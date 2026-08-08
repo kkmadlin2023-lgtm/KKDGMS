@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HM Dashboard | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    
+    <!-- Enterprise Typography (Plus Jakarta Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <!-- Modern Lucide Icons & Tailwind CSS -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <style>
+        :root {
+            --brand-primary: #4F46E5;
+            --brand-primary-hover: #4338CA;
+            --brand-primary-light: #EEF2FF;
+            --surface-bg: #F8FAFC;
+            --surface-card: #FFFFFF;
+            --border-subtle: #E2E8F0;
+            --border-hover: #CBD5E1;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--surface-bg);
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
+
+        /* Sidebar & Menu Dynamic Collapsible Micro-animations */
+        .sidebar-transition { 
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+
+        .submenu-hidden { 
+            max-height: 0; 
+            opacity: 0; 
+            overflow: hidden; 
+            transition: max-height 0.25s cubic-bezier(0, 1, 0, 1), opacity 0.2s ease-out; 
+        }
+
+        .submenu-visible { 
+            max-height: 300px; 
+            opacity: 1; 
+            transition: max-height 0.3s ease-in-out, opacity 0.25s ease-in; 
+        }
+
+        /* Enterprise Card Hover Effects */
+        .card-hover-effect {
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+        }
+
+        .card-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.06), 0 4px 6px -2px rgba(15, 23, 42, 0.02);
+            border-color: var(--border-hover);
+        }
+
+        .btn-interactive {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-interactive:active {
+            transform: scale(0.98);
+        }
+
+        /* Glassmorphism Navigation Bar Header */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Custom Soft Elevation Shadows */
+        .shadow-enterprise-sm {
+            box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+        }
+        
+        .shadow-enterprise-md {
+            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.03), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+        }
+
+        /* Custom Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E2E8F0;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #CBD5E1;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col lg:flex-row selection:bg-indigo-500 selection:text-white">
+
+    <!-- Enterprise Sidebar Navigation -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-enterprise-md" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Head Master Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
+                
+                <!-- Admissions Submenu Parent Accordion -->
+                <div>
+                    <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium cursor-pointer group">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
+                            <span>ADMISSION FORMS</span>
+                        </span>
+                        <i id="submenu-arrow-indicator" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="admissions-submenu" class="submenu-hidden pl-7 pr-1 mt-1 space-y-1 bg-slate-50/80 rounded-xl border border-slate-100 py-1.5">
+                        <a href="a_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Admin Admission Form</span>
+                        </a>
+                        <a href="f_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Faculty Admission Form</span>
+                        </a>
+                        <a href="s_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Student Admission Form</span>
+                        </a>
+                        <a href="w_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Warden Admission Form</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Navigation Module Links -->
+                <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY ASSIGNING PAGE</span>
+                </a>
+                
+                <a href="a_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
+                    <span>ATTENDANCE VIEW</span>
+                </a>
+
+                <a href="a_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="a_bonafide.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
+                    <span>BONAFIDE FORM</span>
+                </a>
+
+                <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
+                    <span>ANNOUNCEMENT EDIT</span>
+                </a>
+
+                <a href="a_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QUESTION BANK</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">System Records</div>
+
+                <a href="a_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>ADMIN DATABASE</span>
+                </a>
+
+                <a href="f_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DATABASE</span>
+                </a>
+
+                <a href="s_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT DATABASE</span>
+                </a>
+
+                <a href="w_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>WARDEN DATABASE</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governance</div>
+
+                <a href="a_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE CONFIRMING PAGE</span>
+                </a>
+
+                <a href="a_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="award" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET VIEW</span>
+                </a>
+
+                <a href="a_user.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                    <span>USER UPDATES</span>
+                </a>
+
+                <a href="a_password.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
+                    <span>PASSWORD UPDATES</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Workspace Navigation -->
+    <div class="flex-1 lg:pl-72 min-h-screen flex flex-col transition-all duration-300">
+        
+        <!-- Mobile Top Header Bar -->
+        <header class="lg:hidden sticky top-0 z-30 glass-header border-b border-slate-200/80 p-4 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebarMenu()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 btn-interactive cursor-pointer" aria-label="Open Navigation Drawer">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-800">HM Terminal</span>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
+                HM
+            </div>
+        </header>
+
+        <!-- Main Dashboard Workspace -->
+        <main class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+
+            <!-- Profile Header Elevation Card -->
+            <header class="bg-white border border-slate-200/80 rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-enterprise-sm card-hover-effect flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
+
+                <!-- Verified Avatar Frame Container -->
+                <div class="relative flex-shrink-0 mt-2 md:mt-0">
+                    <img id="admin-avatar-img" src="teacher1.jpg" alt="Admin Profile Avatar" class="w-24 h-24 md:w-28 md:h-28 rounded-2xl object-cover border-2 border-slate-100 shadow-md bg-slate-50">
+                    <span class="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs ring-4 ring-white font-bold shadow-xs" title="Verified Account Badge">
+                        <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>
+                    </span>
+                </div>
+                
+                <div class="flex-1 text-center md:text-left space-y-4 w-full z-10">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <h1 id="admin-fullname-lbl" class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">Loading Head Master's Profile...</h1>
+                                <span id="admin-title-lbl" class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full border border-indigo-100/80">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                                    Verifying system credential profiles...
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- System Identity Badge Block -->
+                        <div class="bg-slate-50 border border-slate-200/60 p-3.5 rounded-2xl text-xs font-mono text-center md:text-right min-w-[200px] shadow-xs">
+                            <div class="text-slate-500 flex justify-between md:justify-end gap-2">
+                                <span class="text-slate-400">System Staff ID:</span>
+                                <span id="admin-uid-lbl" class="text-slate-900 font-bold">—</span>
+                            </div>
+                            <div class="text-slate-500 flex justify-between md:justify-end gap-2 mt-1">
+                                <span class="text-slate-400">Role Matrix:</span>
+                                <span id="admin-role-lbl" class="text-emerald-600 font-bold uppercase tracking-wider">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-slate-100 flex flex-wrap justify-center md:justify-start gap-y-2.5 gap-x-6 text-xs text-slate-600 font-medium">
+                        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                            <i data-lucide="mail" class="w-4 h-4 text-indigo-500"></i>
+                            <span id="admin-email-lbl" class="text-slate-800 font-semibold">—</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                            <i data-lucide="phone" class="w-4 h-4 text-indigo-500"></i>
+                            <span id="admin-phone-lbl" class="text-slate-800 font-semibold">—</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                            <i data-lucide="graduation-cap" class="w-4 h-4 text-indigo-500"></i>
+                            <span id="admin-qual-lbl" class="text-slate-800 font-semibold">—</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Grid Panels -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Card 1: Core Demographics & Identity -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <i data-lucide="id-card" class="w-4 h-4"></i>
+                                </div>
+                                Core Demographics & Identity
+                            </h2>
+                        </div>
+                        <div class="space-y-3 text-xs font-medium">
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Date of Birth / Age</span>
+                                <span id="admin-dob-age" class="text-slate-900 font-semibold">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Gender Assigned</span>
+                                <span id="admin-gender" class="text-slate-900 font-semibold uppercase">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Blood Group Allocation</span>
+                                <span id="admin-blood" class="font-mono font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded-full text-[11px]">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5">
+                                <span class="text-slate-500">Aadhaar Reference Token</span>
+                                <span id="admin-aadhaar" class="font-mono font-bold text-slate-800 tracking-wider bg-slate-50 px-2 py-1 rounded border border-slate-100">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Health & Residential Matrix -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <i data-lucide="activity" class="w-4 h-4"></i>
+                                </div>
+                                Health & Residential Matrix
+                            </h2>
+                        </div>
+                        <div class="space-y-3 text-xs font-medium">
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Hostel Boarding Unit</span>
+                                <span id="admin-hostel" class="text-slate-900 font-semibold">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Identification Mark 1</span>
+                                <span id="admin-idmark1" class="text-slate-700 max-w-[160px] text-right truncate">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Identification Mark 2</span>
+                                <span id="admin-idmark2" class="text-slate-700 max-w-[160px] text-right truncate">—</span>
+                            </div>
+                            <div class="flex flex-col gap-1.5 py-1">
+                                <span class="text-slate-500">Medical Condition Log Summary</span>
+                                <p id="admin-medical" class="font-semibold text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200/60 text-[11px]">—</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Address Blueprint -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                                </div>
+                                Residential Address Blueprint
+                            </h2>
+                        </div>
+                        <div class="space-y-3 text-xs font-medium">
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Door / Street Address</span>
+                                <span id="admin-address-door" class="text-slate-900 font-semibold text-right truncate max-w-[180px]">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Locality / Place</span>
+                                <span id="admin-address-place" class="text-slate-900 font-semibold text-right truncate max-w-[180px]">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">District & State</span>
+                                <span id="admin-address-region" class="text-slate-900 font-semibold text-right truncate max-w-[180px]">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5">
+                                <span class="text-slate-500">Area Postal Pincode</span>
+                                <span id="admin-pincode" class="font-mono font-bold bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full text-[10px] border border-indigo-100/60">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Functional Scripts Preserved -->
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const sidebarNav = document.getElementById('sidebar-nav');
+        const admissionsSubmenu = document.getElementById('admissions-submenu');
+        const arrowIndicator = document.getElementById('submenu-arrow-indicator');
+
+        function toggleSidebarMenu() {
+            sidebarNav.classList.toggle('-translate-x-full');
+        }
+
+        function toggleAdmissionsSubmenu() {
+            const isHidden = admissionsSubmenu.classList.contains('submenu-hidden');
+            if (isHidden) {
+                admissionsSubmenu.classList.remove('submenu-hidden');
+                admissionsSubmenu.classList.add('submenu-visible');
+                if(arrowIndicator) arrowIndicator.style.transform = 'rotate(180deg)';
+            } else {
+                admissionsSubmenu.classList.remove('submenu-visible');
+                admissionsSubmenu.classList.add('submenu-hidden');
+                if(arrowIndicator) arrowIndicator.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        async function verifyAdminSessionWorkspace() {
+            const { data: { session }, error } = await _supabase.auth.getSession();
+            if (error || !session) {
+                window.location.href = "login.html";
+                return;
+            }
+            fetchAdminSchemaProfile(session.user.id);
+        }
+
+        async function fetchAdminSchemaProfile(authUid) {
+            try {
+                const { data: profile, error } = await _supabase
+                    .from('admins')
+                    .select('*')
+                    .eq('auth_uid', authUid)
+                    .maybeSingle();
+
+                if (error || !profile) {
+                    alert("Profile resolution anomaly. Rerouting to authorization checkpoint.");
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                document.getElementById('admin-fullname-lbl').innerText = profile.full_name;
+                document.getElementById('admin-title-lbl').innerText = `${profile.department || 'General Administration'} Department Leader`;
+                document.getElementById('admin-uid-lbl').innerText = profile.user_id || '—';
+                document.getElementById('admin-role-lbl').innerText = profile.role || 'admin';
+                document.getElementById('admin-email-lbl').innerText = profile.email;
+                document.getElementById('admin-phone-lbl').innerText = profile.mobile || '—';
+                document.getElementById('admin-qual-lbl').innerText = profile.qualification || '—';
+
+                if (profile.photo_url) {
+                    document.getElementById('admin-avatar-img').src = profile.photo_url;
+                }
+
+                document.getElementById('admin-dob-age').innerText = `${profile.dob} (${profile.age || '—'} Yrs)`;
+                document.getElementById('admin-gender').innerText = profile.gender || '—';
+                document.getElementById('admin-blood').innerText = profile.blood_group || '—';
+                
+                const rawAadhaar = profile.aadhaar || '';
+                document.getElementById('admin-aadhaar').innerText = rawAadhaar ? `XXXX-XXXX-${rawAadhaar.slice(-4)}` : '—';
+
+                document.getElementById('admin-hostel').innerText = profile.hostel_name || 'N/A';
+                document.getElementById('admin-idmark1').innerText = profile.id_mark_1 || 'None Recorded';
+                document.getElementById('admin-idmark2').innerText = profile.id_mark_2 || 'None Recorded';
+                document.getElementById('admin-medical').innerText = profile.medical_issues ? profile.medical_issues.trim() : 'No recorded clinical risk statements or dependencies mapped.';
+
+                document.getElementById('admin-address-door').innerText = `${profile.door_no || ''} ${profile.street_name || '—'}`.trim();
+                document.getElementById('admin-address-place').innerText = profile.place || '—';
+                document.getElementById('admin-address-region').innerText = `${profile.district || ''}, ${profile.state || '—'}`.trim().replace(/^,\s*/, '');
+                document.getElementById('admin-pincode').innerText = profile.pincode || '—';
+
+            } catch (err) {
+                window.location.href = "login.html";
+            }
+        }
+
+        async function triggerSystemLogout() {
+            await _supabase.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        window.onload = () => {
+            verifyAdminSessionWorkspace();
+            // Render vector Lucide icons dynamically
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        };
+    </script>
+</body>
+</html>

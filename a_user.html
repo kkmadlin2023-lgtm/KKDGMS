@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Updates | KKDGMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-image: url('kanyakumari.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(10, 12, 22, 0.45);
+            backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0.03);
+        }
+
+        /* 3D Cinematic Scale-Down Animation Matrix */
+        @keyframes cinematicScaleDown {
+            0% { 
+                transform: scale(2.8) rotateX(-25deg) rotateY(30deg) rotateZ(-10deg) translateY(-20px); 
+                opacity: 0; 
+                filter: blur(12px) brightness(1.8);
+            }
+            45% {
+                opacity: 1;
+                filter: blur(0px) brightness(1.2);
+            }
+            100% { 
+                transform: scale(1) rotateX(12deg) rotateY(-14deg) rotateZ(4deg) translateY(0); 
+                opacity: 1;
+                filter: drop-shadow(-12px 16px 28px rgba(0, 0, 0, 0.6)) 
+                       drop-shadow(0px 8px 20px rgba(99, 102, 241, 0.25));
+            }
+        }
+
+        .animate-3d-badge {
+            perspective: 1500px;
+            transform-style: preserve-3d;
+            animation: cinematicScaleDown 1.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+
+        /* Notification Toast Animations */
+        @keyframes slideIn {
+            from { transform: translateX(120%) scale(0.9); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        .toast-active {
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 text-white text-xs select-none relative overflow-x-hidden">
+
+    <!-- Top-Right Fixed RYG Notification Dock Container -->
+    <div id="notification-dock" class="fixed top-6 right-6 z-50 flex flex-col gap-3 w-80 pointer-events-none"></div>
+
+    <div class="glass-panel p-8 rounded-2xl w-full max-w-sm relative overflow-hidden">
+        <!-- Ambient Background Glow Elements -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none"></div>
+        
+        <!-- Console Brand Header -->
+        <div class="text-center mb-6 relative z-10">
+            <h1 class="text-base font-extrabold tracking-widest uppercase text-slate-100">
+                KKDGMS <span class="text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded ml-0.5 text-[10px] font-bold tracking-normal uppercase align-middle">CORE</span>
+            </h1>
+            <p class="text-slate-400 text-[8px] uppercase tracking-[0.2em] font-medium mt-2">Identity Overwrite Controller</p>
+        </div>
+
+        <!-- 3D Identity Found Animation Container -->
+        <div id="verification-badge" class="hidden mb-6 flex flex-col items-center justify-center text-center py-4 relative z-10">
+            <div class="animate-3d-badge mb-3">
+                <img src="verified.png" alt="Identity Verified" class="w-16 h-16 object-contain">
+            </div>
+            <p class="text-emerald-400 font-extrabold tracking-widest uppercase text-[8px] mt-1">Target Account Located</p>
+            <p class="text-[7.5px] text-slate-400 uppercase tracking-wider mt-0.5">Isolated and Locked for Replacement</p>
+        </div>
+
+        <!-- PHASE 1: Existing Email Lookup Form -->
+        <form id="lookup-form" class="space-y-4 relative z-10">
+            <div class="glass-card p-3 rounded-lg">
+                <label class="block text-[8px] text-indigo-300 uppercase tracking-widest font-bold mb-1.5">Existing Account Email (To Remove)</label>
+                <input 
+                    type="email" 
+                    id="existing-email" 
+                    required 
+                    autocomplete="off"
+                    placeholder="old-user@kkdgms.com" 
+                    class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 transition-colors"
+                >
+            </div>
+            <button 
+                type="submit" 
+                id="lookup-btn"
+                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] rounded font-bold transition-all uppercase tracking-wider text-[9px] shadow-lg shadow-indigo-600/10 cursor-pointer"
+            >
+                Fetch and Lock Identity Record
+            </button>
+        </form>
+
+        <!-- PHASE 2: New Email Overwrite Form (Hidden Initially) -->
+        <form id="overwrite-form" class="space-y-4 hidden relative z-10">
+            <div class="glass-card p-3 rounded-lg">
+                <label class="block text-[8px] text-emerald-300 uppercase tracking-widest font-bold mb-1.5">New Replacement Email Address</label>
+                <input 
+                    type="email" 
+                    id="new-email" 
+                    required 
+                    autocomplete="off"
+                    placeholder="new-address@kkdgms.com" 
+                    class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                >
+            </div>
+            <button 
+                type="submit" 
+                id="submit-btn"
+                class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] rounded font-bold transition-all uppercase tracking-wider text-[9px] shadow-lg shadow-emerald-600/10 cursor-pointer"
+            >
+                Commit Overwrite Replacement
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        
+        // PASTE YOUR PRIVATE SERVICE ROLE KEY HERE FOR DIRECT PRIVILEGED SYSTEM OVERWRITES
+        const SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTAxODk3NywiZXhwIjoyMDk0NTk0OTc3fQ.yZroS9XpQWo4QkTjmhn61nqxoMVwCzzL7GY158ydOPM"; 
+
+        const _supabaseAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { persistSession: false }
+        });
+
+        const lookupForm = document.getElementById('lookup-form');
+        const overwriteForm = document.getElementById('overwrite-form');
+        const lookupBtn = document.getElementById('lookup-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const badge = document.getElementById('verification-badge');
+        const dock = document.getElementById('notification-dock');
+
+        let targetUserUUID = "";
+
+        // Top Right Corner RYG Alert System
+        function spawnAlert(type, message) {
+            const toast = document.createElement('div');
+            toast.className = "toast-active glass-card p-4 rounded-xl flex items-center gap-3 border pointer-events-auto shadow-2xl transition-all";
+            
+            // Map configuration dynamically as per RYG (Red, Yellow, Green) structural requirements
+            let systemStyles = "";
+            if (type === 'red') {
+                systemStyles = "border-rose-500/30 bg-rose-950/40 text-rose-400";
+            } else if (type === 'yellow') {
+                systemStyles = "border-amber-500/30 bg-amber-950/40 text-amber-400";
+            } else if (type === 'green') {
+                systemStyles = "border-emerald-500/30 bg-emerald-950/40 text-emerald-400";
+            }
+            
+            toast.className += ` ${systemStyles}`;
+            toast.innerHTML = `
+                <div class="flex flex-col w-full">
+                    <span class="text-[8px] uppercase tracking-widest font-extrabold opacity-60">${type === 'red' ? 'System Error' : type === 'yellow' ? 'Processing Action' : 'Transaction Success'}</span>
+                    <span class="text-[10px] font-medium tracking-wide mt-0.5">${message}</span>
+                </div>
+            `;
+            
+            dock.appendChild(toast);
+            
+            // Auto clean-up alert node out of DOM structure after execution lifespan terminates
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%) scale(0.9)';
+                setTimeout(() => toast.remove(), 400);
+            }, 4500);
+        }
+
+        // Verification Security Protocol: Redirects immediately if the admin is unauthenticated
+        async function verifyAdminAccess() {
+            const standardClient = supabase.createClient(SUPABASE_URL, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA");
+            const { data: { session } } = await standardClient.auth.getSession();
+            
+            if (!session) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Phase 1: Search the database core for matching record to overwrite
+        lookupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emailInput = document.getElementById('existing-email').value.trim();
+
+            lookupBtn.disabled = true;
+            lookupBtn.textContent = "Accessing Core Registry...";
+            spawnAlert('yellow', `Scanning registry table for target mapping: ${emailInput}`);
+
+            try {
+                const { data: { users }, error } = await _supabaseAdmin.auth.admin.listUsers();
+                if (error) throw error;
+
+                const match = users.find(u => u.email.toLowerCase() === emailInput.toLowerCase());
+
+                if (!match) {
+                    throw new Error("Target identity could not be matched inside auth.users database.");
+                }
+
+                targetUserUUID = match.id;
+                
+                // Trigger 3D Scale-Down and form transition
+                badge.classList.remove('hidden');
+                lookupForm.classList.add('hidden');
+                overwriteForm.classList.remove('hidden');
+                spawnAlert('green', "Target account isolated. Ready to execute replacement sequence.");
+
+            } catch (err) {
+                spawnAlert('red', err.message);
+            } finally {
+                lookupBtn.disabled = false;
+                lookupBtn.textContent = "Fetch and Lock Identity Record";
+            }
+        });
+
+        // Phase 2: Complete direct administrative overwrite of the primary column mapping
+        overwriteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newEmailInput = document.getElementById('new-email').value.trim();
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Rewriting Registry Index...";
+            spawnAlert('yellow', "Directly overwriting core database columns inside auth.users schema...");
+
+            try {
+                // Execute direct atomic overwrite configuration statement
+                const { error } = await _supabaseAdmin.auth.admin.updateUserById(
+                    targetUserUUID,
+                    { 
+                        email: newEmailInput,
+                        email_confirm: true // Force confirms the replacement address so no confirmation link step blocks access
+                    }
+                );
+
+                if (error) throw error;
+
+                spawnAlert('green', "Success: Core replacement committed. Target data linkage remains preserved.");
+                
+                setTimeout(() => {
+                    location.reload(); 
+                }, 3000);
+
+            } catch (err) {
+                spawnAlert('red', err.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Commit Overwrite Replacement";
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', verifyAdminAccess);
+    </script>
+</body>
+</html>

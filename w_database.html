@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Control Console | KKDGMS Portal</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    
+    <!-- Tailwind CSS v4 & Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .sticky-col { position: sticky; left: 0; z-index: 20; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .submenu-hidden { display: none; }
+        
+        .toast-enter { transform: translateY(-1rem) scale(0.95); opacity: 0; }
+        .toast-active { transform: translateY(0) scale(1); opacity: 1; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700 font-sans antialiased min-h-screen selection:bg-indigo-600 selection:text-white flex flex-col lg:flex-row">
+
+    <!-- FLOATING TOAST NOTIFICATION SYSTEM -->
+    <div class="fixed top-6 right-6 z-50 pointer-events-none">
+        <div id="toast-notification" class="toast-enter transition-all duration-300 ease-out pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-slate-900 text-white border-slate-800">
+            <span id="toast-icon" class="text-lg">⚙️</span>
+            <div class="flex-1">
+                <p id="toast-title" class="text-[10px] uppercase font-black tracking-wider text-slate-400">System Core</p>
+                <p id="toast-msg" class="text-xs font-bold text-slate-100 mt-0.5">Initializing Warden Engine...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE SIDEBAR OVERLAY -->
+    <div id="sidebar-overlay" onclick="toggleSidebarMenu()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 lg:hidden hidden"></div>
+
+    <!-- REQUIRED SIDEBAR NAVIGATION -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-xl lg:shadow-none" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Head Master Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive cursor-pointer" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
+                
+                <!-- Admissions Submenu Parent Accordion -->
+                <div>
+                    <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium cursor-pointer group">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
+                            <span>ADMISSION FORMS</span>
+                        </span>
+                        <i id="submenu-arrow-indicator" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="admissions-submenu" class="submenu-hidden pl-7 pr-1 mt-1 space-y-1 bg-slate-50/80 rounded-xl border border-slate-100 py-1.5">
+                        <a href="a_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Admin Admission Form</span>
+                        </a>
+                        <a href="f_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Faculty Admission Form</span>
+                        </a>
+                        <a href="s_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Student Admission Form</span>
+                        </a>
+                        <a href="w_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Warden Admission Form</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Navigation Module Links -->
+                <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY ASSIGNING PAGE</span>
+                </a>
+                
+                <a href="a_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
+                    <span>ATTENDANCE VIEW</span>
+                </a>
+
+                <a href="a_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="a_bonafide.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
+                    <span>BONAFIDE FORM</span>
+                </a>
+
+                <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
+                    <span>ANNOUNCEMENT EDIT</span>
+                </a>
+
+                <a href="a_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QUESTION BANK</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">System Records</div>
+
+                <a href="f_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DATABASE</span>
+                </a>
+
+                <a href="a_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>ADMIN DATABASE</span>
+                </a>
+
+                <a href="s_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT DATABASE</span>
+                </a>
+
+                <a href="w_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-indigo-600 bg-indigo-50/80 rounded-xl transition font-bold border border-indigo-100">
+                    <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
+                    <span>WARDEN DATABASE</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governance</div>
+
+                <a href="a_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE CONFIRMING PAGE</span>
+                </a>
+
+                <a href="a_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="award" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET VIEW</span>
+                </a>
+
+                <a href="a_user.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                    <span>USER UPDATES</span>
+                </a>
+
+                <a href="a_password.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
+                    <span>PASSWORD UPDATES</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT CONTENT (OFFSET FOR FIXED ASIDE SIDEBAR) -->
+    <div class="flex-1 lg:ml-72 flex flex-col min-w-0 min-h-screen">
+
+        <!-- HEADER BAR WITH MOBILE TOGGLE & SYSTEM DASHBOARD BTN -->
+        <header class="h-16 px-6 bg-white border-b border-slate-200/80 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                        <i data-lucide="shield" class="w-4 h-4"></i>
+                    </div>
+                    <h1 class="text-sm font-bold text-slate-900 tracking-tight">Wardens Control Engine</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Database Live
+                </span>
+                <a href="a_dashboard.html" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- DASHBOARD CONTAINER BODY -->
+        <main class="p-6 space-y-6 flex-1">
+
+            <!-- CONSOLE STATUS PANEL (MATCHES REFERENCE UX CARD STYLING) -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-xs font-extrabold uppercase tracking-widest text-slate-900">MASTER INLINE MUTATION CONSOLE</h2>
+                        <p class="text-xs text-slate-400 mt-1">Inline record mutation system synchronized with storage asset buckets and real-time subscription channels.</p>
+                    </div>
+                    <button onclick="fetchWardenDatabase()" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-200 transition cursor-pointer self-stretch md:self-auto justify-center">
+                        <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                        <span>Sync Base</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- DATA TABLE WRAPPER CONTAINER -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
+                        <span class="font-bold text-slate-700">Total Records:</span>
+                        <span id="record-counter-badge" class="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold font-mono rounded-md text-[11px]">0</span>
+                    </div>
+                    <span class="text-slate-400 text-[11px]">Shift + Scroll horizontally for all fields</span>
+                </div>
+
+                <!-- FULL DATA MATRIX GRID -->
+                <div class="overflow-x-auto w-full">
+                    <table id="database-matrix-table" class="w-full text-left border-collapse min-w-[3400px] table-fixed">
+                        <thead>
+                            <tr class="bg-slate-50/80 text-slate-400 text-[10px] font-black uppercase tracking-wider border-b border-slate-100">
+                                <th class="p-3 w-[150px] text-center sticky-col bg-slate-50 border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">ACTIONS</th>
+                                <th class="p-3 w-[80px]">ID</th>
+                                <th class="p-3 w-[100px] text-center">PHOTO</th>
+                                <th class="p-3 w-[240px]">FULL NAME</th>
+                                <th class="p-3 w-[160px]">USER ID</th>
+                                <th class="p-3 w-[180px]">HOSTEL</th>
+                                <th class="p-3 w-[160px]">DEPARTMENT</th>
+                                <th class="p-3 w-[160px]">QUALIFICATION</th>
+                                <th class="p-3 w-[240px]">SYSTEM EMAIL</th>
+                                <th class="p-3 w-[150px]">MOBILE</th>
+                                <th class="p-3 w-[160px]">AADHAAR REF</th>
+                                <th class="p-3 w-[140px]">DOB</th>
+                                <th class="p-3 w-[90px]">AGE</th>
+                                <th class="p-3 w-[110px]">GENDER</th>
+                                <th class="p-3 w-[110px]">BLOOD GROUP</th>
+                                <th class="p-3 w-[130px]">DOOR NO</th>
+                                <th class="p-3 w-[200px]">STREET</th>
+                                <th class="p-3 w-[160px]">PLACE</th>
+                                <th class="p-3 w-[160px]">DISTRICT</th>
+                                <th class="p-3 w-[160px]">STATE</th>
+                                <th class="p-3 w-[110px]">PINCODE</th>
+                                <th class="p-3 w-[240px]">MEDICAL ISSUES</th>
+                                <th class="p-3 w-[220px]">INCOME CERTIFICATE</th>
+                                <th class="p-3 w-[220px]">NATIVITY CERTIFICATE</th>
+                            </tr>
+                            <tr class="bg-white border-b border-slate-100 text-xs">
+                                <td class="p-2 sticky-col bg-white border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)] text-center text-[10px] text-slate-400 font-bold uppercase">FILTER</td>
+                                <td class="p-2"><input type="text" data-col="id" oninput="executeTableMatrixFiltering()" placeholder="ID..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"></td>
+                                <td class="p-2"><input type="text" data-col="full_name" oninput="executeTableMatrixFiltering()" placeholder="Search..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="user_id" oninput="executeTableMatrixFiltering()" placeholder="UID..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="hostel_name" oninput="executeTableMatrixFiltering()" placeholder="Hostel..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="department" oninput="executeTableMatrixFiltering()" placeholder="Dept..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="qualification" oninput="executeTableMatrixFiltering()" placeholder="Qual..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="email" oninput="executeTableMatrixFiltering()" placeholder="Email..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="mobile" oninput="executeTableMatrixFiltering()" placeholder="Phone..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="aadhaar" oninput="executeTableMatrixFiltering()" placeholder="Aadhaar..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="dob" oninput="executeTableMatrixFiltering()" placeholder="DOB..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="age" oninput="executeTableMatrixFiltering()" placeholder="Age..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="gender" oninput="executeTableMatrixFiltering()" placeholder="Gender..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="blood_group" oninput="executeTableMatrixFiltering()" placeholder="Blood..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="door_no" oninput="executeTableMatrixFiltering()" placeholder="Door..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="street_name" oninput="executeTableMatrixFiltering()" placeholder="Street..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="place" oninput="executeTableMatrixFiltering()" placeholder="Place..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="district" oninput="executeTableMatrixFiltering()" placeholder="District..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="state" oninput="executeTableMatrixFiltering()" placeholder="State..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="pincode" oninput="executeTableMatrixFiltering()" placeholder="Pin..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="medical_issues" oninput="executeTableMatrixFiltering()" placeholder="Medical..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="income_certificate" oninput="executeTableMatrixFiltering()" placeholder="Income..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="nativity_certificate" oninput="executeTableMatrixFiltering()" placeholder="Nativity..." class="w-full bg-slate-50 border border-slate-200 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-600 rounded-lg"></td>
+                            </tr>
+                        </thead>
+                        <tbody id="database-matrix-body" class="text-xs divide-y divide-slate-100 font-medium text-slate-700">
+                            <tr>
+                                <td colspan="24" class="p-8 text-center text-slate-400 font-mono font-medium">Synchronizing dataset cluster logs...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- PROFILE MODAL POPUP -->
+    <div id="profile-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-[32px] w-full max-w-[480px] p-8 shadow-2xl relative transform scale-95 transition-transform duration-300">
+            <button onclick="closeProfileModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition text-lg cursor-pointer">✕</button>
+
+            <div class="flex flex-col items-center">
+                <div class="relative w-28 h-28 mb-4">
+                    <img id="modal-photo" src="" alt="Warden Profile" class="w-full h-full rounded-full object-cover border-4 border-white shadow-md bg-slate-50" onerror="this.src='kk.png'">
+                    <div class="absolute bottom-1 right-1 bg-indigo-600 text-white rounded-full p-1 border-2 border-white shadow-xs">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    </div>
+                </div>
+
+                <h3 id="modal-name" class="text-lg font-black text-slate-900 tracking-tight uppercase">WARDEN NAME</h3>
+                <span id="modal-role-badge" class="mt-1 px-3 py-0.5 font-extrabold text-[9px] text-indigo-600 bg-indigo-50 rounded-full uppercase tracking-widest border border-indigo-100">WARDEN</span>
+                
+                <div class="w-full border-t border-slate-100 my-6"></div>
+
+                <div class="w-full space-y-3.5 text-xs font-semibold px-2">
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">UID Reference</span>
+                        <span id="modal-id" class="font-mono font-black text-slate-800">N/A</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Department Allocation</span>
+                        <span id="modal-department" class="text-slate-800 font-bold">N/A</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Email Address</span>
+                        <span id="modal-email" class="text-slate-600 font-bold truncate max-w-[240px]">N/A</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Phone Contact</span>
+                        <span id="modal-phone" class="font-mono text-slate-600">N/A</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Assigned Hostel</span>
+                        <span id="modal-hostel" class="text-slate-600 font-bold">N/A</span>
+                    </div>
+                </div>
+
+                <button onclick="closeProfileModal()" class="mt-8 w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-2xl transition cursor-pointer">
+                    Close Profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CORE FUNCTIONALITY ENGINE -->
+    <script>
+        // SUPABASE CLIENT INITIALIZATION
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const databaseMatrixBody = document.getElementById('database-matrix-body');
+        const toastNotification = document.getElementById('toast-notification');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastTitle = document.getElementById('toast-title');
+        const toastMsg = document.getElementById('toast-msg');
+
+        let MASTER_WARDENS_DATASTORES = [];
+        let EDITING_ROW_ID = null;
+        let toastTimeout = null;
+
+        // SIDEBAR ACCORDION CONTROLLERS
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function toggleAdmissionsSubmenu() {
+            const submenu = document.getElementById('admissions-submenu');
+            const arrow = document.getElementById('submenu-arrow-indicator');
+            submenu.classList.toggle('submenu-hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        function triggerSystemLogout() {
+            if (confirm("Are you sure you want to log out of the Warden Management Portal?")) {
+                window.location.href = "login.html";
+            }
+        }
+
+        // TOAST ENGINE NOTIFICATIONS
+        function flashSystemStatus(message, state = 'success') {
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastMsg.innerText = message;
+            
+            if (state === 'error') {
+                toastTitle.innerText = "Transaction Blocked";
+                toastIcon.innerText = "🛑";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-rose-50 border-rose-200 text-rose-800 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-rose-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-rose-500";
+            } else if (state === 'warning') {
+                toastTitle.innerText = "Engine Working";
+                toastIcon.innerText = "⏳";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-amber-50 border-amber-200 text-amber-800 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-amber-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-amber-500";
+            } else {
+                toastTitle.innerText = "Core Sync Completed";
+                toastIcon.innerText = "✅";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-emerald-50 border-emerald-200 text-emerald-700 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-emerald-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-emerald-500";
+            }
+
+            toastTimeout = setTimeout(() => {
+                toastNotification.className = "toast-enter fixed top-6 right-6 z-50 pointer-events-none flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-slate-900 text-white border-slate-800 transition-all duration-300 ease-in";
+            }, 3500);
+        }
+
+        // REAL-TIME WEBSOCKET LISTENERS
+        function initializeRealtimeListener() {
+            _supabase
+                .channel('schema-wardens-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'wardens' }, (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        MASTER_WARDENS_DATASTORES.push(payload.new);
+                        flashSystemStatus(`Live Addition: Warden Record Added`, 'success');
+                    } 
+                    else if (payload.eventType === 'UPDATE') {
+                        const targetIdx = MASTER_WARDENS_DATASTORES.findIndex(w => Number(w.id) === Number(payload.new.id));
+                        if (targetIdx !== -1) MASTER_WARDENS_DATASTORES[targetIdx] = payload.new;
+                        flashSystemStatus(`Live Sync: Warden ID #${payload.new.id} Modified`, 'warning');
+                    } 
+                    else if (payload.eventType === 'DELETE') {
+                        MASTER_WARDENS_DATASTORES = MASTER_WARDENS_DATASTORES.filter(w => Number(w.id) !== Number(payload.old.id));
+                        flashSystemStatus(`Live Sync: Warden ID #${payload.old.id} Dropped`, 'error');
+                    }
+                    if (EDITING_ROW_ID !== Number(payload.new?.id)) {
+                        executeTableMatrixFiltering();
+                    }
+                })
+                .subscribe();
+        }
+
+        // DATABASE FETCH PIPELINE
+        async function fetchWardenDatabase() {
+            try {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="24" class="p-8 text-center text-slate-400 font-bold font-mono animate-pulse">Running database viewport scan...</td></tr>`;
+                const { data, error } = await _supabase.from('wardens').select('*').order('id', { ascending: true });
+                if (error) throw error;
+                MASTER_WARDENS_DATASTORES = data || [];
+                renderTableMatrixPayload(MASTER_WARDENS_DATASTORES);
+            } catch (err) {
+                console.error("Database query failed:", err);
+                databaseMatrixBody.innerHTML = `<tr><td colspan="24" class="p-8 text-center text-rose-600 font-bold font-mono">Error: ${err.message}</td></tr>`;
+            }
+        }
+
+        // DATA MATRIX TABLE RENDERER
+        function renderTableMatrixPayload(recordsList) {
+            document.getElementById('record-counter-badge').innerText = recordsList.length;
+            if (recordsList.length === 0) {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="24" class="p-8 text-center text-slate-400 font-mono font-medium">No warden records matching criteria.</td></tr>`;
+                return;
+            }
+
+            databaseMatrixBody.innerHTML = recordsList.map(warden => {
+                const isEditing = EDITING_ROW_ID === Number(warden.id);
+                const cacheBusterUrl = warden.photo_url ? `${warden.photo_url}?t=${Date.now()}` : 'kk.png';
+                
+                const avatarView = warden.photo_url 
+                    ? `<img src="${cacheBusterUrl}" onclick="openProfileModal(${warden.id})" class="w-8 h-8 rounded-full object-cover border border-slate-200/80 shadow-2xs mx-auto cursor-pointer hover:scale-110 transition duration-150" onerror="this.src='kk.png'">` 
+                    : `<div onclick="openProfileModal(${warden.id})" class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] text-slate-400 mx-auto font-bold font-mono cursor-pointer hover:bg-indigo-50 transition duration-150">N/A</div>`;
+
+                // Handle conditional Redacted Aadhaar display
+                const displayAadhaar = warden.aadhaar ? `[Aadhaar Redacted]` : '—';
+
+                // INLINE EDIT ROW VIEW
+                if (isEditing) {
+                    return `
+                    <tr class="bg-indigo-50/30 border-b border-indigo-100 align-middle transition-colors">
+                        <td class="p-2 sticky-col bg-slate-100 shadow-[2px_0_8px_rgba(0,0,0,0.04)] text-center border-r border-slate-200 flex items-center justify-center gap-1.5 h-12 z-10">
+                            <button onclick="inlineSaveMutation(${warden.id})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] rounded-md transition shadow-xs cursor-pointer">Save</button>
+                            <button onclick="inlineCancelEdit()" class="px-2.5 py-1 bg-white hover:bg-slate-200 text-slate-600 font-bold text-[11px] rounded-md border border-slate-300 transition cursor-pointer">Exit</button>
+                        </td>
+                        <td class="p-3 font-mono font-bold text-slate-400 text-center">${warden.id}</td>
+                        <td class="p-1.5 text-center">
+                            <label class="block cursor-pointer">
+                                <span class="text-[9px] bg-slate-900 text-white px-2 py-1 rounded font-bold hover:bg-slate-800">Upload</span>
+                                <input type="file" id="inline-photo-file" accept="image/*" class="hidden">
+                            </label>
+                            <input type="hidden" id="inline-photo-url-hidden" value="${warden.photo_url || ''}">
+                            <input type="hidden" id="inline-auth-uid" value="${warden.auth_uid || ''}">
+                        </td>
+                        <td class="p-1.5"><input type="text" id="inline-full_name" value="${warden.full_name || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-bold focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-user_id" value="${warden.user_id || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-hostel_name" value="${warden.hostel_name || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-department" value="${warden.department || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-qualification" value="${warden.qualification || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="email" id="inline-email" value="${warden.email || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-mobile" value="${warden.mobile || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-aadhaar" value="${warden.aadhaar || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="date" id="inline-dob" value="${warden.dob || ''}" class="w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="number" id="inline-age" value="${warden.age !== null ? warden.age : ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-gender" value="${warden.gender || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-blood_group" value="${warden.blood_group || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-door_no" value="${warden.door_no || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-street_name" value="${warden.street_name || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-place" value="${warden.place || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-district" value="${warden.district || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-state" value="${warden.state || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-pincode" value="${warden.pincode || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-medical_issues" value="${warden.medical_issues || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-income_certificate" value="${warden.income_certificate || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-nativity_certificate" value="${warden.nativity_certificate || ''}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:border-indigo-600 focus:outline-none"></td>
+                    </tr>`;
+                }
+
+                // STANDARD DATA ROW (EXACT UI UX REFERENCE MATCH WITH BLUE ROLE BADGES & DEL/EDIT BUTTONS)
+                return `
+                <tr class="hover:bg-slate-50/80 transition border-b border-slate-100 text-slate-700 text-xs">
+                    <td class="p-2 sticky-col bg-white shadow-[2px_0_5px_rgba(0,0,0,0.01)] text-center border-r border-slate-100 flex items-center justify-center gap-1.5 h-14 z-10">
+                        <button onclick="inlineEnableEdit(${warden.id})" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] rounded-lg transition shadow-2xs cursor-pointer">Edit</button>
+                        <button onclick="dispatchDeleteRecord(${warden.id})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px] rounded-lg transition cursor-pointer">Del</button>
+                    </td>
+                    <td class="p-3 font-mono font-bold text-slate-400 text-center">${warden.id}</td>
+                    <td class="p-1 text-center">${avatarView}</td>
+                    <td class="p-3 font-bold text-slate-900 truncate hover:text-indigo-600 cursor-pointer uppercase" onclick="openProfileModal(${warden.id})" title="View Profile: ${warden.full_name || ''}">${warden.full_name || '—'}</td>
+                    <td class="p-3 font-mono text-slate-500 uppercase">${warden.user_id || '—'}</td>
+                    <td class="p-3 font-medium text-slate-600 uppercase">${warden.hostel_name || 'N/A'}</td>
+                    <td class="p-3 font-bold text-slate-800 uppercase">${warden.department || 'WARDEN'}</td>
+                    <td class="p-3 text-slate-600 truncate">${warden.qualification || '—'}</td>
+                    <td class="p-3 truncate text-slate-600 font-medium" title="${warden.email || ''}">${warden.email || '—'}</td>
+                    <td class="p-3 font-mono text-slate-600">${warden.mobile || '—'}</td>
+                    <td class="p-3 font-mono text-slate-600 tracking-wide">${displayAadhaar}</td>
+                    <td class="p-3 font-mono text-slate-500">${warden.dob || '—'}</td>
+                    <td class="p-3 font-mono text-slate-700">${warden.age !== null && warden.age !== undefined ? warden.age : '—'}</td>
+                    <td class="p-3 text-slate-500 uppercase text-[10px] font-bold tracking-wide">${warden.gender || '—'}</td>
+                    <td class="p-3 font-bold text-slate-600">${warden.blood_group || '—'}</td>
+                    <td class="p-3 font-mono text-slate-600">${warden.door_no || '—'}</td>
+                    <td class="p-3 truncate text-slate-600">${warden.street_name || '—'}</td>
+                    <td class="p-3 text-slate-600">${warden.place || '—'}</td>
+                    <td class="p-3 text-slate-600">${warden.district || '—'}</td>
+                    <td class="p-3 text-slate-600">${warden.state || '—'}</td>
+                    <td class="p-3 font-mono text-slate-500">${warden.pincode || '—'}</td>
+                    <td class="p-3 truncate text-slate-400 font-medium" title="${warden.medical_issues || ''}">${warden.medical_issues ? warden.medical_issues : 'None'}</td>
+                    <td class="p-3 truncate text-slate-400 font-mono text-[11px]" title="${warden.income_certificate || ''}">${warden.income_certificate || '—'}</td>
+                    <td class="p-3 truncate text-slate-400 font-mono text-[11px]" title="${warden.nativity_certificate || ''}">${warden.nativity_certificate || '—'}</td>
+                </tr>`;
+            }).join('');
+            
+            // RE-INITIALIZE LUCIDE ICONS AFTER DYNAMIC RENDER
+            lucide.createIcons();
+        }
+
+        // PROFILE MODAL TRIGGER CONTROLLERS
+        function openProfileModal(id) {
+            const warden = MASTER_WARDENS_DATASTORES.find(w => Number(w.id) === Number(id));
+            if (!warden) return;
+
+            document.getElementById('modal-photo').src = warden.photo_url || 'kk.png';
+            document.getElementById('modal-name').innerText = warden.full_name || 'Warden Name';
+            document.getElementById('modal-id').innerText = warden.user_id || `ID: ${warden.id}`;
+            document.getElementById('modal-role-badge').innerText = 'WARDEN';
+            document.getElementById('modal-email').innerText = warden.email || '—';
+            document.getElementById('modal-phone').innerText = warden.mobile || '—';
+            document.getElementById('modal-department').innerText = warden.department || 'Hostel Operations';
+            document.getElementById('modal-hostel').innerText = warden.hostel_name || '—';
+
+            const modal = document.getElementById('profile-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // MATRIX FILTER SEARCH
+        function executeTableMatrixFiltering() {
+            const filters = Array.from(document.querySelectorAll('input[data-col]'));
+            const dynamicMatches = MASTER_WARDENS_DATASTORES.filter(row => {
+                return filters.every(input => {
+                    const value = (input.value || '').trim().toLowerCase();
+                    if (!value) return true; 
+                    const field = input.getAttribute('data-col');
+                    const targetVal = String(row[field] || '').toLowerCase();
+                    return targetVal.includes(value);
+                });
+            });
+            renderTableMatrixPayload(dynamicMatches);
+        }
+
+        function inlineEnableEdit(id) {
+            EDITING_ROW_ID = Number(id);
+            executeTableMatrixFiltering();
+        }
+
+        function inlineCancelEdit() {
+            EDITING_ROW_ID = null;
+            executeTableMatrixFiltering();
+        }
+
+        const parseSqlValue = (val) => (val && val.trim() !== '') ? val.trim() : null;
+
+        // INLINE MUTATION SAVE ACTION
+        async function inlineSaveMutation(targetId) {
+            const fullName = document.getElementById('inline-full_name').value.trim();
+            const email = document.getElementById('inline-email').value.trim();
+            const aadhaar = document.getElementById('inline-aadhaar').value.trim();
+            const dob = document.getElementById('inline-dob').value;
+            const gender = document.getElementById('inline-gender').value.trim();
+            const authUidInput = document.getElementById('inline-auth-uid').value;
+
+            if (!fullName || !email || !aadhaar || !dob || !gender) {
+                alert("Core database columns require explicit validation (Name, Email, Aadhaar, DOB, Gender).");
+                return;
+            }
+
+            const fileInput = document.getElementById('inline-photo-file');
+            let uploadedPhotoUrl = document.getElementById('inline-photo-url-hidden').value;
+
+            if (fileInput && fileInput.files.length > 0) {
+                flashSystemStatus("Replacing file asset from bucket...", "warning");
+                const targetFile = fileInput.files[0];
+                const cleanExtension = targetFile.name.split('.').pop();
+                
+                const uniqueWardenKey = authUidInput || `row_${targetId}`;
+                const deterministicPath = `passports/warden_${uniqueWardenKey}.${cleanExtension}`;
+
+                if (uploadedPhotoUrl && uploadedPhotoUrl.includes('/storage/v1/object/public/student-photos/')) {
+                    try {
+                        const rawOldPath = uploadedPhotoUrl.split('/student-photos/').pop();
+                        const cleanOldPath = decodeURIComponent(rawOldPath);
+                        if (cleanOldPath && cleanOldPath !== 'admin-placeholder.png') {
+                            await _supabase.storage.from('student-photos').remove([cleanOldPath]);
+                        }
+                    } catch (evictError) {
+                        console.warn("Non-blocking old asset deletion warning:", evictError);
+                    }
+                }
+
+                try {
+                    await _supabase.storage.from('student-photos').remove([deterministicPath]);
+                } catch(err) { }
+
+                try {
+                    const { error: uploadError } = await _supabase.storage
+                        .from('student-photos')
+                        .upload(deterministicPath, targetFile, { cacheControl: '0', upsert: true });
+                    
+                    if (uploadError) throw uploadError;
+
+                    const { data: urlData } = _supabase.storage.from('student-photos').getPublicUrl(deterministicPath);
+                    if (urlData && urlData.publicUrl) uploadedPhotoUrl = urlData.publicUrl;
+                } catch (storageErr) {
+                    console.error("Bucket engine write failure:", storageErr);
+                    flashSystemStatus("Storage Sync Conflict", "error");
+                    return;
+                }
+            }
+
+            const ageInput = document.getElementById('inline-age').value;
+
+            const updatePayload = {
+                full_name: fullName,
+                user_id: parseSqlValue(document.getElementById('inline-user_id').value),
+                hostel_name: document.getElementById('inline-hostel_name').value.trim() || 'N/A',
+                department: parseSqlValue(document.getElementById('inline-department').value),
+                qualification: parseSqlValue(document.getElementById('inline-qualification').value),
+                email: email,
+                mobile: parseSqlValue(document.getElementById('inline-mobile').value),
+                aadhaar: aadhaar,
+                dob: dob,
+                age: ageInput !== '' ? parseInt(ageInput) : null,
+                gender: gender,
+                blood_group: parseSqlValue(document.getElementById('inline-blood_group').value),
+                door_no: parseSqlValue(document.getElementById('inline-door_no').value),
+                street_name: parseSqlValue(document.getElementById('inline-street_name').value),
+                place: parseSqlValue(document.getElementById('inline-place').value),
+                district: parseSqlValue(document.getElementById('inline-district').value),
+                state: parseSqlValue(document.getElementById('inline-state').value),
+                pincode: parseSqlValue(document.getElementById('inline-pincode').value),
+                medical_issues: parseSqlValue(document.getElementById('inline-medical_issues').value),
+                income_certificate: parseSqlValue(document.getElementById('inline-income_certificate').value),
+                nativity_certificate: parseSqlValue(document.getElementById('inline-nativity_certificate').value),
+                photo_url: parseSqlValue(uploadedPhotoUrl)
+            };
+
+            EDITING_ROW_ID = null;
+            flashSystemStatus("Pushing update mutation...", "warning");
+
+            try {
+                const { error } = await _supabase.from('wardens').update(updatePayload).eq('id', targetId);
+                if (error) throw error;
+                flashSystemStatus("Changes securely committed", "success");
+                fetchWardenDatabase();
+            } catch (err) {
+                console.error("Mutation failure:", err);
+                flashSystemStatus("DB Write Conflict", "error");
+            }
+        }
+
+        // RECORD DELETION PIPELINE
+        async function dispatchDeleteRecord(id) {
+            if (!confirm("Permanently drop this warden record from the schema? This automatically clears out the profile photo from the storage bucket.")) return;
+            
+            const record = MASTER_WARDENS_DATASTORES.find(w => Number(w.id) === Number(id));
+            if (!record) return;
+
+            if (record.photo_url && record.photo_url.includes('/storage/v1/object/public/student-photos/')) {
+                try {
+                    const rawPath = record.photo_url.split('/student-photos/').pop();
+                    const relativePath = decodeURIComponent(rawPath);
+                    if (relativePath && relativePath !== 'admin-placeholder.png') {
+                        flashSystemStatus("Purging storage bucket asset...", "warning");
+                        await _supabase.storage.from('student-photos').remove([relativePath]);
+                    }
+                } catch (storageException) {
+                    console.error("Failed to execute storage path parsing:", storageException);
+                }
+            }
+
+            try {
+                flashSystemStatus("Dropping record from database matrix...", "warning");
+                const { error } = await _supabase.from('wardens').delete().eq('id', id);
+                if (error) throw error;
+                flashSystemStatus("Record dropped completely", "success");
+                fetchWardenDatabase();
+            } catch (err) {
+                console.error("Deletion failure:", err);
+                flashSystemStatus("Drop Execution Error", "error");
+            }
+        }
+
+        // INITIALIZATION
+        window.onload = () => {
+            lucide.createIcons();
+            fetchWardenDatabase();
+            initializeRealtimeListener();
+        };
+    </script>
+</body>
+</html>

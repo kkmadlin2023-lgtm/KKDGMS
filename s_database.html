@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Database | KKDGMS Portal</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .sticky-col { position: sticky; left: 0; z-index: 20; }
+        .toast-enter { transform: translateY(-1rem) scale(0.95); opacity: 0; }
+        .toast-active { transform: translateY(0) scale(1); opacity: 1; }
+    </style>
+</head>
+<body class="text-slate-700 font-sans antialiased min-h-screen flex bg-[#f8fafc]">
+
+    <!-- SYSTEM NOTIFICATION TOAST -->
+    <div class="fixed top-6 right-6 z-50 pointer-events-none">
+        <div id="toast-notification" class="toast-enter transition-all duration-300 ease-out pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-slate-900 text-white border-slate-800">
+            <span id="toast-icon" class="text-lg">⚙️</span>
+            <div class="flex-1">
+                <p id="toast-title" class="text-[10px] uppercase font-black tracking-wider text-slate-400">System Core</p>
+                <p id="toast-msg" class="text-xs font-bold text-slate-100 mt-0.5">Online and Listening...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEFT SIDEBAR NAVIGATION -->
+    <aside class="w-72 bg-white border-r border-slate-200/80 shrink-0 flex flex-col justify-between min-h-screen">
+        <div>
+            <!-- BRANDING LOGO -->
+            <div class="p-6 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-base font-extrabold text-slate-800 leading-tight">KKDGMS Portal</h1>
+                    <p class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Head Master Hub</p>
+                </div>
+            </div>
+
+            <!-- NAVIGATION LINKS -->
+            <div class="px-4 py-2">
+                <p class="px-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-3">Operations & Controls</p>
+                <nav class="space-y-1">
+                    <a href="a_database.html" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
+                        <span class="flex items-center gap-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Admission Forms
+                        </span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </a>
+                    <a href="a_assign.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                        Faculty Assigning Page
+                    </a>
+                    <a href="a_attendance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Attendance View
+                    </a>
+                    <a href="a_sdetails.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        Student Profiles
+                    </a>
+                    <a href="a_bonafide.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Bonafide Form
+                    </a>
+                    <a href="a_news.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882T19.24 5a1 1 0 01.76 1.288l-1.5 6A1 1 0 0117.5 13H5a1 1 0 01-.894-.553L2 8l2.106-4.447A1 1 0 015 3h12.5a1 1 0 01.894.553L20 8l-1.5 6H5"></path></svg>
+                        Announcement Edit
+                    </a>
+                    <a href="a_qb.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Question Bank
+                    </a>
+                </nav>
+
+                <p class="px-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mt-6 mb-3">System Records</p>
+                <nav class="space-y-1">
+                    <a href="a_database.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                        Admin Database
+                    </a>
+                    <a href="f_database.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                        Faculty Database
+                    </a>
+                    <!-- ACTIVE LINK: STUDENT DATABASE -->
+                    <a href="s_database.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50/70 border border-indigo-100 transition shadow-2xs">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                        Student Database
+                    </a>
+                    <a href="w_database.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                        Warden Database
+                    </a>
+                </nav>
+
+                <p class="px-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mt-6 mb-3">Governance</p>
+                <nav class="space-y-1">
+                    <a href="a_leave.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        Leave Confirming Page
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- LOGOUT BUTTON -->
+        <div class="p-4 border-t border-slate-100">
+            <button class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-extrabold text-rose-600 bg-rose-50/50 hover:bg-rose-100 transition border border-rose-100/60 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                LOGOUT
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN DASHBOARD CONTENT AREA -->
+    <div class="flex-1 flex flex-col min-w-0">
+        
+        <!-- HEADER TOOLBAR -->
+        <header class="bg-white border-b border-slate-200/80 px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+            <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <h2 class="text-sm font-black text-slate-800 tracking-tight">Student Control Engine</h2>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Database Live
+                </span>
+                <a href="a_dashboard.html" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition border border-slate-200">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Dashboard
+                </a>
+            </div>
+        </header>
+
+        <!-- DASHBOARD BODY -->
+        <main class="p-8 space-y-6">
+
+            <!-- PURPLE ACCENT BANNER CONTROL HEADER -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-6 relative overflow-hidden shadow-2xs">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-sm font-black text-slate-800 tracking-wider uppercase">MASTER INLINE MUTATION CONSOLE</h2>
+                        <p class="text-xs text-slate-400 font-bold mt-0.5">Inline record mutation system synchronized with storage asset buckets and real-time subscription channels.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="launchMutationModal(null)" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5">
+                            ➕ Add Student
+                        </button>
+                        <button onclick="fetchStudentDatabase()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5">
+                            🔄 Sync Base
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLE CONTAINER CARD -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+                <div class="p-4 px-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span class="text-xs font-extrabold text-slate-700">Total Records: <span id="record-counter-badge" class="bg-indigo-100 text-indigo-700 px-2 py-0.5 ml-1 rounded-md text-[11px] font-mono font-black">0</span></span>
+                    </div>
+                    <span class="text-[11px] text-slate-400 font-bold">Shift + Scroll horizontally for all fields</span>
+                </div>
+
+                <!-- MATRIX TABLE -->
+                <div class="overflow-x-auto w-full">
+                    <table id="database-matrix-table" class="w-full text-left border-collapse min-w-[3800px] table-fixed">
+                        <thead>
+                            <tr class="bg-slate-50/80 text-slate-400 text-[10px] font-black uppercase tracking-wider border-b border-slate-200/60">
+                                <th class="p-3.5 w-[150px] text-center sticky-col bg-slate-50 border-r border-slate-200/60 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">ACTIONS</th>
+                                <th class="p-3.5 w-[80px]">ID</th>
+                                <th class="p-3.5 w-[260px]">UUID KEY</th>
+                                <th class="p-3.5 w-[100px] text-center">PHOTO</th>
+                                <th class="p-3.5 w-[220px]">FULL NAME</th>
+                                <th class="p-3.5 w-[160px]">USER ID / UID</th>
+                                <th class="p-3.5 w-[120px]">CLASS</th>
+                                <th class="p-3.5 w-[100px]">SECTION</th>
+                                <th class="p-3.5 w-[120px]">MEDIUM</th>
+                                <th class="p-3.5 w-[140px]">ACADEMIC YEAR</th>
+                                <th class="p-3.5 w-[160px]">STUDENT GROUP</th>
+                                <th class="p-3.5 w-[240px]">SYSTEM EMAIL</th>
+                                <th class="p-3.5 w-[150px]">MOBILE</th>
+                                <th class="p-3.5 w-[180px]">AADHAAR</th>
+                                <th class="p-3.5 w-[130px]">DATE OF BIRTH</th>
+                                <th class="p-3.5 w-[90px]">AGE</th>
+                                <th class="p-3.5 w-[110px]">GENDER</th>
+                                <th class="p-3.5 w-[200px]">FATHER'S NAME</th>
+                                <th class="p-3.5 w-[200px]">MOTHER'S NAME</th>
+                                <th class="p-3.5 w-[160px]">HOSTEL</th>
+                                <th class="p-3.5 w-[140px]">HOSTEL TYPE</th>
+                                <th class="p-3.5 w-[120px]">DOOR CODE</th>
+                                <th class="p-3.5 w-[220px]">STREET ADDRESS</th>
+                                <th class="p-3.5 w-[160px]">PLACE</th>
+                                <th class="p-3.5 w-[160px]">DISTRICT</th>
+                                <th class="p-3.5 w-[160px]">STATE</th>
+                                <th class="p-3.5 w-[120px]">PINCODE</th>
+                                <th class="p-3.5 w-[240px]">MEDICAL ISSUES</th>
+                                <th class="p-3.5 w-[220px]">PREVIOUS SCHOOL</th>
+                            </tr>
+                            
+                            <!-- INLINE INPUT SEARCH FILTERS -->
+                            <tr class="bg-white border-b border-slate-200/60">
+                                <td class="p-2 sticky-col bg-white border-r border-slate-200/60 shadow-[2px_0_5px_rgba(0,0,0,0.02)] text-center text-[10px] text-slate-400 font-extrabold uppercase">FILTER</td>
+                                <td class="p-2"><input type="text" data-col="id" oninput="executeTableMatrixFiltering()" placeholder="ID..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="auth_uid" oninput="executeTableMatrixFiltering()" placeholder="UUID..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"></td>
+                                <td class="p-2"><input type="text" data-col="full_name" oninput="executeTableMatrixFiltering()" placeholder="Search..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="user_id" oninput="executeTableMatrixFiltering()" placeholder="UID..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="student_class" oninput="executeTableMatrixFiltering()" placeholder="Class..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="section" oninput="executeTableMatrixFiltering()" placeholder="Sec..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="medium" oninput="executeTableMatrixFiltering()" placeholder="Medium..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="academic_year" oninput="executeTableMatrixFiltering()" placeholder="Year..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="student_group" oninput="executeTableMatrixFiltering()" placeholder="Group..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="email" oninput="executeTableMatrixFiltering()" placeholder="Email..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="mobile" oninput="executeTableMatrixFiltering()" placeholder="Phone..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="aadhaar" oninput="executeTableMatrixFiltering()" placeholder="Aadhaar..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="dob" oninput="executeTableMatrixFiltering()" placeholder="DOB..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="age" oninput="executeTableMatrixFiltering()" placeholder="Age..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="gender" oninput="executeTableMatrixFiltering()" placeholder="Gender..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="father_name" oninput="executeTableMatrixFiltering()" placeholder="Father..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="mother_name" oninput="executeTableMatrixFiltering()" placeholder="Mother..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="hostel_name" oninput="executeTableMatrixFiltering()" placeholder="Hostel..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="hostel_type" oninput="executeTableMatrixFiltering()" placeholder="Type..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="door_no" oninput="executeTableMatrixFiltering()" placeholder="Door..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="street_name" oninput="executeTableMatrixFiltering()" placeholder="Street..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="place" oninput="executeTableMatrixFiltering()" placeholder="Place..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="district" oninput="executeTableMatrixFiltering()" placeholder="District..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="state" oninput="executeTableMatrixFiltering()" placeholder="State..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="pincode" oninput="executeTableMatrixFiltering()" placeholder="Pin..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="medical_issues" oninput="executeTableMatrixFiltering()" placeholder="Medical..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                                <td class="p-2"><input type="text" data-col="prev_school" oninput="executeTableMatrixFiltering()" placeholder="Prev School..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-[11px] font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            </tr>
+                        </thead>
+                        <tbody id="database-matrix-body" class="text-xs font-semibold text-slate-700 divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="29" class="p-8 text-center text-slate-400 font-mono">Synchronizing student records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- UPDATE / CREATE MODAL LAYER -->
+    <div id="edit-profile-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl rounded-3xl overflow-hidden transform scale-95 transition-transform duration-300">
+            
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                    <h3 class="text-sm font-black text-slate-900 uppercase tracking-tight" id="modal-interface-title">Update Student Profile Record</h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5 font-bold" id="modal-interface-desc">Modifying row parameters directly inside table schema.</p>
+                </div>
+                <button onclick="closeMutationModal()" class="text-slate-400 hover:text-slate-600 font-bold cursor-pointer text-sm">✕</button>
+            </div>
+
+            <form id="mutation-matrix-form" onsubmit="dispatchUpdateMutation(event)" class="flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
+                <input type="hidden" id="edit-primary-key">
+                <input type="hidden" id="edit-auth-uid">
+                
+                <div class="sm:col-span-2 font-black text-slate-800 border-b border-slate-100 pb-1">Core Academic Credentials</div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Full Structural Name *</label>
+                    <input type="text" id="edit-full-name" required class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Student Unique User ID / UID</label>
+                    <input type="text" id="edit-user-id" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Class Block Placement</label>
+                    <input type="text" id="edit-student-class" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Section Allocation</label>
+                    <input type="text" id="edit-section" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Instruction Medium</label>
+                    <input type="text" id="edit-medium" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Academic Registration Year</label>
+                    <input type="text" id="edit-academic-year" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Student Specialty Group</label>
+                    <input type="text" id="edit-student-group" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Previous School History</label>
+                    <input type="text" id="edit-prev-school" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="sm:col-span-2 pt-2 border-t border-slate-100 font-black text-slate-800 border-b border-slate-100 pb-1">Demographics & Image Attachment</div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Core Digital Email Address</label>
+                    <input type="email" id="edit-email" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Mobile Phone Line</label>
+                    <input type="text" id="edit-mobile" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Aadhaar Reference</label>
+                    <input type="text" id="edit-aadhaar" placeholder="[Aadhaar Redacted]" class="border border-slate-200 p-2.5 font-mono font-bold tracking-wider rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Date of Birth *</label>
+                    <input type="date" id="edit-dob" required class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Calculated Age Integer</label>
+                    <input type="number" id="edit-age" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Gender Matrix Configuration</label>
+                    <input type="text" id="edit-gender" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Blood Allocation Token</label>
+                    <input type="text" id="edit-blood-group" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Profile Image Resource</label>
+                    <input type="file" id="edit-photo-file" accept="image/*" class="border border-slate-200 p-1.5 text-[11px] bg-slate-50 font-bold rounded-lg file:mr-2 file:py-1 file:px-2 file:border-0 file:text-[10px] file:font-bold file:bg-slate-900 file:text-white cursor-pointer file:cursor-pointer file:rounded-lg">
+                    <input type="hidden" id="edit-photo-url">
+                </div>
+
+                <div class="sm:col-span-2 pt-2 border-t border-slate-100 font-black text-slate-800 border-b border-slate-100 pb-1">Parental Registry Ecosystem</div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Father's Full Name</label>
+                    <input type="text" id="edit-father-name" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Father's Professional Occupation</label>
+                    <input type="text" id="edit-father-occupation" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Mother's Full Name</label>
+                    <input type="text" id="edit-mother-name" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Mother's Professional Occupation</label>
+                    <input type="text" id="edit-mother-occupation" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="sm:col-span-2 pt-2 border-t border-slate-100 font-black text-slate-800 border-b border-slate-100 pb-1">Geographical Footprint Metrics</div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Door Code Number</label>
+                    <input type="text" id="edit-door-no" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Street Name Blueprint</label>
+                    <input type="text" id="edit-street-name" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Locality Area / Place</label>
+                    <input type="text" id="edit-place" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">District Parameter</label>
+                    <input type="text" id="edit-district" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">State Matrix Location</label>
+                    <input type="text" id="edit-state" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Postal Pincode Key</label>
+                    <input type="text" id="edit-pincode" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="sm:col-span-2 pt-2 border-t border-slate-100 font-black text-slate-800 border-b border-slate-100 pb-1">Clinical Logging & Housing Allocation</div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Primary Identification Mark 1</label>
+                    <input type="text" id="edit-id-mark-1" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Secondary Identification Mark 2</label>
+                    <input type="text" id="edit-id-mark-2" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Assigned Hostel Facility Unit</label>
+                    <input type="text" id="edit-hostel-name" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Hostel Structural Classification</label>
+                    <input type="text" id="edit-hostel-type" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="sm:col-span-2 flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Medical Vulnerabilities / Condition Log</label>
+                    <textarea id="edit-medical-issues" rows="2" class="border border-slate-200 p-2.5 font-bold resize-none rounded-lg focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="sm:col-span-2 pt-2 border-t border-slate-100 font-black text-slate-800 border-b border-slate-100 pb-1">System Parameters</div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Security Access Role</label>
+                    <input type="text" id="edit-role" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Birth Certificate Vault URL</label>
+                    <input type="text" id="edit-birth-certificate" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Income Verification URL</label>
+                    <input type="text" id="edit-income-certificate" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Nativity Certificate URL</label>
+                    <input type="text" id="edit-nativity-certificate" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="font-bold text-slate-400">Parental Declaration Statement Link</label>
+                    <input type="text" id="edit-parent-declaration" class="border border-slate-200 p-2.5 font-bold rounded-lg focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="sm:col-span-2 pt-6 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                    <button type="button" onclick="closeMutationModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition cursor-pointer">Cancel</button>
+                    <button type="submit" id="submit-mutation-btn" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition shadow-2xs cursor-pointer">Save Student Mutation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HIGH-FIDELITY PROFILE POPUP CARD -->
+    <div id="profile-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-[32px] w-full max-w-[480px] p-8 shadow-2xl relative transform scale-95 transition-transform duration-300">
+            <button onclick="closeProfileModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition text-lg cursor-pointer">✕</button>
+
+            <div class="flex flex-col items-center">
+                <div class="relative w-32 h-32 mb-4">
+                    <img id="modal-photo" src="" alt="Student Profile" class="w-full h-full rounded-full object-cover border-4 border-white shadow-md bg-slate-50" onerror="this.src='kk.png'">
+                    <div class="absolute bottom-1.5 right-1.5 bg-indigo-600 text-white rounded-full p-1 border-2 border-white shadow-xs">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                </div>
+
+                <h3 id="modal-name" class="text-lg font-black text-slate-800 tracking-tight uppercase">STUDENT NAME</h3>
+                <span id="modal-role-badge" class="mt-1 px-3 py-0.5 font-extrabold text-[9px] text-indigo-600 bg-indigo-50 rounded-full uppercase tracking-widest border border-indigo-100">STUDENT</span>
+                
+                <div class="w-full border-t border-slate-100 my-6"></div>
+
+                <div class="w-full space-y-4 text-xs font-semibold px-2">
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">UID Reference</span>
+                        <span id="modal-id" class="font-mono font-black text-slate-800">N/A</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Class Placement</span>
+                        <span id="modal-class-placement" class="text-slate-800 font-bold">N/A</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Email Address</span>
+                        <span id="modal-email" class="text-slate-600 font-bold truncate max-w-[240px]">N/A</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Phone Contact</span>
+                        <span id="modal-phone" class="font-mono text-slate-600">N/A</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Hostel Allocation</span>
+                        <span id="modal-hostel" class="text-slate-600 font-bold">N/A</span>
+                    </div>
+                </div>
+
+                <button onclick="closeProfileModal()" class="mt-8 w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs rounded-2xl transition cursor-pointer">
+                    Close Profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const databaseMatrixBody = document.getElementById('database-matrix-body');
+        const editProfileModal = document.getElementById('edit-profile-modal');
+        const toastNotification = document.getElementById('toast-notification');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastTitle = document.getElementById('toast-title');
+        const toastMsg = document.getElementById('toast-msg');
+
+        let MASTER_STUDENTS_DATASTORES = [];
+        let toastTimeout = null;
+
+        function flashSystemStatus(message, state = 'success') {
+            if (toastTimeout) clearTimeout(toastTimeout);
+
+            toastMsg.innerText = message;
+            
+            if (state === 'error') {
+                toastTitle.innerText = "Transaction Blocked";
+                toastIcon.innerText = "🛑";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-rose-50 border-rose-200 text-rose-800 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-rose-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-rose-500";
+            } else if (state === 'warning') {
+                toastTitle.innerText = "Engine Working";
+                toastIcon.innerText = "⏳";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-amber-50 border-amber-200 text-amber-800 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-amber-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-amber-500";
+            } else {
+                toastTitle.innerText = "Core Sync Completed";
+                toastIcon.innerText = "✅";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-emerald-50 border-emerald-200 text-emerald-700 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-emerald-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-emerald-500";
+            }
+
+            toastTimeout = setTimeout(() => {
+                toastNotification.className = "toast-enter fixed top-6 right-6 z-50 pointer-events-none flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-slate-900 text-white border-slate-800 transition-all duration-300 ease-in";
+            }, 3500);
+        }
+
+        function initializeRealtimeListener() {
+            _supabase
+                .channel('schema-students-changes')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'students' },
+                    (payload) => {
+                        console.log('Realtime Event Intercepted:', payload);
+                        if (payload.eventType === 'INSERT') {
+                            MASTER_STUDENTS_DATASTORES.push(payload.new);
+                            flashSystemStatus(`Live Addition: Record Added`, 'success');
+                        } 
+                        else if (payload.eventType === 'UPDATE') {
+                            const targetIdx = MASTER_STUDENTS_DATASTORES.findIndex(s => Number(s.id) === Number(payload.new.id));
+                            if (targetIdx !== -1) {
+                                MASTER_STUDENTS_DATASTORES[targetIdx] = payload.new;
+                            }
+                            flashSystemStatus(`Live Sync: Row ID #${payload.new.id} Modified`, 'warning');
+                        } 
+                        else if (payload.eventType === 'DELETE') {
+                            MASTER_STUDENTS_DATASTORES = MASTER_STUDENTS_DATASTORES.filter(s => Number(s.id) !== Number(payload.old.id));
+                            flashSystemStatus(`Live Sync: Row ID #${payload.old.id} Dropped`, 'error');
+                        }
+                        executeTableMatrixFiltering();
+                    }
+                )
+                .subscribe((status) => {
+                    if(status === 'SUBSCRIBED') {
+                        flashSystemStatus("Realtime Active", "success");
+                    }
+                });
+        }
+
+        async function fetchStudentDatabase() {
+            try {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="29" class="p-8 text-center text-slate-400 font-bold font-mono animate-pulse">Running database scan...</td></tr>`;
+                const { data, error } = await _supabase.from('students').select('*').order('id', { ascending: true });
+                if (error) throw error;
+                MASTER_STUDENTS_DATASTORES = data || [];
+                renderTableMatrixPayload(MASTER_STUDENTS_DATASTORES);
+            } catch (err) {
+                console.error("Database query failed:", err);
+                databaseMatrixBody.innerHTML = `<tr><td colspan="29" class="p-8 text-center text-rose-600 font-bold font-mono">Error loading data: ${err.message}</td></tr>`;
+                flashSystemStatus("Failed To Load Data", "error");
+            }
+        }
+
+        function renderTableMatrixPayload(recordsList) {
+            document.getElementById('record-counter-badge').innerText = recordsList.length;
+            if (recordsList.length === 0) {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="29" class="p-8 text-center text-slate-400 font-mono font-medium">No student records match viewport criteria.</td></tr>`;
+                return;
+            }
+
+            databaseMatrixBody.innerHTML = recordsList.map(student => {
+                const avatarCell = student.photo_url 
+                    ? `<img src="${student.photo_url}" onclick="openProfileModal(${student.id})" class="w-8 h-8 rounded-full object-cover border border-slate-200/80 shadow-2xs mx-auto cursor-pointer hover:scale-110 transition duration-150">` 
+                    : `<div onclick="openProfileModal(${student.id})" class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] text-slate-400 mx-auto font-bold font-mono cursor-pointer hover:bg-indigo-50 transition duration-150">N/A</div>`;
+                
+                const maskedAadhaar = student.aadhaar ? `[Aadhaar Redacted]` : '—';
+
+                return `
+                <tr class="hover:bg-slate-50/80 transition border-b border-slate-100 text-slate-700 text-xs">
+                    <td class="p-2.5 sticky-col bg-white border-r border-slate-200/60 shadow-[2px_0_5px_rgba(0,0,0,0.01)] text-center flex items-center justify-center gap-1.5 h-14 z-10">
+                        <button onclick="launchMutationModal(${student.id})" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] rounded-md transition shadow-2xs cursor-pointer">Edit</button>
+                        <button onclick="dispatchDeleteRecord(${student.id})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/60 font-bold text-[10px] rounded-md transition cursor-pointer">Del</button>
+                    </td>
+                    <td class="p-3.5 font-mono font-bold text-slate-400">${student.id}</td>
+                    <td class="p-3.5 font-mono text-slate-400 text-[11px] truncate" title="${student.auth_uid || ''}">${student.auth_uid || '—'}</td>
+                    <td class="p-1 text-center">${avatarCell}</td>
+                    <td class="p-3.5 font-extrabold text-slate-800 truncate hover:text-indigo-600 cursor-pointer" onclick="openProfileModal(${student.id})" title="View Profile: ${student.full_name || ''}">${student.full_name || '—'}</td>
+                    <td class="p-3.5 font-mono text-slate-500 truncate">${student.user_id || '—'}</td>
+                    <td class="p-3.5 font-bold text-slate-700">${student.student_class || '—'}</td>
+                    <td class="p-3.5 font-bold text-slate-500">${student.section || '—'}</td>
+                    <td class="p-3.5 uppercase text-[11px] font-bold tracking-wider text-slate-600">${student.medium || '—'}</td>
+                    <td class="p-3.5 font-medium text-slate-600">${student.academic_year || '—'}</td>
+                    <td class="p-3.5 truncate">${student.student_group || '—'}</td>
+                    <td class="p-3.5 truncate text-slate-600" title="${student.email || ''}">${student.email || '—'}</td>
+                    <td class="p-3.5 font-mono text-slate-600">${student.mobile || '—'}</td>
+                    <td class="p-3.5 font-mono tracking-wider text-slate-400">${maskedAadhaar}</td>
+                    <td class="p-3.5 font-mono text-slate-500">${student.dob || '—'}</td>
+                    <td class="p-3.5 font-mono text-slate-700">${student.age !== null && student.age !== undefined ? student.age : '—'}</td>
+                    <td class="p-3.5 text-slate-500 uppercase text-[10px] font-bold tracking-wide">${student.gender || '—'}</td>
+                    <td class="p-3.5 truncate text-slate-600">${student.father_name || '—'}</td>
+                    <td class="p-3.5 truncate text-slate-600">${student.mother_name || '—'}</td>
+                    <td class="p-3.5 font-bold text-slate-700">${student.hostel_name || '—'}</td>
+                    <td class="p-3.5 text-[11px] text-slate-500">${student.hostel_type || '—'}</td>
+                    <td class="p-3.5 font-mono text-slate-600">${student.door_no || '—'}</td>
+                    <td class="p-3.5 truncate text-slate-600">${student.street_name || '—'}</td>
+                    <td class="p-3.5 text-slate-600">${student.place || '—'}</td>
+                    <td class="p-3.5 text-slate-600">${student.district || '—'}</td>
+                    <td class="p-3.5 text-slate-600">${student.state || '—'}</td>
+                    <td class="p-3.5 font-mono text-slate-500">${student.pincode || '—'}</td>
+                    <td class="p-3.5 truncate text-slate-400 font-medium" title="${student.medical_issues || ''}">${student.medical_issues ? student.medical_issues : 'None'}</td>
+                    <td class="p-3.5 truncate text-slate-400" title="${student.prev_school || ''}">${student.prev_school || '—'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function openProfileModal(id) {
+            const student = MASTER_STUDENTS_DATASTORES.find(s => Number(s.id) === Number(id));
+            if (!student) return;
+
+            document.getElementById('modal-photo').src = student.photo_url || 'kk.png';
+            document.getElementById('modal-name').innerText = student.full_name || 'Student Name';
+            document.getElementById('modal-id').innerText = student.user_id || `ID: ${student.id}`;
+            document.getElementById('modal-role-badge').innerText = 'STUDENT';
+            document.getElementById('modal-email').innerText = student.email || '—';
+            document.getElementById('modal-phone').innerText = student.mobile || '—';
+            document.getElementById('modal-class-placement').innerText = student.student_class ? `${student.student_class} (${student.section || '—'})` : 'Not Assigned';
+            document.getElementById('modal-hostel').innerText = student.hostel_name || '—';
+
+            const modal = document.getElementById('profile-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function executeTableMatrixFiltering() {
+            const filters = Array.from(document.querySelectorAll('input[data-col]'));
+            const dynamicMatches = MASTER_STUDENTS_DATASTORES.filter(row => {
+                return filters.every(input => {
+                    const value = (input.value || '').trim().toLowerCase();
+                    if (!value) return true; 
+                    const field = input.getAttribute('data-col');
+                    const targetVal = String(row[field] || '').toLowerCase();
+                    return targetVal.includes(value);
+                });
+            });
+            renderTableMatrixPayload(dynamicMatches);
+        }
+
+        function launchMutationModal(id) {
+            document.getElementById('mutation-matrix-form').reset();
+            const modalTitle = document.getElementById('modal-interface-title');
+            const modalDesc = document.getElementById('modal-interface-desc');
+            const submitBtn = document.getElementById('submit-mutation-btn');
+
+            if (id === null || id === undefined) {
+                modalTitle.innerText = "Create New Student Profile Record";
+                modalDesc.innerText = "Inserting a new student payload parameter row block.";
+                submitBtn.innerText = "Create Student Record";
+                
+                document.getElementById('edit-primary-key').value = '';
+                document.getElementById('edit-auth-uid').value = '';
+                document.getElementById('edit-photo-url').value = '';
+                document.getElementById('edit-role').value = 'student';
+            } else {
+                modalTitle.innerText = "Update Student Profile Record";
+                modalDesc.innerText = "Modifying row parameters directly inside table schema.";
+                submitBtn.innerText = "Save Student Mutation";
+
+                const record = MASTER_STUDENTS_DATASTORES.find(s => Number(s.id) === Number(id));
+                if (!record) return;
+
+                document.getElementById('edit-primary-key').value = record.id;
+                document.getElementById('edit-auth-uid').value = record.auth_uid || '';
+                document.getElementById('edit-full-name').value = record.full_name || '';
+                document.getElementById('edit-user-id').value = record.user_id || '';
+                document.getElementById('edit-student-class').value = record.student_class || '';
+                document.getElementById('edit-section').value = record.section || '';
+                document.getElementById('edit-medium').value = record.medium || '';
+                document.getElementById('edit-academic-year').value = record.academic_year || '';
+                document.getElementById('edit-student-group').value = record.student_group || '';
+                document.getElementById('edit-prev-school').value = record.prev_school || '';
+                document.getElementById('edit-email').value = record.email || '';
+                document.getElementById('edit-mobile').value = record.mobile || '';
+                document.getElementById('edit-aadhaar').value = record.aadhaar || '';
+                document.getElementById('edit-dob').value = record.dob || '';
+                document.getElementById('edit-age').value = record.age !== null ? record.age : '';
+                document.getElementById('edit-gender').value = record.gender || '';
+                document.getElementById('edit-blood-group').value = record.blood_group || '';
+                document.getElementById('edit-father-name').value = record.father_name || '';
+                document.getElementById('edit-father-occupation').value = record.father_occupation || '';
+                document.getElementById('edit-mother-name').value = record.mother_name || '';
+                document.getElementById('edit-mother-occupation').value = record.mother_occupation || '';
+                document.getElementById('edit-door-no').value = record.door_no || '';
+                document.getElementById('edit-street-name').value = record.street_name || '';
+                document.getElementById('edit-place').value = record.place || '';
+                document.getElementById('edit-district').value = record.district || '';
+                document.getElementById('edit-state').value = record.state || '';
+                document.getElementById('edit-pincode').value = record.pincode || '';
+                document.getElementById('edit-id-mark-1').value = record.id_mark_1 || '';
+                document.getElementById('edit-id-mark-2').value = record.id_mark_2 || '';
+                document.getElementById('edit-hostel-name').value = record.hostel_name || '';
+                document.getElementById('edit-hostel-type').value = record.hostel_type || '';
+                document.getElementById('edit-medical-issues').value = record.medical_issues || '';
+                document.getElementById('edit-photo-url').value = record.photo_url || '';
+                document.getElementById('edit-role').value = record.role || 'student';
+                document.getElementById('edit-birth-certificate').value = record.birth_certificate || '';
+                document.getElementById('edit-income-certificate').value = record.income_certificate || '';
+                document.getElementById('edit-nativity-certificate').value = record.nativity_certificate || '';
+                document.getElementById('edit-parent-declaration').value = record.parent_declaration || '';
+            }
+
+            editProfileModal.classList.remove('hidden');
+            setTimeout(() => {
+                editProfileModal.classList.remove('opacity-0');
+                editProfileModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeMutationModal() {
+            editProfileModal.classList.add('opacity-0');
+            editProfileModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                editProfileModal.classList.add('hidden');
+                document.getElementById('mutation-matrix-form').reset();
+            }, 300);
+        }
+
+        const parseSqlValue = (val) => (val && val.trim() !== '') ? val.trim() : null;
+
+        async function uploadPhotoAsset(studentIdOrSlug) {
+            const fileInput = document.getElementById('edit-photo-file');
+            if (!fileInput.files || fileInput.files.length === 0) return null;
+
+            const file = fileInput.files[0];
+            const fileExtension = file.name.split('.').pop();
+            const uniqueFileName = `student_${studentIdOrSlug}_${Date.now()}.${fileExtension}`;
+
+            flashSystemStatus("Streaming Photo Asset...", "warning");
+            
+            const { data, error } = await _supabase.storage
+                .from('student-photos')
+                .upload(uniqueFileName, file, { cacheControl: '3600', upsert: true });
+
+            if (error) throw error;
+
+            const { data: publicUrlData } = _supabase.storage
+                .from('student-photos')
+                .getPublicUrl(uniqueFileName);
+
+            return publicUrlData.publicUrl;
+        }
+
+        async function dispatchUpdateMutation(event) {
+            event.preventDefault();
+            const targetId = document.getElementById('edit-primary-key').value;
+            const ageInput = document.getElementById('edit-age').value;
+            const authUidInput = document.getElementById('edit-auth-uid').value;
+            let currentPhotoUrl = document.getElementById('edit-photo-url').value.trim() || null;
+            const fileInput = document.getElementById('edit-photo-file');
+
+            try {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    if (currentPhotoUrl && currentPhotoUrl.includes('/storage/v1/object/public/student-photos/')) {
+                        try {
+                            const rawOldPath = currentPhotoUrl.split('/student-photos/').pop();
+                            const cleanOldPath = decodeURIComponent(rawOldPath);
+                            
+                            if (cleanOldPath && cleanOldPath !== 'admin-placeholder.png') {
+                                flashSystemStatus("Evicting obsolete photo from bucket...", "warning");
+                                await _supabase.storage.from('student-photos').remove([cleanOldPath]);
+                            }
+                        } catch (evictionErr) {
+                            console.error("Asset cleanup warning:", evictionErr);
+                        }
+                    }
+
+                    const uploadedUrl = await uploadPhotoAsset(targetId || 'new_entry');
+                    if (uploadedUrl) {
+                        currentPhotoUrl = uploadedUrl;
+                    }
+                }
+
+                const updatePayload = {
+                    full_name: document.getElementById('edit-full-name').value.trim(),
+                    user_id: parseSqlValue(document.getElementById('edit-user-id').value),
+                    student_class: parseSqlValue(document.getElementById('edit-student-class').value),
+                    section: parseSqlValue(document.getElementById('edit-section').value),
+                    medium: parseSqlValue(document.getElementById('edit-medium').value),
+                    academic_year: parseSqlValue(document.getElementById('edit-academic-year').value),
+                    student_group: parseSqlValue(document.getElementById('edit-student-group').value),
+                    prev_school: parseSqlValue(document.getElementById('edit-prev-school').value),
+                    email: parseSqlValue(document.getElementById('edit-email').value),
+                    mobile: parseSqlValue(document.getElementById('edit-mobile').value),
+                    aadhaar: parseSqlValue(document.getElementById('edit-aadhaar').value),
+                    dob: document.getElementById('edit-dob').value,
+                    age: ageInput !== '' ? parseInt(ageInput) : null,
+                    gender: parseSqlValue(document.getElementById('edit-gender').value),
+                    blood_group: parseSqlValue(document.getElementById('edit-blood-group').value),
+                    father_name: parseSqlValue(document.getElementById('edit-father-name').value),
+                    father_occupation: parseSqlValue(document.getElementById('edit-father-occupation').value),
+                    mother_name: parseSqlValue(document.getElementById('edit-mother-name').value),
+                    mother_occupation: parseSqlValue(document.getElementById('edit-mother-occupation').value),
+                    door_no: parseSqlValue(document.getElementById('edit-door-no').value),
+                    street_name: parseSqlValue(document.getElementById('edit-street-name').value),
+                    place: parseSqlValue(document.getElementById('edit-place').value),
+                    district: parseSqlValue(document.getElementById('edit-district').value),
+                    state: parseSqlValue(document.getElementById('edit-state').value),
+                    pincode: parseSqlValue(document.getElementById('edit-pincode').value),
+                    id_mark_1: parseSqlValue(document.getElementById('edit-id-mark-1').value),
+                    id_mark_2: parseSqlValue(document.getElementById('edit-id-mark-2').value),
+                    hostel_name: parseSqlValue(document.getElementById('edit-hostel-name').value),
+                    hostel_type: parseSqlValue(document.getElementById('edit-hostel-type').value),
+                    medical_issues: parseSqlValue(document.getElementById('edit-medical-issues').value),
+                    photo_url: currentPhotoUrl,
+                    role: document.getElementById('edit-role').value.trim() || 'student',
+                    birth_certificate: parseSqlValue(document.getElementById('edit-birth-certificate').value),
+                    income_certificate: parseSqlValue(document.getElementById('edit-income-certificate').value),
+                    nativity_certificate: parseSqlValue(document.getElementById('edit-nativity-certificate').value),
+                    parent_declaration: parseSqlValue(document.getElementById('edit-parent-declaration').value),
+                    auth_uid: authUidInput !== '' ? authUidInput : null
+                };
+
+                if (targetId) {
+                    const { error } = await _supabase.from('students').update(updatePayload).eq('id', targetId);
+                    if (error) throw error;
+                    flashSystemStatus("Record Saved Successfully", "success");
+                } else {
+                    const { error } = await _supabase.from('students').insert([updatePayload]);
+                    if (error) throw error;
+                    flashSystemStatus("Record Created Successfully", "success");
+                }
+                closeMutationModal();
+                fetchStudentDatabase();
+            } catch (err) {
+                console.error("Mutation failure:", err);
+                alert(`Mutation failed: ${err.message}`);
+                flashSystemStatus("Error processing mutation", "error");
+            }
+        }
+
+        async function dispatchDeleteRecord(id) {
+            if (!confirm("Permanently drop this student record? This clears out the photo asset from the bucket storage and completely deletes their login profile.")) return;
+            
+            try {
+                flashSystemStatus("Initiating deletion sequence...", "warning");
+
+                const record = MASTER_STUDENTS_DATASTORES.find(s => Number(s.id) === Number(id));
+                
+                if (record && record.photo_url) {
+                    try {
+                        if (record.photo_url.includes('/storage/v1/object/public/student-photos/')) {
+                            const rawPath = record.photo_url.split('/student-photos/').pop();
+                            const relativePath = decodeURIComponent(rawPath);
+                            
+                            if (relativePath && relativePath !== 'admin-placeholder.png') {
+                                flashSystemStatus("Purging storage bucket asset...", "warning");
+                                const { error: storageError } = await _supabase.storage
+                                    .from('student-photos')
+                                    .remove([relativePath]);
+                                
+                                if (storageError) {
+                                    console.error("Storage bucket eviction failure:", storageError.message);
+                                }
+                            }
+                        }
+                    } catch (storageException) {
+                        console.error("Failed to execute storage path parsing:", storageException);
+                    }
+                }
+
+                const { error } = await _supabase.from('students').delete().eq('id', id);
+                if (error) throw error;
+                
+                flashSystemStatus("Record dropped completely", "success");
+                fetchStudentDatabase();
+            } catch (err) {
+                console.error("Deletion failure:", err);
+                alert(`Failed to delete student record context: ${err.message}`);
+                flashSystemStatus("Error processing deletion", "error");
+            }
+        }
+
+        window.onload = () => {
+            fetchStudentDatabase();
+            initializeRealtimeListener();
+        };
+    </script>
+</body>
+</html>

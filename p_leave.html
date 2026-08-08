@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Leave Approval | KKDGMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <style>
+        /* 3D Perspective & Flip Styles */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .preserve-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        .flipped {
+            transform: rotateY(180deg);
+        }
+        /* Modern Glass & Elevation Depth Effects based on UI reference */
+        .card-light-shadow {
+            box-shadow: 0 10px 30px -5px rgba(108, 71, 255, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+        }
+        .btn-3d {
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 0 0 rgba(108, 71, 255, 0.2);
+        }
+        .btn-3d:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 0 rgba(108, 71, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-[#f4f5fa] text-slate-800 font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- Header Navigation -->
+    <header class="w-full bg-white/90 backdrop-blur-md border-b border-purple-100 sticky top-0 z-40 shadow-xs">
+        <div class="max-w-md mx-auto px-5 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-[#6c47ff] text-white flex items-center justify-center font-bold text-xs shadow-md shadow-purple-200">
+                    KK
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-extrabold text-slate-900 leading-tight">KKDGMS</span>
+                    <span class="text-[10px] font-bold text-[#6c47ff] tracking-wide uppercase">Parent Portal</span>
+                </div>
+            </div>
+            <span class="text-[10px] bg-[#f0edff] text-[#6c47ff] border border-purple-200/80 px-2.5 py-1 rounded-lg font-mono font-bold uppercase shadow-xs">
+                Verification Node
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-md mx-auto p-4 flex-1 flex flex-col justify-center items-center perspective-1000 my-auto">
+
+        <!-- Loading State -->
+        <div id="loading-state" class="w-full bg-white border border-purple-100 rounded-3xl p-8 text-center card-light-shadow">
+            <div class="w-12 h-12 border-4 border-[#6c47ff] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-xs font-bold text-slate-500 tracking-wider uppercase font-mono">Fetching Leave Record...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="hidden w-full bg-white border border-rose-200 rounded-3xl p-6 text-center card-light-shadow">
+            <div class="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 font-bold border border-rose-100">⚠️</div>
+            <h3 class="text-sm font-bold text-slate-900 mb-1">Invalid or Expired Link</h3>
+            <p id="error-message" class="text-xs text-slate-500">Unable to retrieve leave records. Please check your verification link.</p>
+        </div>
+
+        <!-- 3D Flipping Card Wrapper -->
+        <div id="card-wrapper" class="hidden w-full preserve-3d relative my-auto">
+
+            <!-- FRONT FACE: Active Application or Detailed View -->
+            <div id="card-front" class="backface-hidden w-full bg-white rounded-3xl card-light-shadow border border-purple-100/80 overflow-hidden">
+                
+                <!-- Card Header -->
+                <div class="bg-gradient-to-r from-[#6c47ff] to-[#8b5cf6] text-white p-6 relative">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[9px] bg-white/20 text-white border border-white/30 font-mono font-bold px-2 py-0.5 rounded-md uppercase tracking-wider backdrop-blur-xs">Leave Record</span>
+                            <h2 id="card-student-name" class="text-xl font-extrabold mt-1.5 text-white tracking-tight">--</h2>
+                        </div>
+                        <span id="card-leave-id" class="text-[10px] text-white/90 font-mono font-bold bg-black/15 px-2.5 py-1 rounded-lg border border-white/20">#000</span>
+                    </div>
+                    <div class="mt-3 text-xs text-purple-100 flex items-center gap-2 font-medium">
+                        <span>Class Info:</span>
+                        <span id="card-student-class" class="font-bold text-white font-mono bg-white/15 px-2 py-0.5 rounded-md border border-white/20">—</span>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-5 space-y-4 text-xs">
+                    
+                    <!-- Parent Status Banner -->
+                    <div id="status-banner" class="p-3.5 rounded-2xl border font-bold text-center uppercase tracking-wider text-[11px] font-mono shadow-xs">
+                        Parent Status: <span id="current-status-text">PENDING</span>
+                    </div>
+
+                    <!-- Already Approved Special Note (Shown if re-opened after approval) -->
+                    <div id="approved-note-box" class="hidden p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-2xl flex items-center gap-3">
+                        <img src="verified.png" alt="Verified" class="w-8 h-8 object-contain shrink-0" onerror="this.src='https://cdn-icons-png.flaticon.com/512/7595/7595183.png'">
+                        <div>
+                            <h4 class="text-emerald-800 font-bold text-[11px] uppercase tracking-wide">Leave Verified & Approved</h4>
+                            <p class="text-[10px] text-emerald-700/80">This leave application has already been granted parent clearance.</p>
+                        </div>
+                    </div>
+
+                    <!-- Timing Details -->
+                    <div class="bg-[#f8f7fc] border border-purple-100/70 rounded-2xl p-4 space-y-2.5">
+                        <div class="flex justify-between items-center pb-2 border-b border-purple-100/60">
+                            <span class="text-slate-500 font-medium">From Date & Time</span>
+                            <span id="card-from-date" class="font-bold text-slate-900 font-mono text-right">--/--/---- --:--</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-0.5">
+                            <span class="text-slate-500 font-medium">To Date & Time</span>
+                            <span id="card-to-date" class="font-bold text-slate-900 font-mono text-right">--/--/---- --:--</span>
+                        </div>
+                    </div>
+
+                    <!-- Reason Section -->
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reason for Leave</label>
+                        <div id="card-reason" class="p-3.5 bg-[#f0edff]/60 border border-purple-100 rounded-2xl text-slate-800 italic font-medium leading-relaxed">
+                            --
+                        </div>
+                    </div>
+
+                    <!-- Approvals Matrix -->
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Approval Statuses</label>
+                        <div class="grid grid-cols-3 gap-2 text-[10px] text-center font-mono">
+                            <div class="p-2.5 bg-[#f8f7fc] border border-purple-100/80 rounded-xl">
+                                <span class="text-slate-400 block text-[9px] uppercase font-sans font-semibold">Faculty</span>
+                                <span id="card-faculty-approval" class="font-bold text-slate-900">--</span>
+                            </div>
+                            <div class="p-2.5 bg-[#f8f7fc] border border-purple-100/80 rounded-xl">
+                                <span class="text-slate-400 block text-[9px] uppercase font-sans font-semibold">Admin</span>
+                                <span id="card-admin-approval" class="font-bold text-slate-900">--</span>
+                            </div>
+                            <div class="p-2.5 bg-[#f8f7fc] border border-purple-100/80 rounded-xl">
+                                <span class="text-slate-400 block text-[9px] uppercase font-sans font-semibold">Warden</span>
+                                <span id="card-warden-approval" class="font-bold text-slate-900">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gate Details -->
+                    <div class="bg-[#f8f7fc] border border-purple-100/70 rounded-2xl p-3.5 space-y-1.5 text-[11px]">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Gate Out:</span>
+                            <span id="card-gate-out" class="font-mono font-bold text-slate-800">--</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Gate In:</span>
+                            <span id="card-gate-in" class="font-mono font-bold text-slate-800">--</span>
+                        </div>
+                        <div id="admin-info-row" class="hidden flex justify-between items-center pt-1 border-t border-purple-100/60">
+                            <span class="text-slate-500">Approved Admin:</span>
+                            <span id="card-approved-admin" class="font-semibold text-slate-800">--</span>
+                        </div>
+                        <div id="warden-out-row" class="hidden flex justify-between items-center">
+                            <span class="text-slate-500">Gate Out Warden:</span>
+                            <span id="card-warden-out" class="font-semibold text-slate-800">--</span>
+                        </div>
+                        <div id="warden-in-row" class="hidden flex justify-between items-center">
+                            <span class="text-slate-500">Gate In Warden:</span>
+                            <span id="card-warden-in" class="font-semibold text-slate-800">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Submission Info -->
+                    <div class="pt-2 border-t border-purple-100/60 flex justify-between items-center text-[11px] text-slate-500">
+                        <span>Submitted By:</span>
+                        <span id="card-applied-by" class="font-semibold text-slate-800">--</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons (Hidden when already approved/rejected) -->
+                <div id="action-buttons-container" class="p-5 bg-[#f8f7fc] border-t border-purple-100 grid grid-cols-2 gap-3">
+                    <button onclick="updateParentApproval('REJECTED')" class="btn-3d w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer flex justify-center items-center gap-1.5 shadow-sm">
+                        <span>✖</span> Reject
+                    </button>
+                    <button onclick="updateParentApproval('APPROVED')" class="btn-3d w-full py-3 bg-[#6c47ff] hover:bg-[#5b38f2] text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer flex justify-center items-center gap-1.5 shadow-sm">
+                        <span>✔</span> Approve
+                    </button>
+                </div>
+            </div>
+
+            <!-- BACK FACE: Flipped Success / Verification Screen -->
+            <div id="card-back" class="absolute top-0 left-0 w-full h-full rotate-y-180 backface-hidden bg-white rounded-3xl card-light-shadow border border-purple-200 p-6 flex flex-col items-center justify-center text-center space-y-4">
+                <div class="relative">
+                    <div class="absolute -inset-2 bg-purple-200/50 rounded-full blur-md animate-pulse"></div>
+                    <img src="verified.png" alt="Verified Badge" class="w-24 h-24 object-contain relative z-10 mx-auto" onerror="this.src='https://cdn-icons-png.flaticon.com/512/7595/7595183.png'">
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-900">Application Approved!</h2>
+                    <p class="text-xs text-slate-500 mt-1">Verification token successfully updated.</p>
+                </div>
+
+                <div class="w-full bg-[#f0edff] border border-purple-200/80 rounded-2xl p-3.5 text-xs text-[#6c47ff] font-mono font-semibold">
+                    Redirecting back in <span id="countdown-timer" class="font-bold text-purple-700">3</span>s...
+                </div>
+
+                <button onclick="navigateBack()" class="text-xs font-bold text-[#6c47ff] hover:text-[#5b38f2] underline cursor-pointer">
+                    Click here if not redirected automatically
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-4 text-[10px] text-slate-400 font-mono">
+        KKDGMS Security Node &bull; Parent Verification Portal
+    </footer>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let activeLeaveRecord = null;
+
+        function getLeaveIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('leave_id');
+        }
+
+        async function loadLeaveRecord() {
+            const leaveId = getLeaveIdFromURL();
+
+            if (!leaveId) {
+                showError("No leave ID found in link parameters.");
+                return;
+            }
+
+            try {
+                const { data, error } = await _supabase
+                    .from('student_leaves')
+                    .select('*')
+                    .eq('id', leaveId)
+                    .single();
+
+                if (error || !data) {
+                    showError("Unable to locate this leave record.");
+                    return;
+                }
+
+                activeLeaveRecord = data;
+                renderLeaveDetails(data);
+
+            } catch (err) {
+                console.error(err);
+                showError("Connection error while accessing data.");
+            }
+        }
+
+        function renderLeaveDetails(record) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('card-wrapper').classList.remove('hidden');
+
+            document.getElementById('card-leave-id').innerText = `#${record.id}`;
+            document.getElementById('card-student-name').innerText = record.student_names || 'N/A';
+            document.getElementById('card-student-class').innerText = `Class ${record.student_class || 'N/A'} - Sec ${record.section || 'N/A'}`;
+            
+            document.getElementById('card-from-date').innerText = record.from_date_time ? new Date(record.from_date_time).toLocaleString() : 'N/A';
+            document.getElementById('card-to-date').innerText = record.to_date_time ? new Date(record.to_date_time).toLocaleString() : 'N/A';
+            document.getElementById('card-reason').innerText = `"${record.reason || 'N/A'}"`;
+            
+            document.getElementById('card-applied-by').innerText = `${record.applied_by_name || 'System'} (${record.applied_by_role || 'faculty'})`;
+
+            // Display approvals breakdown
+            document.getElementById('card-faculty-approval').innerText = record.faculty_approval || 'PENDING';
+            document.getElementById('card-admin-approval').innerText = record.admin_approval || 'PENDING';
+            document.getElementById('card-warden-approval').innerText = record.warden_approval || 'PENDING';
+
+            // Gate Timings
+            document.getElementById('card-gate-out').innerText = record.gate_out_time ? new Date(record.gate_out_time).toLocaleString() : 'Not Out Yet';
+            document.getElementById('card-gate-in').innerText = record.gate_in_time ? new Date(record.gate_in_time).toLocaleString() : 'Not Returned';
+
+            // Optional names
+            if (record.approved_by_admin_name) {
+                document.getElementById('admin-info-row').classList.remove('hidden');
+                document.getElementById('card-approved-admin').innerText = record.approved_by_admin_name;
+            }
+            if (record.gate_out_warden_name) {
+                document.getElementById('warden-out-row').classList.remove('hidden');
+                document.getElementById('card-warden-out').innerText = record.gate_out_warden_name;
+            }
+            if (record.gate_in_warden_name) {
+                document.getElementById('warden-in-row').classList.remove('hidden');
+                document.getElementById('card-warden-in').innerText = record.gate_in_warden_name;
+            }
+
+            updateStatusBannerView(record.parent_approval);
+        }
+
+        function updateStatusBannerView(status) {
+            const banner = document.getElementById('status-banner');
+            const statusText = document.getElementById('current-status-text');
+            const actionContainer = document.getElementById('action-buttons-container');
+            const approvedNoteBox = document.getElementById('approved-note-box');
+
+            statusText.innerText = status;
+
+            if (status === 'APPROVED') {
+                banner.className = "p-3.5 rounded-2xl border font-bold text-center uppercase tracking-wider text-[11px] font-mono bg-purple-50 text-[#6c47ff] border-purple-200";
+                actionContainer.classList.add('hidden');
+                approvedNoteBox.classList.remove('hidden');
+            } else if (status === 'REJECTED') {
+                banner.className = "p-3.5 rounded-2xl border font-bold text-center uppercase tracking-wider text-[11px] font-mono bg-rose-50 text-rose-700 border-rose-200";
+                actionContainer.classList.add('hidden');
+            } else {
+                banner.className = "p-3.5 rounded-2xl border font-bold text-center uppercase tracking-wider text-[11px] font-mono bg-[#f0edff] text-[#6c47ff] border-purple-200/80 animate-pulse";
+            }
+        }
+
+        async function updateParentApproval(status) {
+            if (!activeLeaveRecord) return;
+
+            const confirmMsg = status === 'APPROVED' ? 
+                "Are you sure you want to APPROVE this leave application?" : 
+                "Are you sure you want to REJECT this leave application?";
+
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const { error } = await _supabase
+                    .from('student_leaves')
+                    .update({ parent_approval: status })
+                    .eq('id', activeLeaveRecord.id);
+
+                if (error) {
+                    alert("Failed to update approval: " + error.message);
+                    return;
+                }
+
+                activeLeaveRecord.parent_approval = status;
+
+                if (status === 'APPROVED') {
+                    triggerFlipAndRedirect();
+                } else {
+                    updateStatusBannerView('REJECTED');
+                    alert("Leave request has been marked as REJECTED.");
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred during submission.");
+            }
+        }
+
+        function triggerFlipAndRedirect() {
+            const wrapper = document.getElementById('card-wrapper');
+            wrapper.classList.add('flipped');
+
+            let countdown = 3;
+            const timerEl = document.getElementById('countdown-timer');
+
+            const interval = setInterval(() => {
+                countdown--;
+                if (timerEl) timerEl.innerText = countdown;
+
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    navigateBack();
+                }
+            }, 1000);
+        }
+
+        function navigateBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = "about:blank";
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('card-wrapper').classList.add('hidden');
+            document.getElementById('error-message').innerText = msg;
+            document.getElementById('error-state').classList.remove('hidden');
+        }
+
+        window.onload = loadLeaveRecord;
+    </script>
+</body>
+</html>

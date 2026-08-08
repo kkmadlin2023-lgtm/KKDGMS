@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Entry | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* Landscape Print Layout Configuration Engine */
+        @media print {
+            body * {
+                display: none !important;
+            }
+            #print-landscape-section, #print-landscape-section * {
+                display: block !important;
+                visibility: visible !important;
+            }
+            #print-landscape-section table {
+                display: table !important;
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 20px !important;
+                margin-bottom: 50px !important;
+            }
+            #print-landscape-section thead {
+                display: table-header-group !important;
+            }
+            #print-landscape-section tbody {
+                display: table-row-group !important;
+            }
+            #print-landscape-section tr {
+                display: table-row !important;
+            }
+            #print-landscape-section th, #print-landscape-section td {
+                display: table-cell !important;
+                border: 1px solid #000000 !important;
+                padding: 10px 8px !important;
+                text-align: left !important;
+                font-size: 12px !important;
+                color: #000000 !important;
+                white-space: normal !important;
+            }
+            #print-landscape-section th {
+                background-color: #f1f5f9 !important;
+                font-weight: bold !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .signature-table-wrapper {
+                display: table !important;
+                width: 100% !important;
+                margin-top: 80px !important;
+                border: none !important;
+            }
+            .signature-table-wrapper tr {
+                display: table-row !important;
+            }
+            .signature-table-wrapper td {
+                display: table-cell !important;
+                border: none !important;
+                width: 50% !important;
+                padding: 0 !important;
+            }
+            @page {
+                size: landscape;
+                margin: 15mm !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 w-85 pointer-events-none"></div>
+
+    <div id="main-application-layout" class="min-h-screen p-6 max-w-7xl mx-auto space-y-8">
+        
+        <header class="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <span>🛡️</span> Campus Gate Security Terminal
+                </h1>
+                <p class="text-xs text-gray-500 mt-1">Manual student lookup utility, real-time tracking console, and historical log overview.</p>
+                <p id="current-warden-display" class="text-xs font-semibold text-indigo-600 mt-1">Verifying active session profile...</p>
+            </div>
+            <a href="w_dashboard.html" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg transition border border-slate-200 shadow-xs flex items-center gap-1.5 active:scale-[0.98]">
+                ⬅ Dashboard
+            </a>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <div class="lg:col-span-5 space-y-6">
+                
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
+                    <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2 flex items-center gap-2">
+                        <span>⌨️</span> Manual Student Directory Lookup
+                    </h2>
+                    
+                    <div class="relative">
+                        <label class="block text-[10px] uppercase font-bold text-gray-500 mb-1">Search Student by Name</label>
+                        <input type="text" id="manual-search-input" oninput="handleManualSearchTyping(this.value)" placeholder="Type student name to search..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-hidden focus:border-indigo-500 bg-white">
+                        
+                        <div id="search-suggestions-box" class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden z-30 divide-y divide-gray-100"></div>
+                    </div>
+
+                    <div id="manual-log-form" class="bg-slate-50 p-3 rounded-xl border border-gray-200 space-y-3 hidden">
+                        <div class="text-[11px] font-bold text-slate-700">Selected: <span id="lbl-selected-student" class="text-indigo-600">—</span></div>
+                        
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Select Active Visitor Guardian</label>
+                            <select id="manual-visitor-relation" class="w-full p-1.5 bg-white border border-gray-300 rounded text-xs" onchange="syncManualGuardianFields()">
+                                <option value="Other" selected>Other</option>
+                                <option value="Father">Father</option>
+                                <option value="Mother">Mother</option>
+                            </select>
+                        </div>
+
+                        <!-- Custom Relationship Input Field (Visible only when Other is chosen) -->
+                        <div id="custom-relation-container">
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Specify Relationship</label>
+                            <input type="text" id="manual-custom-relation-input" placeholder="e.g., Uncle, Brother, Guardian..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-hidden focus:border-indigo-500 bg-white font-semibold text-slate-900">
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Guardian Name (Verified / Input)</label>
+                            <input type="text" id="manual-guardian-name-input" placeholder="Enter guardian name..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-hidden focus:border-indigo-500 bg-white font-semibold text-slate-900">
+                        </div>
+
+                        <button onclick="commitManualLogEntry()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 rounded-md text-xs transition cursor-pointer">
+                            ➕ Authorize Entry Manually
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs lg:col-span-7 space-y-6">
+                <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">
+                    🔎 Data Filter & History Operations Desk
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-gray-100">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Select Target Calendar Date</label>
+                        <input type="date" id="filter-calendar-date" onchange="fetchSecurityLogs()" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium focus:outline-hidden focus:border-indigo-500">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="triggerLandscapePrint()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-lg text-xs transition shadow-2xs cursor-pointer flex items-center justify-center gap-2">
+                            🖨️ Download Day Logs (Landscape)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-indigo-500 tracking-wider">Total Scans</div>
+                        <div id="stat-total" class="text-xl font-black text-indigo-950 mt-0.5">0</div>
+                    </div>
+                    <div class="p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-amber-600 tracking-wider">Active Inside</div>
+                        <div id="stat-active" class="text-xl font-black text-amber-950 mt-0.5">0</div>
+                    </div>
+                    <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">Checked Out</div>
+                        <div id="stat-completed" class="text-xl font-black text-emerald-950 mt-0.5">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-xs overflow-hidden">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-gray-600">Real-Time Log Feed</h3>
+                <span id="log-count-badge" class="text-xs font-mono bg-slate-200 px-2.5 py-0.5 rounded-full text-slate-700 font-bold">0 Active Logs</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-gray-100/70 text-gray-600 uppercase text-[10px] font-bold tracking-widest border-b border-gray-200">
+                            <th class="py-3 px-6">Student Context</th>
+                            <th class="py-3 px-6">Authorized Guardian</th>
+                            <th class="py-3 px-6">Relation Drop</th>
+                            <th class="py-3 px-6">Check-In Timestamp / Warden</th>
+                            <th class="py-3 px-6">Check-Out Status / Warden</th>
+                            <th class="py-3 px-6 text-right">Action Operators</th>
+                        </tr>
+                    </thead>
+                    <tbody id="security-table-body" class="divide-y divide-gray-100 text-xs">
+                        <tr>
+                            <td colspan="6" class="text-center py-10 text-gray-400">Choose a calendar view date above to load verification matrices.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-landscape-section" class="hidden" style="font-family: sans-serif; width: 100%;">
+        
+        <div style="text-align: center; border-bottom: 3px double #000000; padding-bottom: 12px; margin-bottom: 20px;">
+            <h1 style="font-size: 22px; font-weight: 800; text-transform: uppercase; margin: 0; letter-spacing: 0.5px; color: #000000;">
+                KANYA KUMARI DISTRICT GOVERNMENT SCHOOL NAVACADU
+            </h1>
+            <h2 style="font-size: 14px; font-weight: 700; text-transform: uppercase; margin: 6px 0 0 0; color: #334155;">
+                Campus Access Security Log Ledger
+            </h2>
+            <p id="print-date-subtitle" style="font-size: 11px; margin: 4px 0 0 0; color: #475569; font-weight: 600;"></p>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="width: 18%;">Student Name</th>
+                    <th style="width: 10%;">Class/Section</th>
+                    <th style="width: 18%;">Authorized Guardian</th>
+                    <th style="width: 10%;">Relationship</th>
+                    <th style="width: 18%;">Check-In Time / Warden</th>
+                    <th style="width: 18%;">Check-Out Time / Warden</th>
+                    <th style="width: 8%;">Status</th>
+                </tr>
+            </thead>
+            <tbody id="print-table-body"></tbody>
+        </table>
+
+        <table class="signature-table-wrapper">
+            <tr>
+                <td style="text-align: left;">
+                    <div style="width: 240px; text-align: center; display: inline-block;">
+                        <div style="border-top: 1.5px solid #000000; width: 100%; margin-bottom: 6px;"></div>
+                        <p style="font-size: 12px; font-weight: bold; color: #000000; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Signature of the Warden</p>
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <div style="width: 240px; text-align: center; display: inline-block;">
+                        <div style="border-top: 1.5px solid #000000; width: 100%; margin-bottom: 6px;"></div>
+                        <p style="font-size: 12px; font-weight: bold; color: #000000; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Signature of the Head Master</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const LOG_TABLE = "visitors_log";
+        let SELECTED_MANUAL_STUDENT = null;
+
+        // Global state tracking variables for the active logged-in warden
+        let loggedInWardenId = null;
+        let loggedInWardenName = null;
+
+        const tableBody = document.getElementById('security-table-body');
+        const printTableBody = document.getElementById('print-table-body');
+        const calendarPicker = document.getElementById('filter-calendar-date');
+        const toastContainer = document.getElementById('toast-container');
+        const suggestionsBox = document.getElementById('search-suggestions-box');
+        const wardenDisplay = document.getElementById('current-warden-display');
+
+        function triggerToast(message, variant = 'success') {
+            const toast = document.createElement('div');
+            toast.className = "p-4 rounded-xl shadow-xl text-white font-bold text-xs transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-center gap-3 border";
+            
+            if (variant === 'success') {
+                toast.className += " bg-emerald-600 border-emerald-500"; 
+                toast.innerHTML = `<span>✅</span> <div class="flex-1">${message}</div>`;
+            } else if (variant === 'warning') {
+                toast.className += " bg-amber-500 border-amber-400 text-slate-950"; 
+                toast.innerHTML = `<span>⚠️</span> <div class="flex-1">${message}</div>`;
+            } else if (variant === 'error') {
+                toast.className += " bg-rose-600 border-rose-500"; 
+                toast.innerHTML = `<span>❌</span> <div class="flex-1">${message}</div>`;
+            }
+
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Fetches operational details from public.wardens table matching the authenticated login UID
+        async function fetchLoggedInWardenDetails() {
+            try {
+                const { data: { user }, error: authError } = await _supabase.auth.getUser();
+                if (authError || !user) {
+                    wardenDisplay.innerText = "Error: No active login session found.";
+                    wardenDisplay.className = "text-xs font-semibold text-rose-600 mt-1";
+                    return;
+                }
+
+                const { data: wardenData, error: dbError } = await _supabase
+                    .from('wardens')
+                    .select('id, full_name')
+                    .eq('auth_uid', user.id)
+                    .maybeSingle();
+
+                if (dbError || !wardenData) {
+                    wardenDisplay.innerText = "Error: Logged-in credentials match no database warden record.";
+                    wardenDisplay.className = "text-xs font-semibold text-rose-600 mt-1";
+                } else {
+                    loggedInWardenId = wardenData.id;
+                    loggedInWardenName = wardenData.full_name;
+                    wardenDisplay.innerText = `Operator Node: ${loggedInWardenName} (ID: ${loggedInWardenId})`;
+                    wardenDisplay.className = "text-xs font-semibold text-emerald-600 mt-1";
+                }
+            } catch (err) {
+                console.error("Warden profile fetch error:", err);
+            }
+        }
+
+        function setInitialCalendarDate() {
+            const today = new Date().toISOString().split('T')[0];
+            calendarPicker.value = today;
+        }
+
+        async function handleManualSearchTyping(searchText) {
+            if (searchText.trim().length < 2) {
+                suggestionsBox.innerHTML = '';
+                suggestionsBox.classList.add('hidden');
+                return;
+            }
+
+            const { data, error } = await _supabase
+                .from('students')
+                .select('id, full_name, student_class, section, father_name, mother_name')
+                .ilike('full_name', `%${searchText}%`)
+                .limit(6);
+
+            if (error || !data || data.length === 0) {
+                suggestionsBox.innerHTML = '<div class="p-2 text-xs text-gray-400">No matching student found</div>';
+                suggestionsBox.classList.remove('hidden');
+                return;
+            }
+
+            suggestionsBox.innerHTML = '';
+            suggestionsBox.classList.remove('hidden');
+
+            data.forEach(student => {
+                const item = document.createElement('div');
+                item.className = "p-2 hover:bg-slate-50 cursor-pointer text-xs transition font-medium text-slate-700";
+                item.innerText = `${student.full_name} (${student.student_class || 'N/A'}-${student.section || ''})`;
+                item.onclick = () => selectManualStudentOption(student);
+                suggestionsBox.appendChild(item);
+            });
+        }
+
+        function selectManualStudentOption(student) {
+            SELECTED_MANUAL_STUDENT = student;
+            suggestionsBox.innerHTML = '';
+            suggestionsBox.classList.add('hidden');
+            document.getElementById('manual-search-input').value = student.full_name;
+            
+            document.getElementById('lbl-selected-student').innerText = `${student.full_name} (${student.student_class || 'N/A'})`;
+            document.getElementById('manual-log-form').classList.remove('hidden');
+            
+            syncManualGuardianFields();
+        }
+
+        function syncManualGuardianFields() {
+            if (!SELECTED_MANUAL_STUDENT) return;
+            const chosenRelation = document.getElementById('manual-visitor-relation').value;
+            const customRelationContainer = document.getElementById('custom-relation-container');
+            const nameInput = document.getElementById('manual-guardian-name-input');
+            const customRelationInput = document.getElementById('manual-custom-relation-input');
+            
+            if (chosenRelation === 'Father') {
+                customRelationContainer.classList.add('hidden');
+                nameInput.value = SELECTED_MANUAL_STUDENT.father_name || '';
+                customRelationInput.value = '';
+            } else if (chosenRelation === 'Mother') {
+                customRelationContainer.classList.add('hidden');
+                nameInput.value = SELECTED_MANUAL_STUDENT.mother_name || '';
+                customRelationInput.value = '';
+            } else {
+                customRelationContainer.classList.remove('hidden');
+                nameInput.value = '';
+                customRelationInput.value = '';
+            }
+        }
+
+        async function commitManualLogEntry() {
+            if (!SELECTED_MANUAL_STUDENT) return;
+            
+            const chosenRelation = document.getElementById('manual-visitor-relation').value;
+            let finalRelation = chosenRelation;
+            let guardianName = document.getElementById('manual-guardian-name-input').value.trim();
+            
+            if (chosenRelation === 'Other') {
+                const customRel = document.getElementById('manual-custom-relation-input').value.trim();
+                if (!customRel) {
+                    triggerToast("Please specify the custom relationship.", "warning");
+                    return;
+                }
+                finalRelation = customRel;
+            }
+
+            if (!guardianName) {
+                triggerToast("Please input a valid Guardian Name.", "warning");
+                return;
+            }
+
+            const insertPayload = {
+                student_title: SELECTED_MANUAL_STUDENT.full_name,
+                class_mapping: SELECTED_MANUAL_STUDENT.student_class || "N/A",
+                authorized_parent: guardianName,
+                relation: finalRelation,
+                status: "Active",
+                scanned_warden_id: loggedInWardenId,
+                scanned_warden_name: loggedInWardenName
+            };
+
+            const { error } = await _supabase.from(LOG_TABLE).insert([insertPayload]);
+            
+            if (error) {
+                triggerToast(`Manual insert failed: ${error.message}`, "error");
+            } else {
+                triggerToast(`Manual override logged for ${guardianName}.`, "success");
+                
+                document.getElementById('manual-search-input').value = '';
+                document.getElementById('manual-log-form').classList.add('hidden');
+                document.getElementById('manual-visitor-relation').value = 'Other';
+                document.getElementById('manual-guardian-name-input').value = '';
+                document.getElementById('manual-custom-relation-input').value = '';
+                SELECTED_MANUAL_STUDENT = null;
+                
+                fetchSecurityLogs();
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            if (e.target.id !== 'manual-search-input') {
+                suggestionsBox.classList.add('hidden');
+            }
+        });
+
+        async function fetchSecurityLogs() {
+            const activeDateValue = calendarPicker.value;
+            if (!activeDateValue) return;
+
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-400 animate-pulse font-medium">Syncing database data array updates...</td></tr>`;
+            
+            const startOfDayISO = `${activeDateValue}T00:00:00.000Z`;
+            const endOfDayISO = `${activeDateValue}T23:59:59.999Z`;
+
+            const { data, error } = await _supabase
+                .from(LOG_TABLE)
+                .select('*')
+                .gte('scanned_at', startOfDayISO)
+                .lte('scanned_at', endOfDayISO)
+                .order('scanned_at', { ascending: false });
+
+            if (error) {
+                triggerToast(`Data sync failed: ${error.message}`, "error");
+                return;
+            }
+
+            document.getElementById('log-count-badge').innerText = `${data.length} Log Records`;
+            updateMetricAnalyticsIndicators(data);
+
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-400 font-medium">No activity logged for [${activeDateValue}].</td></tr>`;
+                printTableBody.innerHTML = '';
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition duration-75 text-slate-700 font-medium";
+
+                const inTime = new Date(row.scanned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const outTime = row.completed_at ? new Date(row.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
+                
+                const scanWarden = row.scanned_warden_name ? `<span class="block text-[10px] text-indigo-500 font-semibold font-mono">By: ${escapeHtml(row.scanned_warden_name)}</span>` : '<span class="block text-[10px] text-gray-400 font-mono">By: Unknown</span>';
+                const completeWarden = row.completed_warden_name ? `<span class="block text-[10px] text-emerald-600 font-semibold font-mono">By: ${escapeHtml(row.completed_warden_name)}</span>` : '';
+
+                const statusPill = row.status === 'Completed' 
+                    ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">Checked Out (${outTime})</span>`
+                    : `<span class="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold animate-pulse">Inside Active</span>`;
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-6 font-bold text-slate-900">${escapeHtml(row.student_title)} <span class="block text-[10px] font-normal text-gray-400">Class Matrix: ${escapeHtml(row.class_mapping)}</span></td>
+                    <td class="py-3.5 px-6 font-semibold">${escapeHtml(row.authorized_parent)}</td>
+                    <td class="py-3.5 px-6"><span class="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded font-mono text-[10px] font-bold uppercase">${escapeHtml(row.relation)}</span></td>
+                    <td class="py-3.5 px-6 text-gray-500 font-mono font-semibold">${inTime} ${scanWarden}</td>
+                    <td class="py-3.5 px-6">${statusPill} ${completeWarden}</td>
+                    <td class="py-3.5 px-6 text-right space-x-2">
+                        ${row.status === 'Active' ? `<button onclick="commitCheckoutRow(${row.id})" class="text-emerald-600 hover:text-emerald-900 font-black cursor-pointer text-xs">Complete Checkout</button>` : ''}
+                        <button onclick="purgeLogInstance(${row.id})" class="text-rose-600 hover:text-rose-900 font-bold cursor-pointer text-xs">Purge Row</button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            compileLandscapeMirrorDataArray(data, activeDateValue);
+        }
+
+        async function commitCheckoutRow(id) {
+            const currentTimeISO = new Date().toISOString();
+            
+            const { error } = await _supabase
+                .from(LOG_TABLE)
+                .update({ 
+                    status: 'Completed', 
+                    completed_at: currentTimeISO,
+                    completed_warden_id: loggedInWardenId,
+                    completed_warden_name: loggedInWardenName
+                })
+                .eq('id', id);
+
+            if (error) {
+                triggerToast(`Checkout registration error: ${error.message}`, "error");
+            } else {
+                triggerToast(`Checkout confirmed for row registry listing #${id}`, "success");
+                fetchSecurityLogs();
+            }
+        }
+
+        async function purgeLogInstance(id) {
+            if (confirm(`Destructive Access Action: Permanently erase tracking log entry reference #${id}?`)) {
+                const { error } = await _supabase.from(LOG_TABLE).delete().eq('id', id);
+                if (error) {
+                    triggerToast(`Purge command denied.`, "error");
+                } else {
+                    triggerToast(`Eradicated data row reference listing #${id}`, "warning");
+                    fetchSecurityLogs();
+                }
+            }
+        }
+
+        function updateMetricAnalyticsIndicators(dataRows) {
+            document.getElementById('stat-total').innerText = dataRows.length;
+            document.getElementById('stat-active').innerText = dataRows.filter(r => r.status === 'Active').length;
+            document.getElementById('stat-completed').innerText = dataRows.filter(r => r.status === 'Completed').length;
+        }
+
+        function compileLandscapeMirrorDataArray(dataRows, targetDate) {
+            document.getElementById('print-date-subtitle').innerText = `Timeline Ledger Log Sheet Date: ${targetDate}`;
+            printTableBody.innerHTML = '';
+            
+            dataRows.forEach(row => {
+                const tr = document.createElement('tr');
+                const inTime = new Date(row.scanned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const outTime = row.completed_at ? new Date(row.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active Inside';
+                
+                const scanWardenText = row.scanned_warden_name ? `<br><small style="color: #4f46e5;">[By: ${escapeHtml(row.scanned_warden_name)}]</small>` : '<br><small style="color: #9ca3af;">[By: Unknown]</small>';
+                const completeWardenText = row.completed_warden_name ? `<br><small style="color: #059669;">[By: ${escapeHtml(row.completed_warden_name)}]</small>` : '';
+
+                tr.innerHTML = `
+                    <td><b>${escapeHtml(row.student_title)}</b></td>
+                    <td>${escapeHtml(row.class_mapping)}</td>
+                    <td>${escapeHtml(row.authorized_parent)}</td>
+                    <td>${escapeHtml(row.relation).toUpperCase()}</td>
+                    <td>${inTime} ${scanWardenText}</td>
+                    <td>${outTime} ${completeWardenText}</td>
+                    <td><b>${row.status.toUpperCase()}</b></td>
+                `;
+                printTableBody.appendChild(tr);
+            });
+        }
+
+        function triggerLandscapePrint() {
+            if (printTableBody.children.length === 0) {
+                triggerToast("Cannot run export engine on empty arrays.", "error");
+                return;
+            }
+            window.print();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        window.onload = async () => {
+            setInitialCalendarDate();
+            await fetchLoggedInWardenDetails();
+            fetchSecurityLogs();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HM Leave Approval | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .submenu-hidden { display: none; }
+    </style>
+</head>
+<body class="bg-[#f3f6fc] text-slate-700 font-sans antialiased min-h-screen flex">
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-enterprise-md" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Head Master Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
+                
+                <!-- Admissions Submenu Parent Accordion -->
+                <div>
+                    <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium cursor-pointer group">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
+                            <span>ADMISSION FORMS</span>
+                        </span>
+                        <i id="submenu-arrow-indicator" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="admissions-submenu" class="submenu-hidden pl-7 pr-1 mt-1 space-y-1 bg-slate-50/80 rounded-xl border border-slate-100 py-1.5">
+                        <a href="a_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Admin Admission Form</span>
+                        </a>
+                        <a href="f_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Faculty Admission Form</span>
+                        </a>
+                        <a href="s_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Student Admission Form</span>
+                        </a>
+                        <a href="w_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Warden Admission Form</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Navigation Module Links -->
+                <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY ASSIGNING PAGE</span>
+                </a>
+                
+                <a href="a_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
+                    <span>ATTENDANCE VIEW</span>
+                </a>
+
+                <a href="a_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="a_bonafide.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
+                    <span>BONAFIDE FORM</span>
+                </a>
+
+                <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
+                    <span>ANNOUNCEMENT EDIT</span>
+                </a>
+
+                <a href="a_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QUESTION BANK</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">System Records</div>
+
+                <a href="a_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>ADMIN DATABASE</span>
+                </a>
+
+                <a href="f_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DATABASE</span>
+                </a>
+
+                <a href="s_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT DATABASE</span>
+                </a>
+
+                <a href="w_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>WARDEN DATABASE</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governance</div>
+
+                <a href="a_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-indigo-600 bg-indigo-50/80 rounded-xl transition font-semibold">
+                    <i data-lucide="door-open" class="w-4 h-4 text-indigo-600"></i>
+                    <span>LEAVE CONFIRMING PAGE</span>
+                </a>
+
+                <a href="a_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="award" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET VIEW</span>
+                </a>
+
+                <a href="a_user.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                    <span>USER UPDATES</span>
+                </a>
+
+                <a href="a_password.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
+                    <span>PASSWORD UPDATES</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+        <!-- HEADER WITH LOGO, RGB NOTIFICATION LAMPS & DYNAMIC PROFILE CARD -->
+        <header class="w-full bg-white border-b border-slate-200/80 sticky top-0 z-40 px-8 py-4 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <!-- Brand Logo -->
+                <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-lg shadow-sm">
+                    🧠
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold text-slate-800 tracking-tight">KKDGMS</h1>
+                    <p id="admin-display-log" class="text-[11px] text-slate-400 font-medium">Validating security handshake credentials...</p>
+                </div>
+            </div>
+
+            <!-- RIGHT CONTROL CORNER -->
+            <div class="flex items-center gap-6">
+                <!-- RETURN TO DASHBOARD BUTTON -->
+                <a href="a_dashboard.html" class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition shadow-2xs">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Return to Dashboard
+                </a>
+
+                <!-- RED-GREEN-YELLOW NOTIFICATION LAMPS -->
+                <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-full px-3 py-1.5 shadow-2xs">
+                    <!-- RED LAMP -->
+                    <span id="lamp-red" class="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-100 animate-pulse cursor-pointer relative" title="Alert Stack">
+                        <span class="absolute -top-1 -right-1 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span></span>
+                    </span>
+                    <!-- YELLOW LAMP -->
+                    <span id="lamp-yellow" class="w-3.5 h-3.5 rounded-full bg-amber-400 ring-4 ring-amber-50 cursor-pointer" title="Pending Sync"></span>
+                    <!-- GREEN LAMP -->
+                    <span id="lamp-green" class="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-50 cursor-pointer" title="Network Up"></span>
+                </div>
+
+                <!-- ADMIN PROFILE CARD -->
+                <div onclick="openProfileModal()" class="flex items-center gap-3 cursor-pointer group select-none">
+                    <div class="relative">
+                        <img id="profile-avatar" src="kk.png" alt="Admin" class="w-10 h-10 rounded-full object-cover border-2 border-indigo-100 group-hover:border-indigo-400 transition" onerror="this.src='https://via.placeholder.com/40'">
+                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <div class="text-left hidden sm:block">
+                        <div id="admin-name" class="text-xs font-bold text-slate-800 tracking-tight leading-none">Loading...</div>
+                        <span id="profile-sync-badge" class="text-[9px] font-bold text-indigo-500 tracking-wider uppercase leading-none mt-1 inline-block">ADMIN</span>
+                    </div>
+                    <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- PORTAL GRID CONTENT -->
+        <main class="p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pb-28 max-w-7xl w-full mx-auto">
+            
+            <!-- LEFT COLUMN: MASTER CALENDAR COMPONENT -->
+            <section class="bg-white border border-slate-200/80 p-5 shadow-xs rounded-2xl h-fit">
+                <div class="flex flex-col gap-3 mb-5 pb-3 border-b border-slate-100">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-500 uppercase tracking-wider">Calendar Filter</span>
+                        <span id="active-date-badge" class="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold rounded-full">All Logs</span>
+                    </div>
+                    <button onclick="clearGlobalDateFilter()" class="w-full text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 font-semibold py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs">
+                        🔄 Reset Calendar View
+                    </button>
+                </div>
+                
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <button onclick="shiftGlobalCalendarMonth(-1)" class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition font-bold">◀</button>
+                    <div id="global-calendar-month-title" class="text-xs font-bold tracking-wider text-slate-700 uppercase">...</div>
+                    <button onclick="shiftGlobalCalendarMonth(1)" class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition font-bold">▶</button>
+                </div>
+
+                <div class="grid grid-cols-7 gap-1 text-[10px] font-bold text-center text-slate-400 mb-2 uppercase">
+                    <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                </div>
+                <div id="global-calendar-days-grid" class="grid grid-cols-7 gap-1.5 text-center font-medium text-xs"></div>
+            </section>
+
+            <!-- RIGHT COLUMN: LEAVE STREAM COMPONENT -->
+            <section class="lg:col-span-2 bg-white border border-slate-200/80 shadow-xs flex flex-col rounded-2xl overflow-hidden">
+                
+                <!-- Filters Header -->
+                <div class="p-4 bg-slate-50/70 border-b border-slate-200/80 flex flex-col sm:flex-row items-center gap-4 text-xs">
+                    <div class="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-2xs shrink-0 select-none">
+                        <input type="checkbox" id="global-select-all" onchange="toggleSelectAllRows(this)" class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                        <label for="global-select-all" class="font-semibold text-slate-600 cursor-pointer">Select All</label>
+                    </div>
+                    <div class="relative flex-1 w-full">
+                        <input type="text" id="filter-name" oninput="applyInterfaceFilters()" placeholder="Search student name query..." class="w-full bg-white border border-slate-200 px-3.5 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-2xs">
+                    </div>
+                    <select id="filter-node" onchange="applyInterfaceFilters()" class="bg-white border border-slate-200 px-3 py-2 text-sm rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 min-w-[180px] text-slate-700 shadow-2xs">
+                        <option value="">All Operational States</option>
+                        <option value="MY_PENDING">Awaiting My Approval</option>
+                        <option value="FULLY_APPROVED">Completely Authenticated</option>
+                    </select>
+                </div>
+
+                <!-- Ledger List -->
+                <div class="flex-1 overflow-y-auto max-h-[600px] lg:max-h-[700px]">
+                    <div id="leaves-stream-container" class="divide-y divide-slate-100">
+                        <div class="p-12 text-center text-slate-400 text-sm font-medium animate-pulse">Establishing master system handshake...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- FLOATING MULTI-ACTION TOOLBAR -->
+    <div id="mass-action-bar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 max-w-2xl w-[90%] bg-slate-900 text-white shadow-2xl rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border border-slate-800 hidden opacity-0 transition-all duration-300">
+        <div class="flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wide">
+            <span class="flex items-center justify-center w-6 h-6 bg-indigo-600 text-white rounded-full font-bold text-xs" id="mass-selected-count">0</span>
+            <span>Leave Applications Selected</span>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button onclick="executeMassApprovalTrack('APPROVED')" class="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer uppercase tracking-wider transition shadow-md">Mass Approve</button>
+            <button onclick="executeMassApprovalTrack('REJECTED')" class="flex-1 sm:flex-initial bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer uppercase tracking-wider transition shadow-md">Mass Reject</button>
+            <button onclick="clearSelectedRows()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-2.5 rounded-xl transition cursor-pointer">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ADMIN DETAILS MODAL -->
+    <div id="profile-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-100 overflow-hidden relative transform transition-all duration-200">
+            <!-- Close Button -->
+            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition text-lg font-bold">✕</button>
+            
+            <div class="p-8 flex flex-col items-center">
+                <!-- Circular Avatar Frame with Badge -->
+                <div class="relative w-32 h-32 mb-4">
+                    <div class="w-full h-full rounded-full border-4 border-indigo-100 overflow-hidden shadow-inner bg-slate-50 flex items-center justify-center">
+                        <img id="modal-profile-img" src="kk.png" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/128'">
+                    </div>
+                    <!-- Verified Checkmark Badge -->
+                    <span class="absolute bottom-1 right-1 bg-emerald-500 border-2 border-white rounded-full p-1 shadow">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </span>
+                </div>
+
+                <h3 id="modal-admin-name" class="text-xl font-extrabold text-slate-800 mb-6 uppercase tracking-wider">ADMIN</h3>
+
+                <!-- Data Fields -->
+                <div class="w-full border-t border-b border-slate-100 divide-y divide-slate-50 text-xs mb-6">
+                    <div class="py-3 flex justify-between items-center">
+                        <span class="text-slate-400 font-bold uppercase tracking-wider">User ID</span>
+                        <span id="modal-admin-id" class="font-extrabold text-slate-800">LOADING...</span>
+                    </div>
+                    <div class="py-3 flex justify-between items-center">
+                        <span class="text-slate-400 font-bold uppercase tracking-wider">Email</span>
+                        <span id="modal-admin-email" class="font-semibold text-slate-600">LOADING...</span>
+                    </div>
+                </div>
+
+                <button onclick="closeProfileModal()" class="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-xs rounded-xl tracking-wider uppercase transition shadow-2xs">Close Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DRAWER/OVERLAY SCREEN FOR APPROVAL DETAILS -->
+    <div id="approval-drawer-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity duration-200">
+        <div class="bg-white text-slate-800 border border-slate-200/80 max-w-xl w-full shadow-2xl p-6 rounded-t-2xl sm:rounded-2xl relative max-h-[92vh] flex flex-col overflow-y-auto transform transition-transform duration-200">
+            <button onclick="closeApprovalDrawer()" class="absolute top-5 right-5 w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition text-xs font-bold cursor-pointer">✕</button>
+            
+            <div class="mb-5 pr-8">
+                <span class="inline-block text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200/60 px-2.5 py-0.5 tracking-wider font-bold uppercase rounded-md">Master Authority Override Board</span>
+                <h3 id="drawer-student-title" class="text-lg font-extrabold text-slate-900 mt-2">Student Record</h3>
+                <p id="drawer-meta-logs" class="text-[11px] text-slate-400 mt-0.5">Loading data payload...</p>
+            </div>
+
+            <div class="bg-slate-50/60 p-4 mb-4 border border-slate-100 rounded-2xl shadow-2xs">
+                <div id="calendar-month-header" class="text-[10px] font-bold tracking-wider uppercase text-slate-400 mb-3 text-center border-b border-slate-200/60 pb-1.5">Absence Mapping Tracker</div>
+                <div class="grid grid-cols-7 gap-1 text-[9px] font-bold text-center text-slate-400 mb-1.5 uppercase">
+                    <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                </div>
+                <div id="drawer-calendar-days-grid" class="grid grid-cols-7 gap-1 text-center font-medium text-xs"></div>
+            </div>
+
+            <div class="bg-slate-50/60 p-4 mb-5 text-xs space-y-2.5 border border-slate-100 rounded-2xl shadow-2xs">
+                <div class="text-slate-600"><strong class="text-slate-900 font-bold block mb-0.5">Timeline Window:</strong> <span id="drawer-duration" class="text-slate-700 font-medium">...</span></div>
+                <div class="text-slate-600"><strong class="text-slate-900 font-bold block mb-0.5">Reason Statement:</strong> <span id="drawer-reason" class="italic text-slate-700 bg-white border border-slate-200/60 rounded-xl px-3 py-2 block mt-1">...</span></div>
+            </div>
+
+            <input type="hidden" id="drawer-leave-id">
+            
+            <div class="space-y-4 my-1 text-xs">
+                <div class="bg-indigo-50/30 p-4 border border-indigo-100/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                    <div>
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-indigo-500">⚡ Administration Audit (Your Node)</div>
+                        <div id="b-admin" class="text-sm font-extrabold text-indigo-950 mt-0.5">PENDING</div>
+                        <div id="b-admin-processor" class="text-[10px] text-slate-400 mt-1 font-medium">Processed by: None</div>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="mutateAdminNodeState('APPROVED')" class="flex-1 sm:flex-initial px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl cursor-pointer uppercase tracking-wider transition shadow-xs">Approve</button>
+                        <button onclick="mutateAdminNodeState('REJECTED')" class="flex-1 sm:flex-initial px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl cursor-pointer uppercase tracking-wider transition shadow-xs">Reject</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
+                    <div class="bg-slate-50 p-3 border border-slate-100 rounded-xl shadow-2xs">
+                        <span class="text-slate-400 font-bold text-[9px] block uppercase tracking-wider">1. Parent Track</span>
+                        <span id="b-parent" class="font-bold mt-1 block">PENDING</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 border border-slate-100 rounded-xl shadow-2xs">
+                        <span class="text-slate-400 font-bold text-[9px] block uppercase tracking-wider">2. Faculty Track</span>
+                        <span id="b-faculty" class="font-bold mt-1 block">PENDING</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 border border-slate-100 rounded-xl shadow-2xs">
+                        <span class="text-slate-400 font-bold text-[9px] block uppercase tracking-wider">4. Warden Track</span>
+                        <span id="b-warden" class="font-bold mt-1 block">PENDING</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center gap-3">
+                <button onclick="adminDestroyRecord()" class="px-3 py-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 font-bold text-xs rounded-xl transition cursor-pointer">🗑 Purge Log</button>
+                <button onclick="closeApprovalDrawer()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer">Exit Board</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-notification" class="fixed top-6 right-6 z-50 bg-slate-900 text-slate-100 font-medium text-xs px-4 py-3 shadow-2xl border border-slate-800 rounded-xl transform translate-x-full transition-all duration-300 flex items-center gap-2.5">
+        <span id="toast-icon" class="text-sm">🛡️</span>
+        <span id="toast-text" class="tracking-wide">Admin Pipeline Initializing...</span>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const leavesStreamContainer = document.getElementById('leaves-stream-container');
+        const approvalDrawerOverlay = document.getElementById('approval-drawer-overlay');
+        const toastNotification = document.getElementById('toast-notification');
+        const toastText = document.getElementById('toast-text');
+        const toastIcon = document.getElementById('toast-icon');
+        const profileBadge = document.getElementById('profile-sync-badge');
+        const profileName = document.getElementById('admin-name');
+        const massActionBar = document.getElementById('mass-action-bar');
+        const massSelectedCount = document.getElementById('mass-selected-count');
+
+        let MASTER_LEAVES_REPOS = [];
+        let CURRENT_FILTERED_LEAVES = [];
+        let SELECTED_ROW_IDS = new Set();
+        let currentGlobalYear = new Date().getFullYear();
+        let currentGlobalMonth = new Date().getMonth();
+        let selectedFilterTimestamp = null; 
+
+        let cachedAdminDbId = null;
+        let cachedAdminName = null;
+        let cachedAdminEmail = null;
+
+        /* SIDEBAR TOGGLE UTILITIES */
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function toggleAdmissionsSubmenu() {
+            const submenu = document.getElementById('admissions-submenu');
+            const arrow = document.getElementById('submenu-arrow-indicator');
+            submenu.classList.toggle('submenu-hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        async function triggerSystemLogout() {
+            await _supabase.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        function displayToastNotification(msg, icon = "🛡️", duration = 3500) {
+            toastText.innerText = msg;
+            toastIcon.innerText = icon;
+            toastNotification.classList.remove('translate-x-full');
+            setTimeout(() => { toastNotification.classList.add('translate-x-full'); }, duration);
+        }
+
+        // RED-YELLOW-GREEN LAMP CLICK ACTIONS FOR INTERACTION
+        document.getElementById('lamp-red').addEventListener('click', () => {
+            displayToastNotification("High priority: Pending admin reviews require attention.", "🔴");
+        });
+        document.getElementById('lamp-yellow').addEventListener('click', () => {
+            displayToastNotification("Database sync pipeline operating normally.", "🟡");
+        });
+        document.getElementById('lamp-green').addEventListener('click', () => {
+            displayToastNotification("Central server connectivity healthy.", "🟢");
+        });
+
+        // PROFILE MODAL FUNCTIONS
+        function openProfileModal() {
+            document.getElementById('modal-admin-name').innerText = cachedAdminName || 'ADMIN';
+            document.getElementById('modal-admin-id').innerText = cachedAdminDbId || 'PENDING';
+            document.getElementById('modal-admin-email').innerText = cachedAdminEmail || 'PENDING';
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        // AUTHENTICATION & PROFILE INTEGRATION
+        async function verifyAdminAuthSession() {
+            try {
+                const { data: { session }, error: sessionErr } = await _supabase.auth.getSession();
+                if (sessionErr) throw sessionErr;
+                
+                if (!session) { 
+                    window.location.href = "login.html"; 
+                    return; 
+                }
+
+                const { data: adminProfile, error: profileErr } = await _supabase
+                    .from('admins')
+                    .select('id, full_name')
+                    .eq('auth_uid', session.user.id)
+                    .single();
+
+                if (profileErr || !adminProfile) {
+                    console.warn("Unregistered admin attempt. Security redirecting...");
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                cachedAdminDbId = adminProfile.id;
+                cachedAdminName = adminProfile.full_name;
+                cachedAdminEmail = session.user.email;
+                document.getElementById('admin-display-log').innerText = `Authorized Admin ID: ${cachedAdminDbId}`;
+
+                profileName.innerText = cachedAdminName || 'Admin Desk';
+                profileBadge.innerText = session.user.email.split('@')[0].toUpperCase();
+
+                await fetchLeavesDatabase();
+                initializeRealtimeSync();
+            } catch (err) {
+                console.error(err);
+                displayToastNotification("Critical Session Exception Error", "❌");
+                setTimeout(() => { window.location.href = "login.html"; }, 1500);
+            }
+        }
+
+        function initializeRealtimeSync() {
+            _supabase
+                .channel('admin-leaves-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'student_leaves' }, (payload) => {
+                    fetchLeavesDatabase().then(() => {
+                        const drawerOverlay = document.getElementById('approval-drawer-overlay');
+                        const currentLeaveId = document.getElementById('drawer-leave-id').value;
+                        
+                        if (!drawerOverlay.classList.contains('hidden') && currentLeaveId) {
+                            const stillExists = MASTER_LEAVES_REPOS.find(l => Number(l.id) === Number(currentLeaveId));
+                            if (stillExists) { launchApprovalDrawer(currentLeaveId); } 
+                            else { closeApprovalDrawer(); displayToastNotification("Record was updated elsewhere.", "⚠️"); }
+                        }
+                    });
+                })
+                .subscribe();
+        }
+
+        async function fetchLeavesDatabase() {
+            try {
+                const { data, error } = await _supabase.from('student_leaves').select('*').order('id', { ascending: false });
+                if (error) throw error;
+                MASTER_LEAVES_REPOS = data || [];
+                
+                const activeIds = new Set(MASTER_LEAVES_REPOS.map(l => l.id));
+                SELECTED_ROW_IDS = new Set([...SELECTED_ROW_IDS].filter(id => activeIds.has(id)));
+                syncMassActionBarUi();
+                
+                renderGlobalCalendar();
+                applyInterfaceFilters();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        /* SELECTIONS & MASS ACTIONS */
+        function handleRowCheckboxSelection(event, id) {
+            event.stopPropagation();
+            if (event.target.checked) { SELECTED_ROW_IDS.add(id); } 
+            else { SELECTED_ROW_IDS.delete(id); }
+            syncMassActionBarUi();
+        }
+
+        function toggleSelectAllRows(masterCheckbox) {
+            if (masterCheckbox.checked) {
+                CURRENT_FILTERED_LEAVES.forEach(leave => SELECTED_ROW_IDS.add(leave.id));
+            } else {
+                CURRENT_FILTERED_LEAVES.forEach(leave => SELECTED_ROW_IDS.delete(leave.id));
+            }
+            syncMassActionBarUi();
+            renderLeavesLedger(CURRENT_FILTERED_LEAVES);
+        }
+
+        function clearSelectedRows() {
+            SELECTED_ROW_IDS.clear();
+            document.getElementById('global-select-all').checked = false;
+            syncMassActionBarUi();
+            renderLeavesLedger(CURRENT_FILTERED_LEAVES);
+        }
+
+        function syncMassActionBarUi() {
+            const count = SELECTED_ROW_IDS.size;
+            massSelectedCount.innerText = count;
+            if (count > 0) {
+                massActionBar.classList.remove('hidden');
+                setTimeout(() => { massActionBar.classList.remove('opacity-0'); }, 10);
+            } else {
+                massActionBar.classList.add('opacity-0');
+                document.getElementById('global-select-all').checked = false;
+                setTimeout(() => { massActionBar.classList.add('hidden'); }, 300);
+            }
+        }
+
+        async function executeMassApprovalTrack(state) {
+            if (SELECTED_ROW_IDS.size === 0) return;
+            if (!confirm(`Simultaneously change state to ${state} across ${SELECTED_ROW_IDS.size} records?`)) return;
+
+            const targets = Array.from(SELECTED_ROW_IDS);
+            const payload = { admin_approval: state };
+            if (cachedAdminDbId && cachedAdminName) {
+                payload.approved_by_admin_id = cachedAdminDbId;
+                payload.approved_by_admin_name = cachedAdminName;
+            }
+
+            displayToastNotification(`Executing state modifications...`, "⏳");
+            const updatePromises = targets.map(id => _supabase.from('student_leaves').update(payload).eq('id', id));
+            await Promise.all(updatePromises);
+            displayToastNotification(`Action resolved successfully!`, "🚀");
+            clearSelectedRows();
+            await fetchLeavesDatabase();
+        }
+
+        /* THEMED CALENDAR LOGIC */
+        function renderGlobalCalendar() {
+            const daysGrid = document.getElementById('global-calendar-days-grid');
+            const titleEl = document.getElementById('global-calendar-month-title');
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            titleEl.innerText = `${monthNames[currentGlobalMonth]} ${currentGlobalYear}`;
+
+            const firstDayIndex = new Date(currentGlobalYear, currentGlobalMonth, 1).getDay();
+            const totalDaysInMonth = new Date(currentGlobalYear, currentGlobalMonth + 1, 0).getDate();
+
+            let gridHtml = '';
+            for (let i = 0; i < firstDayIndex; i++) { gridHtml += `<div class="text-slate-200 py-2 bg-slate-50/20">•</div>`; }
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dayDate = new Date(currentGlobalYear, currentGlobalMonth, day);
+                const dayTimestamp = dayDate.getTime();
+
+                const activeCount = MASTER_LEAVES_REPOS.filter(leave => {
+                    const cleanStart = new Date(new Date(leave.from_date_time).setHours(0,0,0,0)).getTime();
+                    const cleanEnd = new Date(new Date(leave.to_date_time).setHours(23,59,59,999)).getTime();
+                    return dayTimestamp >= cleanStart && dayTimestamp <= cleanEnd;
+                }).length;
+
+                let customClasses = "bg-white text-slate-700 hover:bg-indigo-50/50 border border-slate-100 rounded-xl shadow-2xs";
+                let notificationPip = '';
+
+                if (activeCount > 0) {
+                    customClasses = "bg-indigo-50/80 text-indigo-700 font-bold hover:bg-indigo-100 border border-indigo-100 rounded-xl";
+                    notificationPip = `<span class="absolute bottom-1 right-1.5 px-1 text-[8px] bg-indigo-600 text-white rounded-md font-extrabold">${activeCount}</span>`;
+                }
+
+                if (selectedFilterTimestamp && selectedFilterTimestamp === dayTimestamp) {
+                    customClasses = "bg-indigo-600 text-white font-extrabold rounded-xl scale-105 shadow-md shadow-indigo-200 z-10";
+                    if (activeCount > 0) { notificationPip = `<span class="absolute bottom-1 right-1.5 px-1 text-[8px] bg-white text-indigo-700 rounded-md font-extrabold">${activeCount}</span>`; }
+                }
+
+                gridHtml += `
+                <div onclick="selectGlobalCalendarDate(${currentGlobalYear}, ${currentGlobalMonth}, ${day})" class="py-2.5 relative cursor-pointer text-xs transition-all flex flex-col items-center justify-center min-h-[42px] ${customClasses}">
+                    <span>${day}</span>
+                    ${notificationPip}
+                </div>`;
+            }
+            daysGrid.innerHTML = gridHtml;
+        }
+
+        function selectGlobalCalendarDate(y, m, d) {
+            selectedFilterTimestamp = new Date(y, m, d).getTime();
+            document.getElementById('active-date-badge').innerText = `${new Date(selectedFilterTimestamp).toLocaleDateString()}`;
+            renderGlobalCalendar(); applyInterfaceFilters();
+        }
+
+        function clearGlobalDateFilter() {
+            selectedFilterTimestamp = null; document.getElementById('active-date-badge').innerText = "All Logs";
+            renderGlobalCalendar(); applyInterfaceFilters();
+        }
+
+        function shiftGlobalCalendarMonth(direction) {
+            currentGlobalMonth += direction;
+            if (currentGlobalMonth > 11) { currentGlobalMonth = 0; currentGlobalYear++; } 
+            else if (currentGlobalMonth < 0) { currentGlobalMonth = 11; currentGlobalYear--; }
+            renderGlobalCalendar();
+        }
+
+        /* LEDGER ENGINE RENDERING */
+        function renderLeavesLedger(list) {
+            if (list.length === 0) {
+                leavesStreamContainer.innerHTML = `<div class="p-12 text-center text-slate-400 text-xs font-semibold">No entries matched the designated search criteria.</div>`;
+                return;
+            }
+
+            leavesStreamContainer.innerHTML = list.map(leave => {
+                const badgeStyle = s => {
+                    if (s === 'APPROVED') return 'bg-emerald-50 text-emerald-700 border border-emerald-200/60';
+                    if (s === 'REJECTED') return 'bg-rose-50 text-rose-700 border border-rose-200/60';
+                    return 'bg-amber-50 text-amber-700 border border-amber-200/60';
+                };
+
+                const processorLabel = leave.approved_by_admin_name 
+                    ? `<span class="text-[10px] bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold px-2 py-0.5 rounded-md">Admin: ${leave.approved_by_admin_name}</span>`
+                    : '';
+                
+                const isChecked = SELECTED_ROW_IDS.has(leave.id) ? 'checked' : '';
+                
+                return `
+                <div onclick="launchApprovalDrawer(${leave.id})" class="p-5 hover:bg-[#f8faff] transition duration-150 cursor-pointer flex gap-4 items-start">
+                    <div onclick="event.stopPropagation();" class="pt-1 shrink-0">
+                        <input type="checkbox" ${isChecked} onchange="handleRowCheckboxSelection(event, ${leave.id})" class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start gap-3">
+                            <div class="space-y-1.5 w-full sm:max-w-[85%]">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-extrabold text-slate-800 text-base tracking-tight">${leave.student_names}</span>
+                                    <span class="text-[10px] bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 font-bold rounded-md">ID: #${leave.id}</span>
+                                    <span class="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 border border-slate-200/60 font-semibold rounded-md">Class: ${leave.student_class || '—'} • Sec: ${leave.section || '—'}</span>
+                                    ${processorLabel}
+                                </div>
+                                <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                                    Authored by Faculty: <span class="text-slate-600 font-bold">${leave.applied_by_name}</span> (${leave.applied_by_role})
+                                </div>
+                                <div class="text-xs text-slate-800 font-bold flex items-center gap-1.5">
+                                    <span class="text-slate-400 font-normal">Schedule Range:</span> ${new Date(leave.from_date_time).toLocaleString()} ➡️ ${new Date(leave.to_date_time).toLocaleString()}
+                                </div>
+                                <div class="text-xs text-slate-500 italic line-clamp-1 max-w-xl">"${leave.reason}"</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-100 text-[10px] tracking-wide text-center font-bold">
+                            <div class="p-2 rounded-xl bg-slate-50/50 border border-slate-100">
+                                <span class="text-slate-400 font-bold block mb-1">⭐ Admin Override</span>
+                                <span class="px-2 py-0.5 block rounded-md ${badgeStyle(leave.admin_approval)}">${leave.admin_approval}</span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50/50 border border-slate-100">
+                                <span class="text-slate-400 font-bold block mb-1">Parent Node</span>
+                                <span class="px-2 py-0.5 block rounded-md ${badgeStyle(leave.parent_approval)}">${leave.parent_approval}</span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50/50 border border-slate-100">
+                                <span class="text-slate-400 font-bold block mb-1">Faculty Node</span>
+                                <span class="px-2 py-0.5 block rounded-md ${badgeStyle(leave.faculty_approval)}">${leave.faculty_approval}</span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50/50 border border-slate-100">
+                                <span class="text-slate-400 font-bold block mb-1">Warden Node</span>
+                                <span class="px-2 py-0.5 block rounded-md ${badgeStyle(leave.warden_approval)}">${leave.warden_approval}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function applyInterfaceFilters() {
+            const name = document.getElementById('filter-name').value.toLowerCase().trim();
+            const filterState = document.getElementById('filter-node').value;
+
+            CURRENT_FILTERED_LEAVES = MASTER_LEAVES_REPOS.filter(row => {
+                const matchName = row.student_names.toLowerCase().includes(name);
+                
+                let matchState = true;
+                if (filterState === 'MY_PENDING') { matchState = (row.admin_approval === 'PENDING'); } 
+                else if (filterState === 'FULLY_APPROVED') {
+                    matchState = (row.parent_approval === 'APPROVED' && row.faculty_approval === 'APPROVED' && row.admin_approval === 'APPROVED' && row.warden_approval === 'APPROVED');
+                }
+
+                let matchDate = true;
+                if (selectedFilterTimestamp) {
+                    const startRange = new Date(new Date(row.from_date_time).setHours(0,0,0,0)).getTime();
+                    const endRange = new Date(new Date(row.to_date_time).setHours(23,59,59,999)).getTime();
+                    matchDate = selectedFilterTimestamp >= startRange && selectedFilterTimestamp <= endRange;
+                }
+                return matchName && matchState && matchDate;
+            });
+
+            const allChecked = CURRENT_FILTERED_LEAVES.length > 0 && CURRENT_FILTERED_LEAVES.every(l => SELECTED_ROW_IDS.has(l.id));
+            document.getElementById('global-select-all').checked = allChecked;
+
+            renderLeavesLedger(CURRENT_FILTERED_LEAVES);
+        }
+
+        function generateVisualCalendarDates(startDateIso, endDateIso) {
+            const daysGrid = document.getElementById('drawer-calendar-days-grid');
+            const header = document.getElementById('calendar-month-header');
+            
+            const start = new Date(startDateIso); const end = new Date(endDateIso);
+            const targetYear = start.getFullYear(); const targetMonth = start.getMonth();
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            header.innerText = `Absence View: ${monthNames[targetMonth]} ${targetYear}`;
+
+            const firstDayIndex = new Date(targetYear, targetMonth, 1).getDay();
+            const totalDaysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+            const cleanStart = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+            const cleanEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+
+            let gridHtml = '';
+            for (let i = 0; i < firstDayIndex; i++) { gridHtml += `<div class="text-slate-200 py-1">•</div>`; }
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const slotTimestamp = new Date(targetYear, targetMonth, day).getTime();
+                const isWithinLeaveRange = slotTimestamp >= cleanStart && slotTimestamp <= cleanEnd;
+
+                if (isWithinLeaveRange) { gridHtml += `<div class="bg-indigo-600 text-white font-extrabold py-1 rounded-xl shadow-2xs">${day}</div>`; } 
+                else { gridHtml += `<div class="text-slate-400 py-1 font-normal">${day}</div>`; }
+            }
+            daysGrid.innerHTML = gridHtml;
+        }
+
+        function launchApprovalDrawer(id) {
+            const row = MASTER_LEAVES_REPOS.find(l => Number(l.id) === Number(id));
+            if(!row) return;
+
+            document.getElementById('drawer-leave-id').value = row.id;
+            document.getElementById('drawer-student-title').innerText = row.student_names;
+            document.getElementById('drawer-duration').innerText = `${new Date(row.from_date_time).toLocaleString()} to ${new Date(row.to_date_time).toLocaleString()}`;
+            document.getElementById('drawer-reason').innerText = `"${row.reason}"`;
+            document.getElementById('drawer-meta-logs').innerText = `Origin Filter Context: Class ${row.student_class || '—'} (${row.section || '—'}) | Created By Faculty ${row.applied_by_name}`;
+
+            const formatStaticBadge = (id, val) => {
+                const el = document.getElementById(id); el.innerText = val;
+                el.className = val === 'APPROVED' ? 'text-emerald-600 font-bold block mt-1' : (val === 'REJECTED' ? 'text-rose-600 font-bold block mt-1' : 'text-amber-600 font-bold block mt-1');
+            };
+
+            formatStaticBadge('b-parent', row.parent_approval);
+            formatStaticBadge('b-faculty', row.faculty_approval);
+            formatStaticBadge('b-warden', row.warden_approval);
+
+            const adminEl = document.getElementById('b-admin'); adminEl.innerText = row.admin_approval;
+            adminEl.className = row.admin_approval === 'APPROVED' ? 'text-emerald-600 font-extrabold block mt-0.5 text-sm tracking-wide' : (row.admin_approval === 'REJECTED' ? 'text-rose-600 font-extrabold block mt-0.5 text-sm tracking-wide' : 'text-amber-600 font-extrabold block mt-0.5 text-sm tracking-wide');
+
+            const processorEl = document.getElementById('b-admin-processor');
+            if (row.approved_by_admin_name) {
+                processorEl.innerText = `Processed by: ${row.approved_by_admin_name} (ID: ${row.approved_by_admin_id})`;
+                processorEl.className = "text-[10px] text-indigo-600 font-extrabold mt-1 uppercase tracking-wide";
+            } else {
+                processorEl.innerText = "Processed by: None";
+                processorEl.className = "text-[10px] text-slate-400 mt-1 font-semibold";
+            }
+
+            generateVisualCalendarDates(row.from_date_time, row.to_date_time);
+            approvalDrawerOverlay.classList.remove('hidden');
+        }
+
+        function closeApprovalDrawer() { approvalDrawerOverlay.classList.add('hidden'); }
+
+        async function mutateAdminNodeState(state) {
+            const id = document.getElementById('drawer-leave-id').value;
+            const payload = { admin_approval: state };
+            
+            if (cachedAdminDbId && cachedAdminName) {
+                payload.approved_by_admin_id = cachedAdminDbId;
+                payload.approved_by_admin_name = cachedAdminName;
+            }
+
+            const { error } = await _supabase.from('student_leaves').update(payload).eq('id', id);
+            if(error) return alert(error.message);
+
+            displayToastNotification(`Admin Node updated to ${state}`, "💾");
+            await fetchLeavesDatabase();
+            launchApprovalDrawer(id); 
+        }
+
+        async function adminDestroyRecord() {
+            if(!confirm("Completely purge this log out of the database?")) return;
+            const id = document.getElementById('drawer-leave-id').value;
+            await _supabase.from('student_leaves').delete().eq('id', id);
+            displayToastNotification("Log record deleted.", "🗑");
+            closeApprovalDrawer();
+            await fetchLeavesDatabase();
+        }
+
+        window.onload = function() {
+            verifyAdminAuthSession();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        };
+    </script>
+</body>
+</html>

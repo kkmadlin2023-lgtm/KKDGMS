@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>KKDGMS</title>
+    <link class="hidden" rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.0/dist/umd/supabase.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-up {
+            animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        /* High Quality Background Image Configuration */
+        .hero-bg {
+            background-image: 
+                radial-gradient(
+                    700px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                    rgba(99, 102, 241, 0.18), 
+                    transparent 80%
+                ),
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.5), rgba(2, 6, 23, 1)), 
+                url('kanyakumari.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: scroll;
+            transition: background-image 0.15s ease-out;
+        }
+
+        @media (min-width: 768px) {
+            .hero-bg {
+                background-attachment: fixed;
+            }
+        }
+
+        /* Continuous Smooth Scrolling Optimization Styles */
+        .marquee-wrapper {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+        }
+        .marquee-content {
+            display: flex;
+            gap: 2.5rem;
+            white-space: nowrap;
+            width: max-content;
+            animation: scroll-marquee 25s linear infinite;
+        }
+        .marquee-content:hover {
+            animation-play-state: paused;
+        }
+        @keyframes scroll-marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased font-sans overflow-x-hidden">
+
+    <section id="hero-interactive-container" class="relative min-h-screen flex flex-col overflow-hidden hero-bg">
+        
+        <header class="relative z-50 bg-slate-900/40 backdrop-blur-xl border-b border-white/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:h-20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex flex-col sm:flex-row items-center text-center sm:text-left gap-3 sm:gap-4 w-full sm:w-auto">
+                    <div class="shrink-0">
+                        <img src="kk.png" class="w-12 h-12 object-contain mx-auto" alt="Logo">
+                    </div>
+                    <div>
+                        <h1 class="text-xs sm:text-sm md:text-lg font-black text-white tracking-tight leading-tight uppercase">KANYAKUMARI DISTRICT GOVERNMENT MODEL SCHOOL</h1>
+                        <p class="text-[10px] text-slate-300 font-semibold tracking-widest uppercase mt-1">Kanyakumari</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-center shrink-0 w-full sm:w-auto">
+                    <a class="inline-flex items-center justify-center space-x-2 bg-white text-slate-950 hover:bg-indigo-500 hover:text-white font-bold text-xs uppercase tracking-wider py-2.5 px-6 sm:py-3 sm:px-5 rounded-xl transition-all duration-300 shadow-xl w-full sm:w-auto" href="login.html">
+                        <i class="w-4 h-4" data-lucide="log-in"></i>
+                        <span>Login</span>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <div class="relative z-20 flex-grow flex items-center justify-center py-12 sm:py-20 px-4 text-center">
+            <div class="max-w-4xl mx-auto space-y-8 sm:space-y-12 w-full">
+                <div class="space-y-4 sm:space-y-6 animate-fade-up flex flex-col items-center">
+                    <span class="inline-flex items-center px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-400 text-slate-950 uppercase tracking-[0.2em] shadow-lg shadow-amber-400/20 w-fit">
+                        Where Oceans Meet Knowledge
+                    </span>
+                    <h2 class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tighter leading-[1.2] sm:leading-[1.1] text-white w-full">
+                        Illuminating Minds at <br class="hidden sm:inline"/>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-indigo-400">the Land's End</span>
+                    </h2>
+                    <p class="text-slate-200 text-sm sm:text-xl max-w-2xl mx-auto font-medium leading-relaxed px-2">
+                        Rooted in the spiritual legacy of Kanyakumari, our academy nurtures academic breakthroughs, ethical leadership, and continuous character formation.
+                    </p>
+
+                    <!-- Continuous Auto-Scrolling Live News Bulletin Container -->
+                    <div class="w-full max-w-3xl mx-auto pt-2 sm:pt-4">
+                        <div class="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:space-x-4 shadow-xl">
+                            <div class="flex items-center justify-center space-x-1.5 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shrink-0 animate-pulse mx-auto sm:mx-0">
+                                <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+                                <span>Live Updates</span>
+                            </div>
+                            <div class="marquee-wrapper w-full" id="announcement-ticker-box">
+                                <div class="marquee-content text-xs sm:text-sm font-semibold text-slate-300 tracking-wide text-center sm:text-left" id="ticker-target-inner">
+                                    <span>Syncing announcement database layers...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 sm:pt-4 w-full sm:w-auto">
+                        <a href="#departments-section" class="inline-flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest py-3.5 px-6 sm:py-4 sm:px-8 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-600/30 w-full sm:w-auto">
+                            <span>Explore Departments</span>
+                            <i class="w-4 h-4" data-lucide="arrow-down"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-6 sm:pt-10 text-left animate-fade-up" style="animation-delay: 0.2s">
+                    <div class="group bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-6 sm:p-8 rounded-3xl space-y-4 hover:bg-slate-900/90 transition-all duration-500 hover:border-amber-400/30 flex flex-col items-start">
+                        <div class="bg-amber-400 text-slate-950 p-3 rounded-2xl w-fit shadow-lg shadow-amber-400/20 group-hover:scale-110 transition-transform">
+                            <i class="w-6 h-6" data-lucide="eye"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl font-bold tracking-tight text-amber-300">Our Strategic Vision</h3>
+                        <p class="text-sm text-slate-300 font-normal leading-relaxed">
+                            To build a globally benchmarked academic platform where coastal resilience and traditional core ethics meet to empower student communities.
+                        </p>
+                    </div>
+                    <div class="group bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-6 sm:p-8 rounded-3xl space-y-4 hover:bg-slate-900/90 transition-all duration-500 hover:border-indigo-400/30 flex flex-col items-start">
+                        <div class="bg-indigo-500 text-white p-3 rounded-2xl w-fit shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform">
+                            <i class="w-6 h-6" data-lucide="target"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl font-bold tracking-tight text-indigo-300">Our Daily Mission</h3>
+                        <p class="text-sm text-slate-300 font-normal leading-relaxed">
+                            Deploying specialized instructional models, world-class faculty profiles, and deep laboratory environments that spark creative research.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main id="departments-section" class="relative z-30 bg-slate-950 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 space-y-12 sm:space-y-16">
+        <div class="text-center space-y-4">
+            <h3 class="text-2xl sm:text-4xl font-black text-white tracking-tight">Explore Academic Departments</h3>
+            <p class="text-xs sm:text-sm text-slate-400 font-medium max-w-md mx-auto px-4">
+                Select a department below to fetch and view active certified faculty profiles.
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 max-w-6xl mx-auto w-full" id="departments-portal-grid">
+            <div class="col-span-full text-center py-20 text-slate-600 font-bold uppercase tracking-[0.3em] text-xs animate-pulse">
+                Synchronizing Department Databases...
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Container with Map, Contact info, and Branded Social Image Media Links -->
+    <footer class="relative z-30 bg-slate-900/50 border-t border-white/5 text-slate-400 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                
+                <!-- Left Column Details -->
+                <div class="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
+                    <div class="bg-indigo-600/10 p-4 rounded-full text-indigo-500 w-fit">
+                        <i class="w-8 h-8" data-lucide="graduation-cap"></i>
+                    </div>
+                    <div class="space-y-2 max-w-md">
+                        <p class="font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-slate-200 text-sm sm:text-base leading-relaxed">
+                            Kanyakumari District Government Model School
+                        </p>
+                        <p class="text-slate-500 font-mono text-xs">© All Rights Reserved.</p>
+                    </div>
+                    
+                    <!-- Quick Contact Links Matrix -->
+                    <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 text-xs font-semibold text-slate-300 w-full justify-center lg:justify-start">
+                        <a href="tel:+918015188967" class="flex items-center justify-center gap-2 hover:text-indigo-400 transition-colors bg-slate-900/80 border border-white/5 py-2 px-4 rounded-xl">
+                            <i class="w-4 h-4 text-emerald-400" data-lucide="phone"></i>
+                            <span>+91 8015188967</span>
+                        </a>
+                        <a href="mailto:kkmadlin2023@gmail.com" class="flex items-center justify-center gap-2 hover:text-indigo-400 transition-colors bg-slate-900/80 border border-white/5 py-2 px-4 rounded-xl">
+                            <i class="w-4 h-4 text-indigo-400" data-lucide="mail"></i>
+                            <span>kkmadlin2023@gmail.com</span>
+                        </a>
+                    </div>
+
+                    <!-- Verified Brand Image Badges for Media Platforms -->
+                    <div class="flex items-center gap-4 pt-2">
+                        <a href="https://www.youtube.com/@kanniyagms" target="_blank" rel="noopener noreferrer" class="p-3 bg-slate-900 border border-white/5 rounded-xl hover:bg-slate-800 hover:border-rose-500/30 transition-all duration-300 hover:scale-105 flex items-center justify-center" title="YouTube">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/75/YouTube_social_white_squircle_%282017%29.svg" alt="YouTube" class="w-6 h-6 object-contain">
+                        </a>
+                        <a href="https://www.instagram.com/_.kkdgms._/?utm_source=ig_web_button_share_sheet" target="_blank" rel="noopener noreferrer" class="p-3 bg-slate-900 border border-white/5 rounded-xl hover:bg-slate-800 hover:border-pink-500/30 transition-all duration-300 hover:scale-105 flex items-center justify-center" title="Instagram">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg" alt="Instagram" class="w-6 h-6 object-contain">
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Column Map Frame: Restored to crisp default full-color coordinates -->
+                <div class="w-full h-64 sm:h-72 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative bg-slate-950">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3949.1994192667104!2d77.41793217588737!3d8.245837091787943!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b04f649ff29b99f%3A0xaf9a09a6b371df92!2sJames%20College%20of%20Engineering%20and%20Technology!5e0!3m2!1sen!2sin!4v1710000000000!5m2!1sen!2sin" 
+                        class="w-full h-full border-0"
+                        allowfullscreen="" 
+                        loading="lazy" 
+                        referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        
+        // Fluid radial glow update function tied to client tracking coordinates
+        const heroSection = document.getElementById('hero-interactive-container');
+        window.addEventListener('mousemove', (e) => {
+            const rect = heroSection.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            heroSection.style.setProperty('--mouse-x', `${(x / rect.width) * 100}%`);
+            heroSection.style.setProperty('--mouse-y', `${(y / rect.height) * 100}%`);
+        });
+
+        // XHR Engine used to load news securely under local file context (file:///)
+        function fetchLocalNewsTicker(callback) {
+            const now = new Date().toISOString();
+            const url = `${SUPABASE_URL}/rest/v1/news?expiry_date=gt.${now}&order=created_at.desc`;
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
+            xhr.setRequestHeader("apikey", SUPABASE_KEY);
+            xhr.setRequestHeader("Authorization", "Bearer " + SUPABASE_KEY);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        callback(null, xhr.responseText ? JSON.parse(xhr.responseText) : []);
+                    } else {
+                        callback(xhr.responseText || "Connection failure", []);
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        // Ticker setup routine
+        function initializeTickerStream() {
+            const innerBox = document.getElementById('ticker-target-inner');
+            
+            fetchLocalNewsTicker(function(err, data) {
+                if(err || !data || data.length === 0) {
+                    innerBox.innerHTML = `<span>Welcome to Kanyakumari District Government Model School. Check back later for official announcements.</span>`;
+                    return;
+                }
+
+                // Construct textual output elements
+                let newsString = "";
+                data.forEach(item => {
+                    newsString += `📢 <span class="text-amber-300 font-bold">${item.title}:</span> ${item.passage} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `;
+                });
+
+                // Duplicate contents to ensure seamless infinite looping layout structure
+                innerBox.innerHTML = `<span>${newsString}</span><span>${newsString}</span>`;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            
+            // Trigger announcement scroll assembly
+            initializeTickerStream();
+
+            try {
+                const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                const { data, error } = await supabaseClient.from('faculty_details').select('department');
+                if (error) throw error;
+
+                // Strip duplicates and perform sorting alphabetically
+                const departments = [...new Set((data || []).map(r => r.department).filter(Boolean))].sort();
+                const grid = document.getElementById('departments-portal-grid');
+                grid.innerHTML = '';
+
+                if (departments.length === 0) {
+                    grid.innerHTML = `<p class="col-span-full text-center text-xs font-bold text-slate-500 uppercase tracking-wider">No Active Departments Found in Database.</p>`;
+                    return;
+                }
+
+                // Append department elements redirecting directly onto faculty.html in same workspace root folder
+                departments.forEach((dept, index) => {
+                    const box = document.createElement('a');
+                    box.href = `faculty.html?dept=${encodeURIComponent(dept)}`;
+                    box.className = "group bg-slate-900/40 border border-white/10 rounded-3xl p-5 sm:p-8 flex items-center justify-between hover:bg-white/5 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 cursor-pointer animate-fade-up w-full";
+                    box.style.animationDelay = `${index * 0.05}s`;
+                    
+                    box.innerHTML = `
+                        <div class="flex items-center space-x-4 sm:space-x-5 text-left">
+                            <div class="bg-indigo-500/10 text-indigo-400 p-3 sm:p-4 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 group-hover:scale-110 shrink-0">
+                                <i data-lucide="layers" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm sm:text-base font-bold text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">${dept}</h4>
+                                <p class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">View Faculty Directory &rarr;</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-2 transition-all duration-500 shrink-0"></i>
+                    `;
+                    grid.appendChild(box);
+                });
+                
+                // Re-initialize dynamic vector graphics
+                lucide.createIcons();
+            } catch (err) {
+                document.getElementById('departments-portal-grid').innerHTML = `
+                    <div class="col-span-full bg-rose-500/10 border border-rose-500/20 p-6 sm:p-8 rounded-3xl text-center w-full">
+                        <p class="text-sm font-bold text-rose-500 uppercase tracking-widest">System Sync Error</p>
+                        <p class="text-xs text-rose-400/70 mt-2">${err.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

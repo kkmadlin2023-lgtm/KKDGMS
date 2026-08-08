@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management | KKDGMS</title>
+    <link class="no-print" rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <style>
+        /* Modern Minimalist Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f9fafb; }
+        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        /* Sidebar Transition Support */
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* ─── FIXED CRITICAL A4 PRINT AND PDF ENGINE OVERRIDES ─── */
+        @media print {
+            html, body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            aside, header, main, #toast-notification, .no-print, #mass-action-bar, #sidebar-overlay {
+                display: none !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+            #print-report-area {
+                display: block !important;
+                visibility: visible !important;
+                width: 100% !important;
+                position: relative !important;
+                left: 0 !important;
+                top: 0 !important;
+                margin: 0 !important;
+                padding: 20px !important;
+            }
+            #print-report-area * {
+                visibility: visible !important;
+                color: #000000 !important;
+            }
+            tr { page-break-inside: avoid !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased min-h-screen relative pb-24 lg:pl-72">
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebarMenu()" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden no-print"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-enterprise-md" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="building-2" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Warden Control Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Control</div>
+                
+                <!-- Active Navigation State --><a href="w_dashboard.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                
+                    <span>WARDEN DASHBOARD</span>
+                </a>
+               <a href="w_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 bg-indigo-50/80 text-indigo-600 rounded-xl transition font-semibold shadow-xs border border-indigo-100 pointer-events-none">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-600"></i>
+                
+                    <span>LEAVE MANAGEMENT</span>
+                </a>
+                
+                <a href="w_visitor.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-check" class="w-4 h-4 text-slate-400"></i>
+                    <span>VISITORS ENTRY</span>
+                </a>
+
+                <a href="w_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Toast Overlay Notification -->
+    <div id="toast-notification" class="fixed top-4 right-4 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 shadow-xl rounded-xl border border-slate-800 tracking-wide transform translate-x-full transition-transform duration-300 flex items-center gap-2 no-print">
+        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast-text">Warden System Core Active...</span>
+    </div>
+
+    <!-- Header Navigation Section -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40 px-6 py-4 flex justify-between items-center no-print">
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleSidebarMenu()" class="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition" aria-label="Toggle Sidebar Menu">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <div class="bg-indigo-600 text-white p-2 rounded-lg">
+                <i data-lucide="shield" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-bold text-gray-800">CampusLeave Portal</h1>
+                    <span id="profile-sync-badge" class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Verifying Node...</span>
+                </div>
+                <p id="warden-display-log" class="text-xs text-gray-400 font-medium">Monitoring active checkout windows...</p>
+            </div>
+        </div>
+        
+        <!-- Header Controls & User Identity Badge -->
+        <div class="flex items-center space-x-6">
+            <!-- Download Date Context Inputs -->
+            <div class="hidden md:flex items-center gap-3 border-r pr-6 border-gray-200 text-xs">
+                <div class="flex items-center gap-1.5 text-gray-500 font-medium">
+                    <label for="print-from-date">From:</label>
+                    <input type="date" id="print-from-date" class="bg-gray-50 border border-gray-200 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-600">
+                </div>
+                <div class="flex items-center gap-1.5 text-gray-500 font-medium">
+                    <label for="print-to-date">To:</label>
+                    <input type="date" id="print-to-date" class="bg-gray-50 border border-gray-200 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-600">
+                </div>
+                <button onclick="triggerRangePrintReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i> Export Range
+                </button>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div id="avatar-icon" class="w-9 h-9 bg-indigo-100 text-indigo-700 font-bold rounded-full flex items-center justify-center">W</div>
+                <button onclick="triggerSystemLogout()" class="p-2 text-gray-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition" title="Log Out">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        <a href="w_dashboard.html" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg transition border border-slate-200 shadow-xs flex items-center gap-1.5 active:scale-[0.98]">
+            ⬅ Dashboard
+        </a>
+    </header>
+
+    <!-- Main Grid Dashboard Layout -->
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8 no-print">
+        
+        <!-- Left Column: Gatehouse Calendar Workspace Form Pane -->
+        <section class="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-fit space-y-6">
+            <div class="flex flex-col gap-2 pb-2 border-b border-gray-50">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i> Gatehouse Filter
+                    </h2>
+                    <span id="active-date-badge" class="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md">All Logs</span>
+                </div>
+                <button onclick="clearGlobalDateFilter()" class="w-full text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 font-semibold py-2 rounded-xl transition cursor-pointer">
+                    🔄 Clear Date Filter (Show All)
+                </button>
+            </div>
+            
+            <!-- Calendar Navigation Header Toggle -->
+            <div class="flex justify-between items-center mb-3 px-1">
+                <button onclick="shiftGlobalCalendarMonth(-1)" class="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition font-bold">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+                <div id="global-calendar-month-title" class="text-xs font-bold tracking-wider text-gray-700 uppercase font-mono">...</div>
+                <button onclick="shiftGlobalCalendarMonth(1)" class="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition font-bold">
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Days Grid Component Layout -->
+            <div class="grid grid-cols-7 gap-1 text-[10px] font-bold text-center text-gray-400 uppercase tracking-wider">
+                <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+            </div>
+            <div id="global-calendar-days-grid" class="grid grid-cols-7 gap-1.5 text-center font-medium text-xs pt-1"></div>
+        </section>
+
+        <!-- Right Column: Workspace Ledger Logs Views/Filters Area -->
+        <section class="lg:col-span-2 space-y-4">
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                
+                <!-- Filter bar inputs row with Multi-Select Action Controls -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3.5 py-2.5 rounded-xl shadow-2xs shrink-0 select-none">
+                        <input type="checkbox" id="global-select-all" onchange="toggleSelectAllRows(this)" class="w-4 h-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer">
+                        <label for="global-select-all" class="text-sm font-semibold text-gray-600 cursor-pointer">Select All</label>
+                    </div>
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-5 h-5 absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" id="filter-name" oninput="applyInterfaceFilters()" class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" placeholder="Search name, class, section details...">
+                    </div>
+                    <div>
+                        <select id="filter-node" onchange="applyInterfaceFilters()" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-gray-600 min-w-[200px]">
+                            <option value="">All Structural States</option>
+                            <option value="AWAITING_SIGNOUT">Awaiting Sign Out</option>
+                            <option value="OUT_AT_GATE">Currently Signed Out</option>
+                            <option value="COMPLETELY_RETURNED">Returned In-Time (Archived)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Ledger Dynamic Workspace Stream Container -->
+                <div id="leaves-stream-container" class="divide-y divide-gray-100 rounded-xl border border-gray-100 overflow-hidden bg-white">
+                    <div class="p-8 text-center text-gray-400 text-sm font-medium animate-pulse">Running live workspace synchronization...</div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- FLOATING MULTI-ACTION TOOLBAR -->
+    <div id="mass-action-bar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 max-w-2xl w-[90%] bg-slate-900 text-white shadow-2xl rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border border-slate-800 hidden opacity-0 transition-all duration-300 no-print">
+        <div class="flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wide">
+            <span class="flex items-center justify-center w-6 h-6 bg-indigo-600 text-white rounded-full font-bold text-xs animate-bounce" id="mass-selected-count">0</span>
+            <span>Leave Logs Selected</span>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button onclick="executeMassWardenProcess('SIGNOUT')" class="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer uppercase tracking-wider transition shadow-md">Mass Sign-Out</button>
+            <button onclick="executeMassWardenProcess('RETURN')" class="flex-1 sm:flex-initial bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer uppercase tracking-wider transition shadow-md">Mass Return</button>
+            <button onclick="clearSelectedRows()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-2.5 rounded-xl transition cursor-pointer">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Hidden Printing Sub-Canvas Module Engine Context -->
+    <div id="print-report-area" class="hidden bg-white text-black p-8 font-sans w-full mx-auto">
+        <div class="text-center border-b-4 border-slate-900 pb-4 mb-6">
+            <h2 class="text-xl font-black uppercase tracking-tight">CAMPUS LEAVE OUTPOST REPORT DESK</h2>
+            <p class="text-xs font-mono tracking-widest uppercase text-slate-600 mt-1">Central Registry Leave Records & Gatehouse Ledger Logs</p>
+            <p id="print-timestamp" class="text-[10px] text-slate-500 font-mono mt-1"></p>
+        </div>
+
+        <table class="w-full text-left text-[11px] border-collapse border border-slate-400 text-black">
+            <thead>
+                <tr class="bg-slate-100 font-mono font-bold uppercase border-b border-slate-400 text-black">
+                    <th class="p-2 border-r border-slate-400">ID</th>
+                    <th class="p-2 border-r border-slate-400">Student Names</th>
+                    <th class="p-2 border-r border-slate-400">Class Block</th>
+                    <th class="p-2 border-r border-slate-400">Reason</th>
+                    <th class="p-2 border-r border-slate-400">Gate Out Info</th>
+                    <th class="p-2 border-r border-slate-400">Gate In Info</th>
+                    <th class="p-2 border-slate-400">Warden Pass</th>
+                </tr>
+            </thead>
+            <tbody id="print-table-rows" class="divide-y divide-slate-300 text-black"></tbody>
+        </table>
+
+        <div class="mt-20 grid grid-cols-2 gap-12 text-center text-xs font-mono font-bold tracking-wider text-black">
+            <div>
+                <div class="border-b border-black w-48 mx-auto mb-2"></div>
+                <p class="uppercase text-slate-700">CAMPUS WARDEN SIGNATURE</p>
+            </div>
+            <div>
+                <div class="border-b border-black w-48 mx-auto mb-2"></div>
+                <p class="uppercase text-slate-700">HOUSE MASTER (HM) SIGNATURE</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active JavaScript Portal Scripts Engine Context -->
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const leavesStreamContainer = document.getElementById('leaves-stream-container');
+        const toastNotification = document.getElementById('toast-notification');
+        const toastText = document.getElementById('toast-text');
+        const massActionBar = document.getElementById('mass-action-bar');
+        const massSelectedCount = document.getElementById('mass-selected-count');
+
+        let MASTER_LEAVES_REPOS = [];
+        let CURRENT_FILTERED_LEAVES = [];
+        let SELECTED_ROW_IDS = new Set();
+        let currentGlobalYear = new Date().getFullYear();
+        let currentGlobalMonth = new Date().getMonth();
+        let selectedFilterTimestamp = null; 
+
+        let cachedWardenDbId = null;
+        let cachedWardenName = null;
+
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function displayToastNotification(msg, duration = 3500) {
+            toastText.innerText = msg;
+            toastNotification.classList.remove('translate-x-full');
+            setTimeout(() => { toastNotification.classList.add('translate-x-full'); }, duration);
+        }
+
+        async function verifyWardenSession() {
+            lucide.createIcons();
+            try {
+                const { data: { session } } = await _supabase.auth.getSession();
+                if (!session) { window.location.href = "login.html"; return; }
+
+                // Fetch dynamic metadata matching Wardens Database Configuration
+                const { data: wardenProfile, error: profileErr } = await _supabase
+                    .from('wardens')
+                    .select('id, full_name')
+                    .eq('auth_uid', session.user.id)
+                    .single();
+
+                if (profileErr || !wardenProfile) {
+                    document.getElementById('warden-display-log').innerText = `Secure Node System: (${session.user.email})`;
+                } else {
+                    cachedWardenDbId = wardenProfile.id;
+                    cachedWardenName = wardenProfile.full_name;
+                    document.getElementById('warden-display-log').innerText = `Gatehouse Warden: ${cachedWardenName} (UID: ${cachedWardenDbId})`;
+                }
+
+                document.getElementById('profile-sync-badge').innerText = "Warden Secure Connection";
+                document.getElementById('profile-sync-badge').className = "px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-md uppercase tracking-wider";
+
+                displayToastNotification("Warden Ledger Interface Synchronized.");
+                await fetchLeavesDatabase();
+                initializeRealtimeSync();
+            } catch (err) { console.error(err); }
+        }
+
+        function initializeRealtimeSync() {
+            _supabase
+                .channel('warden-realtime-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'student_leaves' }, () => {
+                    fetchLeavesDatabase();
+                })
+                .subscribe();
+        }
+
+        async function fetchLeavesDatabase() {
+            try {
+                const { data, error } = await _supabase.from('student_leaves').select('*').order('id', { ascending: false });
+                if (error) throw error;
+                MASTER_LEAVES_REPOS = data || [];
+
+                // Remove selections on leaves that no longer exist
+                const activeIds = new Set(MASTER_LEAVES_REPOS.map(l => l.id));
+                SELECTED_ROW_IDS = new Set([...SELECTED_ROW_IDS].filter(id => activeIds.has(id)));
+                syncMassActionBarUi();
+                
+                renderGlobalCalendar();
+                applyInterfaceFilters();
+            } catch (err) { console.error(err); }
+        }
+
+        /* ─── MASS SELECTION MECHANICS ─── */
+        function handleRowCheckboxSelection(event, id) {
+            event.stopPropagation();
+            if (event.target.checked) { SELECTED_ROW_IDS.add(id); } 
+            else { SELECTED_ROW_IDS.delete(id); }
+            syncMassActionBarUi();
+        }
+
+        function toggleSelectAllRows(masterCheckbox) {
+            if (masterCheckbox.checked) {
+                CURRENT_FILTERED_LEAVES.forEach(leave => SELECTED_ROW_IDS.add(leave.id));
+            } else {
+                CURRENT_FILTERED_LEAVES.forEach(leave => SELECTED_ROW_IDS.delete(leave.id));
+            }
+            syncMassActionBarUi();
+            renderLeavesLedger(CURRENT_FILTERED_LEAVES);
+        }
+
+        function clearSelectedRows() {
+            SELECTED_ROW_IDS.clear();
+            document.getElementById('global-select-all').checked = false;
+            syncMassActionBarUi();
+            renderLeavesLedger(CURRENT_FILTERED_LEAVES);
+        }
+
+        function syncMassActionBarUi() {
+            const count = SELECTED_ROW_IDS.size;
+            massSelectedCount.innerText = count;
+            if (count > 0) {
+                massActionBar.classList.remove('hidden');
+                setTimeout(() => { massActionBar.classList.remove('opacity-0'); }, 10);
+            } else {
+                massActionBar.classList.add('opacity-0');
+                document.getElementById('global-select-all').checked = false;
+                setTimeout(() => { massActionBar.classList.add('hidden'); }, 300);
+            }
+        }
+
+        async function executeMassWardenProcess(actionType) {
+            if (SELECTED_ROW_IDS.size === 0) return;
+            const textConfirm = actionType === 'SIGNOUT' ? "approve and check out" : "register campus return for";
+            if (!confirm(`Are you sure you want to simultaneously ${textConfirm} all ${SELECTED_ROW_IDS.size} selected students?`)) return;
+
+            const targets = Array.from(SELECTED_ROW_IDS);
+            const currentTimestamp = new Date().toISOString();
+            displayToastNotification(`Processing gate records...`, 5000);
+
+            const updatePromises = targets.map(id => {
+                const payload = {};
+                if (actionType === 'SIGNOUT') {
+                    payload.warden_approval = 'APPROVED';
+                    payload.gate_out_time = currentTimestamp;
+                    if (cachedWardenDbId && cachedWardenName) {
+                        payload.gate_out_warden_id = cachedWardenDbId;
+                        payload.gate_out_warden_name = cachedWardenName;
+                    }
+                } else {
+                    payload.gate_in_time = currentTimestamp;
+                    if (cachedWardenDbId && cachedWardenName) {
+                        payload.gate_in_warden_id = cachedWardenDbId;
+                        payload.gate_in_warden_name = cachedWardenName;
+                    }
+                }
+                return _supabase.from('student_leaves').update(payload).eq('id', id);
+            });
+
+            await Promise.all(updatePromises);
+            displayToastNotification(`Successfully updated ${targets.length} gate logs!`, 3500);
+            clearSelectedRows();
+            await fetchLeavesDatabase();
+        }
+
+        function renderGlobalCalendar() {
+            const daysGrid = document.getElementById('global-calendar-days-grid');
+            const titleEl = document.getElementById('global-calendar-month-title');
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            titleEl.innerText = `${monthNames[currentGlobalMonth]} ${currentGlobalYear}`;
+
+            const firstDayIndex = new Date(currentGlobalYear, currentGlobalMonth, 1).getDay();
+            const totalDaysInMonth = new Date(currentGlobalYear, currentGlobalMonth + 1, 0).getDate();
+
+            let gridHtml = '';
+            for (let i = 0; i < firstDayIndex; i++) {
+                gridHtml += `<div class="text-gray-200 py-2.5 flex items-center justify-center">•</div>`;
+            }
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dayTimestamp = new Date(currentGlobalYear, currentGlobalMonth, day).getTime();
+
+                const leavesOnThisDay = MASTER_LEAVES_REPOS.filter(leave => {
+                    const cleanStart = new Date(new Date(leave.from_date_time).setHours(0,0,0,0)).getTime();
+                    const cleanEnd = new Date(new Date(leave.to_date_time).setHours(23,59,59,999)).getTime();
+                    return dayTimestamp >= cleanStart && dayTimestamp <= cleanEnd;
+                }).length;
+
+                let customClasses = "bg-white text-gray-700 hover:bg-gray-50 border border-gray-100 rounded-xl";
+                let notificationPip = '';
+
+                if (leavesOnThisDay > 0) {
+                    customClasses = "bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 border border-indigo-100 rounded-xl";
+                    notificationPip = `<span class="absolute bottom-1 right-1.5 px-1 text-[8px] bg-indigo-600 text-white font-sans font-bold rounded-md scale-90">${leavesOnThisDay}</span>`;
+                }
+
+                if (selectedFilterTimestamp && selectedFilterTimestamp === dayTimestamp) {
+                    customClasses = "bg-indigo-600 text-white font-bold border border-indigo-600 scale-105 shadow-md z-10 rounded-xl";
+                }
+
+                gridHtml += `
+                <div onclick="selectGlobalCalendarDate(${currentGlobalYear}, ${currentGlobalMonth}, ${day})" class="py-2.5 relative cursor-pointer text-xs transition flex flex-col items-center justify-center min-h-[40px] select-none ${customClasses}">
+                    <span>${day}</span>
+                    ${notificationPip}
+                </div>`;
+            }
+            daysGrid.innerHTML = gridHtml;
+        }
+
+        function selectGlobalCalendarDate(y, m, d) {
+            selectedFilterTimestamp = new Date(y, m, d).getTime();
+            document.getElementById('active-date-badge').innerText = `${new Date(selectedFilterTimestamp).toLocaleDateString()}`;
+            renderGlobalCalendar();
+            applyInterfaceFilters();
+        }
+
+        function clearGlobalDateFilter() {
+            selectedFilterTimestamp = null;
+            document.getElementById('active-date-badge').innerText = "All Logs";
+            renderGlobalCalendar();
+            applyInterfaceFilters();
+        }
+
+        function shiftGlobalCalendarMonth(direction) {
+            currentGlobalMonth += direction;
+            if (currentGlobalMonth > 11) { currentGlobalMonth = 0; currentGlobalYear++; }
+            else if (currentGlobalMonth < 0) { currentGlobalMonth = 11; currentGlobalYear--; }
+            renderGlobalCalendar();
+        }
+
+        function renderLeavesLedger(list) {
+            if (list.length === 0) {
+                leavesStreamContainer.innerHTML = `<div class="p-8 text-center text-gray-400 text-sm font-medium">No entries match the current filters.</div>`;
+                return;
+            }
+
+            leavesStreamContainer.innerHTML = list.map(leave => {
+                const getStatusBadge = s => {
+                    const status = (s || 'Pending').toLowerCase();
+                    if (status === 'approved') return `<span class="px-2 py-0.5 font-bold rounded bg-emerald-100 text-emerald-700">A</span>`;
+                    if (status === 'rejected') return `<span class="px-2 py-0.5 font-bold rounded bg-rose-100 text-rose-700">R</span>`;
+                    return `<span class="px-2 py-0.5 font-bold rounded bg-amber-100 text-amber-700">P</span>`;
+                };
+                
+                const isSignedOut = !!leave.gate_out_time;
+                const isReturned = !!leave.gate_in_time;
+                const isChecked = SELECTED_ROW_IDS.has(leave.id) ? 'checked' : '';
+
+                let controlActionHtml = '';
+                if (!isSignedOut) {
+                    controlActionHtml = `
+                        <button onclick="executeSignOut(${leave.id})" class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5">
+                            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sign Out
+                        </button>
+                    `;
+                } else if (!isReturned) {
+                    controlActionHtml = `
+                        <button onclick="executeReturn(${leave.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5">
+                            <i data-lucide="home" class="w-3.5 h-3.5"></i> Register Return
+                        </button>
+                    `;
+                } else {
+                    controlActionHtml = `
+                        <span class="px-3 py-1.5 bg-gray-100 text-gray-400 font-medium text-xs rounded-xl border border-gray-200/60 flex items-center gap-1">
+                            <i data-lucide="lock" class="w-3 h-3"></i> Archived
+                        </span>
+                    `;
+                }
+
+                // Render dynamic text showing who approved the gate events
+                const gateOutLog = leave.gate_out_warden_name 
+                    ? `<span class="text-[10px] bg-amber-50 border border-amber-200 text-amber-800 font-semibold px-2 py-0.5 rounded-md">By: ${leave.gate_out_warden_name}</span>`
+                    : '';
+                const gateInLog = leave.gate_in_warden_name
+                    ? `<span class="text-[10px] bg-indigo-50 border border-indigo-200 text-indigo-800 font-semibold px-2 py-0.5 rounded-md">By: ${leave.gate_in_warden_name}</span>`
+                    : '';
+
+                return `
+                <div class="p-5 hover:bg-gray-50/50 transition flex flex-row justify-between items-start md:items-center gap-4 text-sm text-gray-600">
+                    
+                    <!-- Checkbox selection component wrapper -->
+                    <div onclick="event.stopPropagation();" class="pt-1.5 shrink-0">
+                        <input type="checkbox" ${isChecked} onchange="handleRowCheckboxSelection(event, ${leave.id})" class="w-4 h-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer">
+                    </div>
+
+                    <div class="space-y-1 flex-1 w-full">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-bold text-gray-900 text-base">${leave.student_names}</span>
+                            <span class="text-[10px] bg-gray-900 text-white px-1.5 py-0.5 font-mono font-medium rounded-md">#${leave.id}</span>
+                            <span class="text-xs bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 border border-gray-200 font-mono rounded-lg">Class: ${leave.student_class || '—'} [Sec: ${leave.section || '—'}]</span>
+                        </div>
+                        
+                        <div class="text-xs text-gray-700 pt-0.5">
+                            <span class="text-gray-400 font-semibold">Slot Timing:</span> 
+                            <span class="font-mono text-gray-600">${new Date(leave.from_date_time).toLocaleString()}</span> ➡️ <span class="font-mono text-gray-600">${new Date(leave.to_date_time).toLocaleString()}</span>
+                        </div>
+                        
+                        <div class="text-xs text-gray-500"><span class="text-gray-400 font-semibold">Reason:</span> "${leave.reason}"</div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs font-mono border-t border-dashed border-gray-100 mt-1.5">
+                            <div class="text-amber-700 flex flex-wrap items-center gap-1.5">
+                                🚪 <strong>Out:</strong> ${leave.gate_out_time ? new Date(leave.gate_out_time).toLocaleString() : '<span class="text-gray-400 italic">Not Checked Out</span>'}
+                                ${gateOutLog}
+                            </div>
+                            <div class="text-indigo-700 flex flex-wrap items-center gap-1.5">
+                                🏠 <strong>In:</strong> ${leave.gate_in_time ? new Date(leave.gate_in_time).toLocaleString() : '<span class="text-gray-400 italic">Not Checked In</span>'}
+                                ${gateInLog}
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-1.5 pt-2">
+                            <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mr-1">Approvals (P / F / A / W):</div>
+                            ${getStatusBadge(leave.parent_approval)}
+                            ${getStatusBadge(leave.faculty_approval)}
+                            ${getStatusBadge(leave.admin_approval)}
+                            ${getStatusBadge(leave.warden_approval)}
+                        </div>
+                    </div>
+                    
+                    <div class="w-full md:w-auto flex justify-end shrink-0 md:pt-0">
+                        ${controlActionHtml}
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function applyInterfaceFilters() {
+            const name = document.getElementById('filter-name').value.toLowerCase().trim();
+            const filterState = document.getElementById('filter-node').value;
+
+            CURRENT_FILTERED_LEAVES = MASTER_LEAVES_REPOS.filter(row => {
+                const matchName = row.student_names.toLowerCase().includes(name) || 
+                                  String(row.student_class || '').toLowerCase().includes(name) || 
+                                  String(row.section || '').toLowerCase().includes(name);
+                
+                let matchState = true;
+                if (filterState === 'AWAITING_SIGNOUT') matchState = (!row.gate_out_time);
+                else if (filterState === 'OUT_AT_GATE') matchState = (row.gate_out_time && !row.gate_in_time);
+                else if (filterState === 'COMPLETELY_RETURNED') matchState = (row.gate_out_time && row.gate_in_time);
+
+                let matchDate = true;
+                if (selectedFilterTimestamp) {
+                    const startRange = new Date(new Date(row.from_date_time).setHours(0,0,0,0)).getTime();
+                    const endRange = new Date(new Date(row.to_date_time).setHours(23,59,59,999)).getTime();
+                    matchDate = selectedFilterTimestamp >= startRange && selectedFilterTimestamp <= endRange;
+                }
+
+                return matchName && matchState && matchDate;
+            });
+
+            const allChecked = CURRENT_FILTERED_LEAVES.length > 0 && CURRENT_FILTERED_LEAVES.every(l => SELECTED_ROW_IDS.has(l.id));
+            document.getElementById('global-select-all').checked = allChecked;
+
+            renderLeavesLedger(CURRENT_FILTERED_LEAVES);
+        }
+
+        async function executeSignOut(id) {
+            if(!confirm("Sign out this student? This approves the log status and captures the out-timestamp.")) return;
+            const currentTimestamp = new Date().toISOString();
+            
+            const payload = { warden_approval: 'APPROVED', gate_out_time: currentTimestamp };
+            if (cachedWardenDbId && cachedWardenName) {
+                payload.gate_out_warden_id = cachedWardenDbId;
+                payload.gate_out_warden_name = cachedWardenName;
+            }
+
+            const { error } = await _supabase
+                .from('student_leaves')
+                .update(payload)
+                .eq('id', id);
+
+            if(error) return alert(error.message);
+            displayToastNotification(`Student #${id} signed OUT successfully.`);
+            fetchLeavesDatabase();
+        }
+
+        async function executeReturn(id) {
+            if(!confirm("Confirm student return to campus?")) return;
+            const currentTimestamp = new Date().toISOString();
+            
+            const payload = { gate_in_time: currentTimestamp };
+            if (cachedWardenDbId && cachedWardenName) {
+                payload.gate_in_warden_id = cachedWardenDbId;
+                payload.gate_in_warden_name = cachedWardenName;
+            }
+
+            const { error } = await _supabase
+                .from('student_leaves')
+                .update(payload)
+                .eq('id', id);
+
+            if(error) return alert(error.message);
+            displayToastNotification(`Student #${id} logged safely IN.`);
+            fetchLeavesDatabase();
+        }
+
+        async function triggerSystemLogout() {
+            await _supabase.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        function triggerRangePrintReport() {
+            const fromInput = document.getElementById('print-from-date').value;
+            const toInput = document.getElementById('print-to-date').value;
+
+            if (!fromInput || !toInput) {
+                alert("⚠️ Please specify both From and To dates to compile the download report.");
+                return;
+            }
+
+            const printStartTimestamp = new Date(fromInput + "T00:00:00").getTime();
+            const printEndTimestamp = new Date(toInput + "T23:59:59").getTime();
+
+            const rangeFilteredRecords = MASTER_LEAVES_REPOS.filter(row => {
+                const recordStart = new Date(row.from_date_time).getTime();
+                return recordStart >= printStartTimestamp && recordStart <= printEndTimestamp;
+            });
+
+            const tbody = document.getElementById('print-table-rows');
+            document.getElementById('print-timestamp').innerText = `Report Date: ${new Date().toLocaleString()} | Context Range: ${fromInput} to ${toInput}`;
+
+            if (rangeFilteredRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center font-mono text-xs text-slate-500 font-bold">No records found matching this date range.</td></tr>`;
+            } else {
+                tbody.innerHTML = rangeFilteredRecords.map(row => `
+                    <tr class="font-medium text-[10px] text-black">
+                        <td class="p-2 border-r border-b border-slate-400 font-mono">#${row.id}</td>
+                        <td class="p-2 border-r border-b border-slate-400 font-bold">${row.student_names}</td>
+                        <td class="p-2 border-r border-b border-slate-400 font-mono">${row.student_class || '—'}-${row.section || '—'}</td>
+                        <td class="p-2 border-r border-b border-slate-400">${row.reason}</td>
+                        <td class="p-2 border-r border-b border-slate-400 font-mono">
+                            ${row.gate_out_time ? new Date(row.gate_out_time).toLocaleString() : '—'} 
+                            ${row.gate_out_warden_name ? `<br><span class="text-[9px] text-gray-500">(${row.gate_out_warden_name})</span>` : ''}
+                        </td>
+                        <td class="p-2 border-r border-b border-slate-400 font-mono">
+                            ${row.gate_in_time ? new Date(row.gate_in_time).toLocaleString() : '—'}
+                            ${row.gate_in_warden_name ? `<br><span class="text-[9px] text-gray-500">(${row.gate_in_warden_name})</span>` : ''}
+                        </td>
+                        <td class="p-2 border-b border-slate-400 font-mono font-bold">${row.warden_approval}</td>
+                    </tr>
+                `).join('');
+            }
+
+            setTimeout(() => { window.print(); }, 100);
+        }
+
+        window.onload = verifyWardenSession;
+    </script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Preventive Back-Button Trap Script -->
+    <script>
+        // Push duplicate history state to disable Chrome back arrow from returning to secure pages
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.pushState(null, null, location.href);
+        };
+    </script>
+
+    <!-- ========================================================= -->
+    <!-- KKDGMS LOADER REDIRECTOR                                   -->
+    <!-- ========================================================= -->
+    <script>
+        (function() {
+            const currentUrl = new URL(window.location.href);
+            const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+                const targetUrl = encodeURIComponent(window.location.href);
+                window.location.replace(`redirect.html?target=${targetUrl}`);
+            }
+        })();
+    </script>
+    <!-- ========================================================= -->
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;600;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-image: url('kanyakumari.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            overflow: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px) saturate(160%);
+            -webkit-backdrop-filter: blur(30px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .input-field {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-field:focus {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: #818cf8;
+            box-shadow: 0 0 20px rgba(129, 140, 248, 0.2);
+            outline: none;
+        }
+
+        #toast-container { perspective: 1000px; }
+        .toast-animate { animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes slideIn {
+            from { transform: translateX(100%) rotateY(-30deg); opacity: 0; }
+            to { transform: translateX(0) rotateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 w-80"></div>
+
+    <main class="glass-panel w-full max-w-[440px] rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 blur-[80px] rounded-full"></div>
+
+        <div class="relative z-10 text-center">
+            <div class="mb-8">
+                <div class="inline-flex p-4 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 mb-4">
+                    <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.312-2.84.873-4.085M6.757 11.643l.053-.09"></path>
+                    </svg>
+                </div>
+                <h1 class="text-white text-3xl font-extrabold tracking-tight italic">KKDGMS</h1>
+                <p class="text-indigo-200/50 text-[10px] uppercase font-bold tracking-[0.4em] mt-1">Login Portal</p>
+            </div>
+
+            <form id="loginForm" class="space-y-5">
+                <input type="email" id="email" required class="input-field w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 text-sm" placeholder="Email Address">
+                <input type="password" id="password" required class="input-field w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 text-sm" placeholder="Password">
+                <button type="submit" id="submitBtn" class="w-full py-4 bg-white text-indigo-950 rounded-2xl font-bold text-sm hover:bg-indigo-400 hover:text-white transition-all transform active:scale-95 shadow-xl">
+                    SIGN IN TO SYSTEM
+                </button>
+            </form>
+            <p class="mt-8 text-white/30 text-[10px] font-medium tracking-widest uppercase">Encryption Active: 2025-2026</p>
+        </div>
+    </main>
+
+    <!-- FIREBASE MESSAGING SDK MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSyMx_ozuq0IBS0J6b22vx45HOyTvJfJw",
+            authDomain: "kkdgmschool.firebaseapp.com",
+            projectId: "kkdgmschool",
+            storageBucket: "kkdgmschool.firebasestorage.app",
+            messagingSenderId: "1091598835673",
+            appId: "1:1091598835673:web:0b613f8750669ac0e403c8",
+            measurementId: "G-ZHSCYNGK23"
+        };
+
+        const VAPID_KEY = "BFBXhwctSdcN-RWHdI__kdX98tVjVwSf0333n3131x7MteABahcUTq4UJHD4zm1id27XjS9OMPX1dPOF6SXTeuM";
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const messaging = getMessaging(firebaseApp);
+
+        const SUPABASE_URL = 'https://kymsjrxjfmloibcbages.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA';
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Explicit Logout Cleanup on Login Page Load
+        (async function ensureLoggedOut() {
+            try {
+                await _supabase.auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (err) {
+                console.warn("Logout cleanup status:", err);
+            }
+        })();
+
+        // Handle BFCache (Chrome Back/Forward Cache)
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+
+        // UI Toast Notification helper
+        function notify(message, type = 'yellow') {
+            const container = document.getElementById('toast-container');
+            const colors = {
+                green: 'bg-emerald-500/20 border-emerald-500 text-emerald-400',
+                red: 'bg-rose-500/20 border-rose-500 text-rose-400',
+                yellow: 'bg-amber-500/20 border-amber-500 text-amber-400'
+            };
+            const toast = document.createElement('div');
+            toast.className = `glass-panel toast-animate px-6 py-4 rounded-2xl border-l-4 ${colors[type]} flex items-center gap-3 shadow-2xl`;
+            toast.innerHTML = `<div class="w-2 h-2 rounded-full animate-pulse ${type === 'green' ? 'bg-emerald-400' : type === 'red' ? 'bg-rose-400' : 'bg-amber-400'}"></div><span class="text-xs font-bold uppercase tracking-wider">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { 
+                toast.style.opacity = '0'; 
+                setTimeout(() => toast.remove(), 500); 
+            }, 4000);
+        }
+
+        // Accurate Mobile Device Detector
+        function isMobileDevice() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+            const isTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            return mobileRegex.test(userAgent) || (window.innerWidth <= 768 && isTouchScreen);
+        }
+
+        // ERROR-FREE MOBILE FCM TOKEN COLLECTION
+        async function collectFcmToken(email, targetTable) {
+            try {
+                if (!isMobileDevice()) {
+                    console.log("Desktop device detected. Skipping FCM token.");
+                    notify("Desktop login — FCM skipped", "yellow");
+                    return;
+                }
+
+                if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+                    console.warn("Mobile browser does not support Service Workers or Push API.");
+                    notify("Browser lacks push notification support", "yellow");
+                    return;
+                }
+
+                let permission = Notification.permission;
+                if (permission === 'denied') {
+                    console.warn("Notification permission permanently denied by mobile user.");
+                    notify("Notifications blocked in phone settings", "yellow");
+                    return;
+                }
+
+                if (permission !== 'granted') {
+                    notify("Requesting Notification Permission...", "yellow");
+                    permission = await Notification.requestPermission();
+                }
+
+                if (permission !== 'granted') {
+                    notify("Notification permission declined", "yellow");
+                    return;
+                }
+
+                let swRegistration;
+                try {
+                    swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                    await navigator.serviceWorker.ready;
+                } catch (swErr) {
+                    console.error("Service worker registration error:", swErr);
+                    notify("Failed to initialize Service Worker", "red");
+                    return;
+                }
+
+                notify("Syncing Mobile FCM Token...", "yellow");
+                const token = await getToken(messaging, { 
+                    vapidKey: VAPID_KEY,
+                    serviceWorkerRegistration: swRegistration 
+                });
+
+                if (token) {
+                    const currentTime = new Date().toISOString();
+                    
+                    let { error } = await _supabase
+                        .from(targetTable)
+                        .update({ 
+                            fcm_token: token,
+                            fcm_updated_at: currentTime
+                        })
+                        .eq('email', email);
+
+                    if (error && error.message.includes('fcm_updated_at')) {
+                        const fallbackResult = await _supabase
+                            .from(targetTable)
+                            .update({ 
+                                fcm_token: token,
+                                updated_at: currentTime
+                            })
+                            .eq('email', email);
+                        error = fallbackResult.error;
+                    }
+
+                    if (error && error.message.includes('updated_at')) {
+                        const tokenOnlyResult = await _supabase
+                            .from(targetTable)
+                            .update({ fcm_token: token })
+                            .eq('email', email);
+                        error = tokenOnlyResult.error;
+                    }
+
+                    if (error) {
+                        console.error("Database Token Save Error:", error.message);
+                        notify("Database error saving FCM token", "red");
+                    } else {
+                        console.log(`FCM token successfully synced for ${email} in '${targetTable}'`);
+                        notify("Mobile Notification Token Synced!", "green");
+                    }
+                } else {
+                    notify("Unable to retrieve FCM registration token", "red");
+                }
+            } catch (fcmErr) {
+                console.error("FCM process exception:", fcmErr);
+                notify(`FCM Error: ${fcmErr.message || fcmErr}`, "red");
+            }
+        }
+
+        // LOGIN FORM SUBMISSION
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-pulse">VERIFYING...</span>`;
+            notify("Processing Request...", "yellow");
+
+            try {
+                const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
+                if (authError) throw authError;
+
+                notify("Credentials Verified. Finding Role...", "yellow");
+
+                const [studentCheck, adminCheck, facultyCheck, wardenCheck] = await Promise.all([
+                    _supabase.from('students').select('email').eq('email', email).maybeSingle(),
+                    _supabase.from('admins').select('email').eq('email', email).maybeSingle(),
+                    _supabase.from('faculty_details').select('email').eq('email', email).maybeSingle(),
+                    _supabase.from('wardens').select('email').eq('email', email).maybeSingle()
+                ]);
+
+                let targetTable = null;
+                let redirectUrl = null;
+
+                if (studentCheck.data) {
+                    targetTable = 'students';
+                    redirectUrl = 's_dashboard.html';
+                } else if (adminCheck.data) {
+                    targetTable = 'admins';
+                    redirectUrl = 'a_dashboard.html';
+                } else if (facultyCheck.data) {
+                    targetTable = 'faculty_details';
+                    redirectUrl = 'f_dashboard.html';
+                } else if (wardenCheck.data) {
+                    targetTable = 'wardens';
+                    redirectUrl = 'w_dashboard.html';
+                }
+
+                if (!targetTable) {
+                    throw new Error("Account authorized, but user role was not found in database.");
+                }
+
+                await collectFcmToken(email, targetTable);
+
+                // Use location.replace so login is replaced in browser history stack
+                setTimeout(() => window.location.replace(redirectUrl), 800);
+
+            } catch (err) {
+                notify(err.message, "red");
+                btn.disabled = false;
+                btn.innerHTML = "SIGN IN TO SYSTEM";
+            }
+        });
+    </script>
+</body>
+</html>

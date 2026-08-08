@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Card | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* High-Performance Print Stylesheet */
+        @media print {
+            /* 1. Hide the entire main dashboard interface cleanly */
+            #main-dashboard-interface {
+                display: none !important;
+            }
+
+            /* 2. Unbind the card from its hidden parents and force it to show */
+            #printable-pass-card {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 320px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: 1px solid #000000 !important;
+                box-shadow: none !important;
+                
+                /* Force browser graphic engines to render background colors and profile photos */
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-scheme: light !important;
+            }
+
+            /* 3. Ensure sub-flexboxes and grids inside the card stay structured */
+            #printable-pass-card .flex { display: flex !important; }
+            #printable-pass-card .grid { display: grid !important; }
+
+            /* 4. Boost image resolution contrast */
+            #pass-student-img {
+                image-rendering: -webkit-optimize-contrast !important;
+                image-rendering: crisp-edges !important;
+            }
+
+            /* 5. Clear out default browser margin headers/footers */
+            @page {
+                size: auto;
+                margin: 0mm !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased relative">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 w-80 pointer-events-none"></div>
+
+    <div id="main-dashboard-interface" class="min-h-screen p-6 max-w-6xl mx-auto space-y-6">
+        
+        <header class="bg-white border border-gray-200 rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <span>🪪</span> Parent Gate Pass & Visitor Desk
+                </h1>
+                <p class="text-xs text-gray-500 mt-1">Generate verified visitor badges linked directly to verified database student records.</p>
+            </div>
+            <button onclick="syncStudentDirectory()" class="text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2 rounded-md transition cursor-pointer">
+                🔄 Sync Student Records
+            </button>
+            <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <a href="a_dashboard.html" class="px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 transition flex items-center gap-1">
+                    <span>‹</span> Back to Dashboard
+                </a>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-xs lg:col-span-4 space-y-4">
+                <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">
+                    1. Select Verified Student
+                </h2>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Search/Select Student *</label>
+                    <select id="student-selector" onchange="processSelectedStudent(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-hidden focus:border-indigo-500">
+                        <option value="">Querying student directory...</option>
+                    </select>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-lg border border-gray-100 space-y-3">
+                    <h3 class="text-xs font-bold text-slate-700 uppercase">2. Select Active Visitor</h3>
+                    <div>
+                        <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                            <input type="radio" name="visitor-type" value="Father" checked onchange="toggleVisitorType(this.value)" class="text-indigo-600">
+                            <span>Father's Credentials</span>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                            <input type="radio" name="visitor-type" value="Mother" onchange="toggleVisitorType(this.value)" class="text-indigo-600">
+                            <span>Mother's Credentials</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button onclick="window.print()" id="print-action-btn" disabled class="w-full bg-slate-400 text-white font-bold py-2 rounded-md text-sm transition shadow-2xs cursor-not-allowed flex items-center justify-center gap-2">
+                    🖨️ Print / Save Pass
+                </button>
+            </div>
+
+            <div class="lg:col-span-8 flex flex-col items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl p-8 min-h-[450px]">
+                
+                <div id="pass-placeholder" class="text-center space-y-2 max-w-xs">
+                    <div class="text-4xl text-gray-300">🎫</div>
+                    <h3 class="text-sm font-bold text-gray-700">No Target Active</h3>
+                    <p class="text-xs text-gray-400">Select a student row tracking item to populate a verified printable token.</p>
+                </div>
+
+                <div id="pass-placement-node" class="w-full flex justify-center"></div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="printable-pass-card" class="hidden bg-white w-full max-w-[340px] border border-gray-300 rounded-2xl shadow-md overflow-hidden font-sans">
+        <div class="bg-slate-900 text-white p-4 text-center border-b-4 border-emerald-500">
+            <div class="text-xs uppercase font-extrabold tracking-widest text-emerald-400">KKDGMS</div>
+            <div class="text-base font-bold tracking-tight mt-0.5">PARENT VISITOR CARD</div>
+        </div>
+
+        <div class="p-5 flex flex-col items-center text-center space-y-4">
+            <div class="relative">
+                <img id="pass-student-img" src="" alt="Student Profile" class="w-24 h-24 rounded-full object-cover border-2 border-slate-200 shadow-sm">
+                <span class="absolute bottom-0 right-0 bg-emerald-500 border-2 border-white w-4 h-4 rounded-full"></span>
+            </div>
+
+            <div class="space-y-1 w-full">
+                <div class="text-xs font-medium text-gray-400 uppercase tracking-wider">Authorized Visitor</div>
+                <div id="pass-visitor-name" class="text-lg font-black text-slate-900 tracking-tight uppercase">—</div>
+                <div id="pass-visitor-relation" class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block border border-emerald-100">Parent</div>
+            </div>
+
+            <hr class="w-full border-gray-100">
+
+            <div class="grid grid-cols-2 gap-x-2 gap-y-3 text-left w-full bg-slate-50 p-3 rounded-xl border border-gray-100 pb-4">
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-gray-400">Student Name</div>
+                    <div id="pass-student-name" class="text-lg font-black text-slate-900 tracking-tight uppercase">—</div>
+                </div>
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-gray-400">Class & Section</div>
+                    <div id="pass-student-meta" class="text-xs font-bold text-gray-800 truncate">—</div>
+                </div>
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-gray-400">System ID</div>
+                    <div id="pass-student-uid" class="text-lg font-black text-slate-900 tracking-tight uppercase">—</div>
+                </div>
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-gray-400">Academic Year</div>
+                    <div id="pass-student-year" class="text-xs font-mono font-bold text-gray-600 truncate">—</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 border-t border-gray-100 px-4 py-2 text-center text-[10px] text-gray-400 font-medium">
+            Valid for designated academic period only. Non-transferable.
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let LOGGED_STUDENTS_ARRAY = [];
+        let ACTIVE_STUDENT_OBJECT = null;
+        let ACTIVE_VISITOR_RELATION = 'Father';
+
+        const studentSelector = document.getElementById('student-selector');
+        const passCard = document.getElementById('printable-pass-card');
+        const passPlacementNode = document.getElementById('pass-placement-node');
+        const passPlaceholder = document.getElementById('pass-placeholder');
+        const printBtn = document.getElementById('print-action-btn');
+        const toastContainer = document.getElementById('toast-container');
+
+        function triggerToast(message, variant = 'success') {
+            const toast = document.createElement('div');
+            toast.className = "p-4 rounded-lg shadow-xl text-white font-medium text-sm transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-start gap-3 border";
+            if (variant === 'success') toast.className += " bg-emerald-600 border-emerald-500";
+            else if (variant === 'warning') toast.className += " bg-amber-500 border-amber-400 text-amber-950";
+            else if (variant === 'error') toast.className += " bg-rose-600 border-rose-500";
+            
+            toast.innerHTML = `<span>⚡</span> <div class="flex-1">${message}</div>`;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        async function syncStudentDirectory() {
+            studentSelector.innerHTML = `<option value="">Reading data nodes...</option>`;
+            const { data, error } = await _supabase.from('students').select('*').order('full_name', { ascending: true });
+
+            if (error) {
+                triggerToast(`Directory Sync Aborted: ${error.message}`, 'error');
+                return;
+            }
+
+            LOGGED_STUDENTS_ARRAY = data;
+            studentSelector.innerHTML = `<option value="">-- Choose Existing Student --</option>`;
+            data.forEach(student => {
+                const opt = document.createElement('option');
+                opt.value = student.id;
+                opt.innerText = `${escapeHtml(student.full_name)} (${escapeHtml(student.student_class || 'N/A')}) [ID: ${escapeHtml(student.user_id || '—')}]`;
+                studentSelector.appendChild(opt);
+            });
+            triggerToast(`Cached ${data.length} student rows.`, 'success');
+        }
+
+        function processSelectedStudent(id) {
+            if (!id) {
+                passPlaceholder.classList.remove('hidden');
+                passCard.classList.add('hidden');
+                // Remove from the preview placement node layout
+                passPlacementNode.innerHTML = '';
+                printBtn.disabled = true;
+                printBtn.className = "w-full bg-slate-400 text-white font-bold py-2 rounded-md text-sm transition cursor-not-allowed flex items-center justify-center gap-2";
+                return;
+            }
+
+            ACTIVE_STUDENT_OBJECT = LOGGED_STUDENTS_ARRAY.find(s => String(s.id) === String(id));
+            if (ACTIVE_STUDENT_OBJECT) {
+                passPlaceholder.classList.add('hidden');
+                
+                // Move element dynamically to display on-screen interface container wrapper safely
+                passPlacementNode.appendChild(passCard);
+                passCard.classList.remove('hidden');
+                
+                printBtn.disabled = false;
+                printBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-md text-sm transition shadow-2xs cursor-pointer flex items-center justify-center gap-2";
+                
+                compilePassCardDetails();
+            }
+        }
+
+        function toggleVisitorType(type) {
+            ACTIVE_VISITOR_RELATION = type;
+            if (ACTIVE_STUDENT_OBJECT) compilePassCardDetails();
+        }
+
+        function compilePassCardDetails() {
+            if(!ACTIVE_STUDENT_OBJECT) return;
+
+            let visitorName = ACTIVE_VISITOR_RELATION === 'Father' ? ACTIVE_STUDENT_OBJECT.father_name : ACTIVE_STUDENT_OBJECT.mother_name;
+            visitorName = visitorName || `${ACTIVE_VISITOR_RELATION} Name Omitted`;
+
+            document.getElementById('pass-student-img').src = ACTIVE_STUDENT_OBJECT.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+            document.getElementById('pass-visitor-name').innerText = visitorName;
+            document.getElementById('pass-visitor-relation').innerText = `${ACTIVE_VISITOR_RELATION} of Student`;
+            document.getElementById('pass-student-name').innerText = ACTIVE_STUDENT_OBJECT.full_name;
+            document.getElementById('pass-student-meta').innerText = `${ACTIVE_STUDENT_OBJECT.student_class || '—'} / Sec: ${ACTIVE_STUDENT_OBJECT.section || '—'}`;
+            document.getElementById('pass-student-uid').innerText = ACTIVE_STUDENT_OBJECT.user_id || '—';
+            document.getElementById('pass-student-year').innerText = ACTIVE_STUDENT_OBJECT.academic_year || '2026';
+
+            triggerToast(`Details updated for ${ACTIVE_VISITOR_RELATION}.`, 'success');
+        }
+
+        // Before sending to print pipeline, move the card directly under <body> to bypass any hidden parents
+        window.onbeforeprint = () => {
+            if (ACTIVE_STUDENT_OBJECT) {
+                document.body.appendChild(passCard);
+            }
+        };
+
+        // Put it back into the preview box after printing completes
+        window.onafterprint = () => {
+            if (ACTIVE_STUDENT_OBJECT) {
+                passPlacementNode.appendChild(passCard);
+            }
+        };
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        window.onload = () => { syncStudentDirectory(); };
+    </script>
+</body>
+</html>

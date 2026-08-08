@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QB | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.0/dist/umd/supabase.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        portal: {
+                            bg: '#f4f7fe',
+                            accent: '#6366f1',
+                            accentHover: '#4f46e5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body, div, p, button { transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s; }
+        .collapsible-content { transition: max-height 0.25s ease-out, opacity 0.2s ease-out; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+    </style>
+</head>
+<body class="bg-portal-bg dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen p-4 md:p-8 flex flex-col items-center space-y-6">
+
+    <!-- HEADER & THEME TOGGLE -->
+    <div class="w-full max-w-4xl flex justify-between items-center px-2">
+        <div class="flex items-center space-x-3">
+            <span class="bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">Student Portal</span>
+            <h1 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Study Repository</h1>
+        </div>
+        <div class="flex items-center space-x-2">
+            <!-- RETURN TO CORE DASHBOARD BUTTON -->
+            <a href="s_dashboard.html" class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-1 shadow-xs">
+                <span>⬅</span> Dashboard
+            </a>
+            <button type="button" onclick="toggleThemeSystem()" class="bg-white dark:bg-slate-900 text-slate-600 dark:text-indigo-400 border border-slate-200 dark:border-white/10 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs transition-all duration-200">
+                <i id="theme-toggle-icon" data-lucide="sun" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- SEARCH AND FILTER INTERFACE -->
+    <div class="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div class="flex items-center space-x-3 text-slate-500 dark:text-slate-400 w-full sm:w-auto">
+            <i data-lucide="book-open" class="w-5 h-5 text-indigo-500 shrink-0"></i>
+            <span class="text-sm font-medium">Tap subjects or questions below to expand study details.</span>
+        </div>
+        <input type="text" id="student-filter" oninput="loadStudentData()" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-white w-full sm:w-72 shadow-xs" placeholder="Search topics or questions...">
+    </div>
+
+    <!-- MAIN STUDENT DIRECTORY CANVAS -->
+    <div id="portal-container" class="w-full max-w-4xl space-y-4">
+        <div class="text-center py-12 text-slate-400 font-medium text-sm tracking-wide bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl shadow-sm">Loading course modules...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            updateThemeIconUI();
+            verifyStudentAuthSession();
+        });
+
+        // Exact Match Session Security Logic Block
+        async function verifyStudentAuthSession() {
+            try {
+                const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
+                if (sessionErr) throw sessionErr;
+
+                if (!session) {
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                loadStudentData();
+            } catch (err) {
+                console.error(err);
+                window.location.href = "login.html";
+            }
+        }
+
+        function toggleThemeSystem() {
+            document.documentElement.classList.toggle('dark');
+            updateThemeIconUI();
+        }
+
+        function updateThemeIconUI() {
+            const iconEl = document.getElementById('theme-toggle-icon');
+            iconEl.setAttribute('data-lucide', document.documentElement.classList.contains('dark') ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
+
+        // Structural UI toggle engines for touch interactivity
+        function toggleSubjectView(subjectId) {
+            const el = document.getElementById(`sub-content-${subjectId}`);
+            const icon = document.getElementById(`sub-icon-${subjectId}`);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.style.transform = "rotate(90deg)";
+            } else {
+                el.classList.add('hidden');
+                icon.style.transform = "rotate(0deg)";
+            }
+        }
+
+        function toggleAnswerView(questionId) {
+            const el = document.getElementById(`ans-content-${questionId}`);
+            const indicator = document.getElementById(`ans-indicator-${questionId}`);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                indicator.innerText = "Hide Details";
+                indicator.className = "text-xs font-bold text-amber-500 uppercase tracking-wider shrink-0 select-none";
+            } else {
+                el.classList.add('hidden');
+                indicator.innerText = "View Details";
+                indicator.className = "text-xs font-bold text-indigo-500 uppercase tracking-wider shrink-0 select-none";
+            }
+        }
+
+        async function loadStudentData() {
+            const container = document.getElementById('portal-container');
+            const searchVal = document.getElementById('student-filter').value.trim();
+            
+            // Querying the question_bank table and mapping to correct column names
+            let query = supabase.from('question_bank').select('*').order('id', { ascending: false });
+            
+            if (searchVal) {
+                query = query.or(`subject.ilike.%${searchVal}%,chapter.ilike.%${searchVal}%,question_title.ilike.%${searchVal}%`);
+            }
+            
+            const { data, error } = await query;
+            if (error) {
+                console.error('Database Query Error:', error);
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-12 text-center text-rose-500 font-medium text-sm tracking-wide shadow-sm">
+                        Failed to fetch data from question_bank table.
+                    </div>`;
+                return;
+            }
+
+            if (!data || !data.length) {
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-12 text-center text-slate-400 font-medium text-sm tracking-wide shadow-sm">
+                        No published materials match your request.
+                    </div>`;
+                return;
+            }
+
+            // Organize relational structure according to question_bank columns: subject & chapter
+            const libraryMap = data.reduce((acc, current) => {
+                const subject = current.subject || 'General Subject';
+                const chapter = current.chapter || current.unit || 'General Module';
+
+                if (!acc[subject]) acc[subject] = {};
+                if (!acc[subject][chapter]) acc[subject][chapter] = [];
+                acc[subject][chapter].push(current);
+                return acc;
+            }, {});
+
+            renderStudentInterface(libraryMap, container);
+        }
+
+        function renderStudentInterface(libraryMap, container) {
+            let html = "";
+            let subCounter = 0;
+
+            for (const [subjectName, topicGroups] of Object.entries(libraryMap)) {
+                subCounter++;
+                const totalQuestions = Object.values(topicGroups).flat().length;
+
+                html += `
+                <!-- SUBJECT HEAD ELEMENT -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl shadow-sm overflow-hidden">
+                    <button type="button" onclick="toggleSubjectView(${subCounter})" class="w-full flex items-center justify-between p-5 bg-slate-50/50 dark:bg-slate-950/20 active:bg-slate-100 dark:active:bg-slate-950/60 transition-colors text-left focus:outline-none">
+                        <div class="flex items-center space-x-3">
+                            <i id="sub-icon-${subCounter}" data-lucide="chevron-right" class="w-5 h-5 text-slate-400 transition-transform duration-150"></i>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-800 dark:text-white tracking-tight">${subjectName}</h2>
+                                <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">${totalQuestions} Study Module${totalQuestions > 1 ? 's' : ''} available</span>
+                            </div>
+                        </div>
+                        <span class="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-bold px-3 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 tracking-wide">Open Module</span>
+                    </button>
+
+                    <!-- TOPIC CONTAINER REGISTER -->
+                    <div id="sub-content-${subCounter}" class="hidden p-5 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-white/5 space-y-5">`;
+
+                for (const [topicName, questionArray] of Object.entries(topicGroups)) {
+                    html += `
+                        <div class="space-y-3">
+                            <h3 class="text-xs font-bold uppercase text-indigo-500 tracking-wider flex items-center px-1">
+                                <i data-lucide="bookmark" class="w-4 h-4 mr-1.5 text-indigo-500"></i> ${topicName}
+                            </h3>
+                            <div class="space-y-3">`;
+
+                    questionArray.forEach(q => {
+                        const marks = q.marks !== null && q.marks !== undefined ? `${q.marks}M` : '—';
+                        const difficulty = q.difficulty || 'Standard';
+                        const questionText = q.question_title || q.question || 'No question prompt available.';
+                        const classLevel = q.student_class || q.class || '';
+                        const author = q.created_by ? `Author: ${q.created_by}` : '';
+
+                        html += `
+                            <!-- TOUCHABLE QUESTION BLOCK -->
+                            <div onclick="toggleAnswerView(${q.id})" class="cursor-pointer group bg-slate-50/60 dark:bg-slate-950/30 hover:bg-slate-100/50 dark:hover:bg-slate-900/40 border border-slate-100 dark:border-white/5 rounded-2xl p-4 flex flex-col space-y-2.5 transition-all">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="space-y-2 w-full">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 bg-white dark:bg-slate-900">${marks}</span>
+                                            <span class="text-[10px] font-sans uppercase font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 bg-white dark:bg-slate-900 tracking-wider">${difficulty}</span>
+                                            ${classLevel ? `<span class="text-[10px] font-sans uppercase font-semibold px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 tracking-wider">Class ${classLevel}</span>` : ''}
+                                        </div>
+                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200 leading-relaxed break-words">Q: ${questionText}</p>
+                                    </div>
+                                    <span id="ans-indicator-${q.id}" class="text-xs font-bold text-indigo-500 uppercase tracking-wider shrink-0 select-none pt-1">View Details</span>
+                                </div>
+
+                                <!-- COMPACT ANSWER DISPLAY BLOCK -->
+                                <div id="ans-content-${q.id}" class="hidden pt-2 border-t border-slate-100 dark:border-white/5 text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap break-words leading-relaxed animate-fadeIn" onclick="event.stopPropagation();">
+                                    <div class="bg-white dark:bg-slate-900/60 py-2.5 px-3 rounded-xl border border-slate-100 dark:border-white/5 shadow-2xs space-y-1">
+                                        <span class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Module Metadata:</span>
+                                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">Chapter: <span class="font-normal">${topicName}</span></p>
+                                        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">Subject: <span class="font-normal">${subjectName}</span></p>
+                                        ${author ? `<p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">${author}</p>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                }
+
+                html += `</div></div>`;
+            }
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
