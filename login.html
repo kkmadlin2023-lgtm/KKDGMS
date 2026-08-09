@@ -10,7 +10,6 @@
     
     <!-- Preventive Back-Button Trap Script -->
     <script>
-        // Push duplicate history state to disable Chrome back arrow from returning to secure pages
         history.pushState(null, null, location.href);
         window.onpopstate = function () {
             history.pushState(null, null, location.href);
@@ -18,14 +17,17 @@
     </script>
 
     <!-- ========================================================= -->
-    <!-- KKDGMS LOADER REDIRECTOR                                   -->
+    <!-- KKDGMS LOADER REDIRECTOR (OAuth Safe)                      -->
     <!-- ========================================================= -->
     <script>
         (function() {
             const currentUrl = new URL(window.location.href);
             const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+            const isOAuthCallback = currentUrl.searchParams.has('error') || 
+                                    window.location.hash.includes('access_token') || 
+                                    window.location.hash.includes('code=');
 
-            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded') && !isOAuthCallback) {
                 const targetUrl = encodeURIComponent(window.location.href);
                 window.location.replace(`redirect.html?target=${targetUrl}`);
             }
@@ -98,6 +100,24 @@
                     SIGN IN TO SYSTEM
                 </button>
             </form>
+
+            <!-- DIVIDER -->
+            <div class="relative my-6 flex items-center justify-center">
+                <div class="border-t border-white/10 w-full"></div>
+                <span class="bg-transparent px-3 text-[10px] text-white/40 uppercase font-bold tracking-widest absolute">OR</span>
+            </div>
+
+            <!-- GOOGLE LOGIN BUTTON -->
+            <button type="button" id="googleBtn" class="w-full py-4 bg-white/10 border border-white/20 text-white rounded-2xl font-semibold text-sm hover:bg-white/20 transition-all flex items-center justify-center gap-3 transform active:scale-95 shadow-lg">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.1 9 5 12 5z"/>
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                    <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/>
+                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.1-6.4-5.2L1.9 16C3.7 19.7 7.5 22.3 12 23z"/>
+                </svg>
+                Sign in with Google
+            </button>
+
             <p class="mt-8 text-white/30 text-[10px] font-medium tracking-widest uppercase">Encryption Active: 2025-2026</p>
         </div>
     </main>
@@ -127,23 +147,7 @@
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Explicit Logout Cleanup on Login Page Load
-        (async function ensureLoggedOut() {
-            try {
-                await _supabase.auth.signOut();
-                localStorage.clear();
-                sessionStorage.clear();
-            } catch (err) {
-                console.warn("Logout cleanup status:", err);
-            }
-        })();
-
-        // Handle BFCache (Chrome Back/Forward Cache)
-        window.addEventListener('pageshow', function (event) {
-            if (event.persisted) {
-                window.location.reload();
-            }
-        });
+        let isRedirecting = false;
 
         // UI Toast Notification helper
         function notify(message, type = 'yellow') {
@@ -163,126 +167,14 @@
             }, 4000);
         }
 
-        // Accurate Mobile Device Detector
-        function isMobileDevice() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-            const isTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-            return mobileRegex.test(userAgent) || (window.innerWidth <= 768 && isTouchScreen);
-        }
+        // Verification & Dashboard Redirect Handler
+        async function verifyUserAndRedirect(email) {
+            if (isRedirecting) return;
+            isRedirecting = true;
 
-        // ERROR-FREE MOBILE FCM TOKEN COLLECTION
-        async function collectFcmToken(email, targetTable) {
-            try {
-                if (!isMobileDevice()) {
-                    console.log("Desktop device detected. Skipping FCM token.");
-                    notify("Desktop login — FCM skipped", "yellow");
-                    return;
-                }
-
-                if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-                    console.warn("Mobile browser does not support Service Workers or Push API.");
-                    notify("Browser lacks push notification support", "yellow");
-                    return;
-                }
-
-                let permission = Notification.permission;
-                if (permission === 'denied') {
-                    console.warn("Notification permission permanently denied by mobile user.");
-                    notify("Notifications blocked in phone settings", "yellow");
-                    return;
-                }
-
-                if (permission !== 'granted') {
-                    notify("Requesting Notification Permission...", "yellow");
-                    permission = await Notification.requestPermission();
-                }
-
-                if (permission !== 'granted') {
-                    notify("Notification permission declined", "yellow");
-                    return;
-                }
-
-                let swRegistration;
-                try {
-                    swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-                    await navigator.serviceWorker.ready;
-                } catch (swErr) {
-                    console.error("Service worker registration error:", swErr);
-                    notify("Failed to initialize Service Worker", "red");
-                    return;
-                }
-
-                notify("Syncing Mobile FCM Token...", "yellow");
-                const token = await getToken(messaging, { 
-                    vapidKey: VAPID_KEY,
-                    serviceWorkerRegistration: swRegistration 
-                });
-
-                if (token) {
-                    const currentTime = new Date().toISOString();
-                    
-                    let { error } = await _supabase
-                        .from(targetTable)
-                        .update({ 
-                            fcm_token: token,
-                            fcm_updated_at: currentTime
-                        })
-                        .eq('email', email);
-
-                    if (error && error.message.includes('fcm_updated_at')) {
-                        const fallbackResult = await _supabase
-                            .from(targetTable)
-                            .update({ 
-                                fcm_token: token,
-                                updated_at: currentTime
-                            })
-                            .eq('email', email);
-                        error = fallbackResult.error;
-                    }
-
-                    if (error && error.message.includes('updated_at')) {
-                        const tokenOnlyResult = await _supabase
-                            .from(targetTable)
-                            .update({ fcm_token: token })
-                            .eq('email', email);
-                        error = tokenOnlyResult.error;
-                    }
-
-                    if (error) {
-                        console.error("Database Token Save Error:", error.message);
-                        notify("Database error saving FCM token", "red");
-                    } else {
-                        console.log(`FCM token successfully synced for ${email} in '${targetTable}'`);
-                        notify("Mobile Notification Token Synced!", "green");
-                    }
-                } else {
-                    notify("Unable to retrieve FCM registration token", "red");
-                }
-            } catch (fcmErr) {
-                console.error("FCM process exception:", fcmErr);
-                notify(`FCM Error: ${fcmErr.message || fcmErr}`, "red");
-            }
-        }
-
-        // LOGIN FORM SUBMISSION
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('password').value;
-
-            btn.disabled = true;
-            btn.innerHTML = `<span class="animate-pulse">VERIFYING...</span>`;
-            notify("Processing Request...", "yellow");
+            notify("User Verified. Checking Role...", "yellow");
 
             try {
-                const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
-                if (authError) throw authError;
-
-                notify("Credentials Verified. Finding Role...", "yellow");
-
                 const [studentCheck, adminCheck, facultyCheck, wardenCheck] = await Promise.all([
                     _supabase.from('students').select('email').eq('email', email).maybeSingle(),
                     _supabase.from('admins').select('email').eq('email', email).maybeSingle(),
@@ -307,14 +199,127 @@
                     redirectUrl = 'w_dashboard.html';
                 }
 
-                if (!targetTable) {
-                    throw new Error("Account authorized, but user role was not found in database.");
+                if (!targetTable || !redirectUrl) {
+                    isRedirecting = false;
+                    throw new Error("Authenticated, but your email is not registered in any role table.");
                 }
 
+                notify("Role Confirmed! Opening Dashboard...", "green");
                 await collectFcmToken(email, targetTable);
 
-                // Use location.replace so login is replaced in browser history stack
-                setTimeout(() => window.location.replace(redirectUrl), 800);
+                setTimeout(() => window.location.replace(redirectUrl), 500);
+
+            } catch (err) {
+                notify(err.message, "red");
+            }
+        }
+
+        // Real-time Auth State Listener
+        _supabase.auth.onAuthStateChange(async (event, session) => {
+            if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
+                const email = session.user.email.trim().toLowerCase();
+                await verifyUserAndRedirect(email);
+            }
+        });
+
+        // BFCache handling
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+
+        // Mobile Detector
+        function isMobileDevice() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+            const isTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            return mobileRegex.test(userAgent) || (window.innerWidth <= 768 && isTouchScreen);
+        }
+
+        // MOBILE FCM TOKEN COLLECTION
+        async function collectFcmToken(email, targetTable) {
+            try {
+                if (!isMobileDevice()) return;
+                if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+
+                let permission = Notification.permission;
+                if (permission === 'denied') return;
+                if (permission !== 'granted') permission = await Notification.requestPermission();
+                if (permission !== 'granted') return;
+
+                let swRegistration;
+                try {
+                    swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                    await navigator.serviceWorker.ready;
+                } catch (swErr) {
+                    console.error("Service worker registration error:", swErr);
+                    return;
+                }
+
+                const token = await getToken(messaging, { 
+                    vapidKey: VAPID_KEY,
+                    serviceWorkerRegistration: swRegistration 
+                });
+
+                if (token) {
+                    const currentTime = new Date().toISOString();
+                    
+                    let { error } = await _supabase
+                        .from(targetTable)
+                        .update({ fcm_token: token, fcm_updated_at: currentTime })
+                        .eq('email', email);
+
+                    if (error && error.message.includes('fcm_updated_at')) {
+                        const fallbackResult = await _supabase
+                            .from(targetTable)
+                            .update({ fcm_token: token, updated_at: currentTime })
+                            .eq('email', email);
+                        error = fallbackResult.error;
+                    }
+
+                    if (error && error.message.includes('updated_at')) {
+                        await _supabase.from(targetTable).update({ fcm_token: token }).eq('email', email);
+                    }
+                }
+            } catch (fcmErr) {
+                console.error("FCM exception:", fcmErr);
+            }
+        }
+
+        // GOOGLE OAUTH LOGIN HANDLER
+        document.getElementById('googleBtn').addEventListener('click', async () => {
+            notify("Redirecting to Google...", "yellow");
+
+            const { error } = await _supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `https://kkdgms.vercel.app/login.html`
+                }
+            });
+
+            if (error) {
+                notify(error.message, "red");
+            }
+        });
+
+        // STANDARD EMAIL/PASSWORD LOGIN SUBMISSION
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-pulse">VERIFYING...</span>`;
+            notify("Processing Request...", "yellow");
+
+            try {
+                const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
+                if (authError) throw authError;
+
+                await verifyUserAndRedirect(email);
 
             } catch (err) {
                 notify(err.message, "red");
