@@ -118,6 +118,7 @@
     </main>
 
     <!-- FIREBASE MESSAGING SDK MODULE -->
+    <!-- FIREBASE & SUPABASE AUTH MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
@@ -162,12 +163,28 @@
             }, 4000);
         }
 
+        // Record Audit Entry to Supabase Table for w_audit.html sync
+        async function recordLoginAudit(user, roleName, providerName) {
+            try {
+                await _supabase.from('login_audit_logs').insert([{
+                    user_id: user.id,
+                    email: user.email,
+                    role: roleName,
+                    provider: providerName,
+                    login_time: new Date().toISOString(),
+                    status: 'Logged In'
+                }]);
+            } catch (auditErr) {
+                console.error("Failed to record login audit log:", auditErr);
+            }
+        }
+
         // Verification & Dashboard Redirect Handler
-        async function verifyUserAndRedirect(rawEmail) {
+        async function verifyUserAndRedirect(user, explicitProvider = null) {
             if (isRedirecting) return;
             isRedirecting = true;
 
-            const email = rawEmail.trim().toLowerCase();
+            const email = user.email.trim().toLowerCase();
             notify(`Checking Role for ${email}...`, "yellow");
 
             try {
@@ -180,19 +197,24 @@
 
                 let targetTable = null;
                 let redirectUrl = null;
+                let roleName = 'Unknown';
 
                 if (studentCheck.data) {
                     targetTable = 'students';
                     redirectUrl = 's_dashboard.html';
+                    roleName = 'Student';
                 } else if (adminCheck.data) {
                     targetTable = 'admins';
                     redirectUrl = 'a_dashboard.html';
+                    roleName = 'Admin';
                 } else if (facultyCheck.data) {
                     targetTable = 'faculty_details';
                     redirectUrl = 'f_dashboard.html';
+                    roleName = 'Faculty';
                 } else if (wardenCheck.data) {
                     targetTable = 'wardens';
                     redirectUrl = 'w_dashboard.html';
+                    roleName = 'Warden';
                 }
 
                 if (!targetTable || !redirectUrl) {
@@ -200,20 +222,31 @@
                     throw new Error(`Authenticated, but (${email}) is not registered in any role table.`);
                 }
 
+                // Determine provider type (Google vs Email/Password)
+                let provider = explicitProvider;
+                if (!provider) {
+                    const appProviders = user.app_metadata?.provider;
+                    provider = (appProviders === 'google') ? 'Google' : 'Email/Password';
+                }
+
+                // Write entry into audit logs for w_audit.html sync
+                await recordLoginAudit(user, roleName, provider);
+
                 notify("Role Identified! Opening Dashboard...", "green");
                 await collectFcmToken(email, targetTable);
 
                 setTimeout(() => window.location.replace(redirectUrl), 500);
 
             } catch (err) {
+                isRedirecting = false;
                 notify(err.message, "red");
             }
         }
 
-        // Real-time Auth State Listener
+        // Real-time Auth State Listener (handles OAuth redirects & persistent sessions)
         _supabase.auth.onAuthStateChange(async (event, session) => {
             if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
-                await verifyUserAndRedirect(session.user.email);
+                await verifyUserAndRedirect(session.user);
             }
         });
 
@@ -314,7 +347,7 @@
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw authError;
 
-                await verifyUserAndRedirect(email);
+                await verifyUserAndRedirect(authData.user, 'Email/Password');
 
             } catch (err) {
                 notify(err.message, "red");
