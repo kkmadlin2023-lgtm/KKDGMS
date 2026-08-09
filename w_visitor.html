@@ -7,6 +7,8 @@
     <link rel="icon" type="image/x-icon" href="kk.png">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- HTML5 QR Code Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
     <style>
         /* Landscape Print Layout Configuration Engine */
@@ -69,6 +71,43 @@
                 margin: 15mm !important;
             }
         }
+
+        /* Custom QR Reader Styling */
+        #qr-reader video {
+            object-fit: cover !important;
+            border-radius: 0.75rem !important;
+        }
+        #qr-reader {
+            border: none !important;
+        }
+
+        /* Realistic Moving Laser Beam Animation */
+        @keyframes scanBeam {
+            0% {
+                top: 5%;
+                opacity: 0.8;
+            }
+            50% {
+                top: 88%;
+                opacity: 1;
+            }
+            100% {
+                top: 5%;
+                opacity: 0.8;
+            }
+        }
+
+        .laser-beam {
+            position: absolute;
+            left: 5%;
+            width: 90%;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(16,185,129,0) 0%, rgba(16,185,129,1) 50%, rgba(16,185,129,0) 100%);
+            box-shadow: 0 0 12px #10b981, 0 0 20px #10b981;
+            animation: scanBeam 2.2s infinite ease-in-out;
+            z-index: 20;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
@@ -82,7 +121,7 @@
                 <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
                     <span>🛡️</span> Campus Gate Security Terminal
                 </h1>
-                <p class="text-xs text-gray-500 mt-1">Manual student lookup utility, real-time tracking console, and historical log overview.</p>
+                <p class="text-xs text-gray-500 mt-1">Camera QR code entry scanner, manual student lookup utility, real-time tracking console, and log ledger.</p>
                 <p id="current-warden-display" class="text-xs font-semibold text-indigo-600 mt-1">Verifying active session profile...</p>
             </div>
             <a href="w_dashboard.html" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg transition border border-slate-200 shadow-xs flex items-center gap-1.5 active:scale-[0.98]">
@@ -92,8 +131,41 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
+            <!-- Left Side: Scanner & Manual Lookup -->
             <div class="lg:col-span-5 space-y-6">
                 
+                <!-- 1. Live Camera QR Scanner Card with Animated Laser -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                            <span>📷</span> Automatic QR Scanner
+                        </h2>
+                        <span id="scanner-status-badge" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">Idle</span>
+                    </div>
+
+                    <div class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[220px] flex items-center justify-center border border-slate-800">
+                        
+                        <!-- Animated Moving Laser Line -->
+                        <div id="scanner-laser" class="laser-beam hidden"></div>
+
+                        <div id="qr-reader" class="w-full"></div>
+                        <div id="scanner-placeholder" class="text-center p-6 space-y-2">
+                            <div class="text-3xl text-slate-500">📹</div>
+                            <p class="text-xs text-slate-400 font-medium">Click start below to activate the video stream for barcode/QR verification.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button id="btn-start-scanner" onclick="startScanner()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1.5">
+                            ▶ Start Camera
+                        </button>
+                        <button id="btn-stop-scanner" onclick="stopScanner()" disabled class="flex-1 bg-slate-200 text-slate-400 font-bold py-2 rounded-lg text-xs transition cursor-not-allowed flex items-center justify-center gap-1.5">
+                            ⏹ Stop Camera
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Manual Student Directory Lookup -->
                 <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
                     <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2 flex items-center gap-2">
                         <span>⌨️</span> Manual Student Directory Lookup
@@ -118,7 +190,7 @@
                             </select>
                         </div>
 
-                        <!-- Custom Relationship Input Field (Visible only when Other is chosen) -->
+                        <!-- Custom Relationship Input Field -->
                         <div id="custom-relation-container">
                             <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Specify Relationship</label>
                             <input type="text" id="manual-custom-relation-input" placeholder="e.g., Uncle, Brother, Guardian..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-hidden focus:border-indigo-500 bg-white font-semibold text-slate-900">
@@ -137,6 +209,7 @@
 
             </div>
 
+            <!-- Right Side: Analytics & Controls -->
             <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs lg:col-span-7 space-y-6">
                 <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">
                     🔎 Data Filter & History Operations Desk
@@ -171,6 +244,7 @@
             </div>
         </div>
 
+        <!-- Real-Time Log Table -->
         <div class="bg-white border border-gray-200 rounded-2xl shadow-xs overflow-hidden">
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                 <h3 class="text-xs font-extrabold uppercase tracking-wider text-gray-600">Real-Time Log Feed</h3>
@@ -199,6 +273,7 @@
         </div>
     </div>
 
+    <!-- Printable Landscape Sheet -->
     <div id="print-landscape-section" class="hidden" style="font-family: sans-serif; width: 100%;">
         
         <div style="text-align: center; border-bottom: 3px double #000000; padding-bottom: 12px; margin-bottom: 20px;">
@@ -253,9 +328,12 @@
         const LOG_TABLE = "visitors_log";
         let SELECTED_MANUAL_STUDENT = null;
 
-        // Global state tracking variables for the active logged-in warden
+        // Global state tracking variables
         let loggedInWardenId = null;
         let loggedInWardenName = null;
+        let html5QrCode = null;
+        let lastScannedPayload = null;
+        let lastScanTime = 0;
 
         const tableBody = document.getElementById('security-table-body');
         const printTableBody = document.getElementById('print-table-body');
@@ -263,6 +341,11 @@
         const toastContainer = document.getElementById('toast-container');
         const suggestionsBox = document.getElementById('search-suggestions-box');
         const wardenDisplay = document.getElementById('current-warden-display');
+        const btnStartScanner = document.getElementById('btn-start-scanner');
+        const btnStopScanner = document.getElementById('btn-stop-scanner');
+        const scannerStatusBadge = document.getElementById('scanner-status-badge');
+        const scannerPlaceholder = document.getElementById('scanner-placeholder');
+        const scannerLaser = document.getElementById('scanner-laser');
 
         function triggerToast(message, variant = 'success') {
             const toast = document.createElement('div');
@@ -287,7 +370,6 @@
             }, 5000);
         }
 
-        // Fetches operational details from public.wardens table matching the authenticated login UID
         async function fetchLoggedInWardenDetails() {
             try {
                 const { data: { user }, error: authError } = await _supabase.auth.getUser();
@@ -317,6 +399,113 @@
             }
         }
 
+        /* CAMERA QR SCANNER LOGIC WITH LASER ANIMATION */
+        function startScanner() {
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("qr-reader");
+            }
+
+            scannerPlaceholder.classList.add('hidden');
+            scannerLaser.classList.remove('hidden'); // Show laser beam
+            scannerStatusBadge.innerText = "Active Scanning";
+            scannerStatusBadge.className = "text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold animate-pulse";
+
+            const config = { fps: 15, qrbox: { width: 220, height: 220 } };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                btnStartScanner.disabled = true;
+                btnStartScanner.className = "flex-1 bg-slate-200 text-slate-400 font-bold py-2 rounded-lg text-xs transition cursor-not-allowed flex items-center justify-center gap-1.5";
+                
+                btnStopScanner.disabled = false;
+                btnStopScanner.className = "flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1.5";
+            }).catch(err => {
+                triggerToast(`Camera startup failed: ${err}`, "error");
+                stopScanner();
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    resetScannerUI();
+                }).catch(err => {
+                    console.error("Stop scanner error:", err);
+                    resetScannerUI();
+                });
+            } else {
+                resetScannerUI();
+            }
+        }
+
+        function resetScannerUI() {
+            scannerPlaceholder.classList.remove('hidden');
+            scannerLaser.classList.add('hidden'); // Hide laser beam
+            scannerStatusBadge.innerText = "Idle";
+            scannerStatusBadge.className = "text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold";
+            
+            btnStartScanner.disabled = false;
+            btnStartScanner.className = "flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1.5";
+            
+            btnStopScanner.disabled = true;
+            btnStopScanner.className = "flex-1 bg-slate-200 text-slate-400 font-bold py-2 rounded-lg text-xs transition cursor-not-allowed flex items-center justify-center gap-1.5";
+        }
+
+        async function onScanSuccess(decodedText, decodedResult) {
+            const now = Date.now();
+            // Prevent duplicate triggers within 4 seconds for the same QR
+            if (decodedText === lastScannedPayload && (now - lastScanTime) < 4000) {
+                return;
+            }
+
+            lastScannedPayload = decodedText;
+            lastScanTime = now;
+
+            try {
+                const parsedData = JSON.parse(decodedText);
+                
+                // Validate payload properties
+                if (!parsedData.student_title || !parsedData.authorized_parent) {
+                    triggerToast("Invalid Pass QR Code structure.", "warning");
+                    return;
+                }
+
+                await processScannedQREntry(parsedData);
+            } catch (err) {
+                triggerToast("Scanned QR contains non-standard data schema.", "warning");
+            }
+        }
+
+        function onScanFailure(error) {
+            // Continuous scanning frame check
+        }
+
+        async function processScannedQREntry(qrData) {
+            const insertPayload = {
+                student_title: qrData.student_title,
+                class_mapping: qrData.class_mapping || "N/A",
+                authorized_parent: qrData.authorized_parent,
+                relation: qrData.relation || "Guardian",
+                status: "Active",
+                scanned_warden_id: loggedInWardenId,
+                scanned_warden_name: loggedInWardenName
+            };
+
+            const { error } = await _supabase.from(LOG_TABLE).insert([insertPayload]);
+
+            if (error) {
+                triggerToast(`QR Entry Insert Error: ${error.message}`, "error");
+            } else {
+                triggerToast(`Entry logged for ${qrData.authorized_parent} (${qrData.student_title})`, "success");
+                fetchSecurityLogs();
+            }
+        }
+
+        /* MANUAL LOOKUP LOGIC */
         function setInitialCalendarDate() {
             const today = new Date().toISOString().split('T')[0];
             calendarPicker.value = today;
@@ -442,6 +631,7 @@
             }
         });
 
+        /* DATA FETCHING & PRINTING */
         async function fetchSecurityLogs() {
             const activeDateValue = calendarPicker.value;
             if (!activeDateValue) return;
