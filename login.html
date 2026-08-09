@@ -36,7 +36,7 @@
     <!-- ========================================================= -->
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -163,7 +163,7 @@
             }, 4000);
         }
 
-        // Record Audit Entry to Supabase Table for w_audit.html sync
+        // Record Login Audit Entry to Supabase Table (Login-time only)
         async function recordLoginAudit(user, roleName, providerName) {
             try {
                 await _supabase.from('login_audit_logs').insert([{
@@ -171,8 +171,7 @@
                     email: user.email,
                     role: roleName,
                     provider: providerName,
-                    login_time: new Date().toISOString(),
-                    status: 'Logged In'
+                    login_time: new Date().toISOString()
                 }]);
             } catch (auditErr) {
                 console.error("Failed to record login audit log:", auditErr);
@@ -229,7 +228,7 @@
                     provider = (appProviders === 'google') ? 'Google' : 'Email/Password';
                 }
 
-                // Write entry into audit logs for w_audit.html sync
+                // Write entry into audit logs (Login timestamp tracking only)
                 await recordLoginAudit(user, roleName, provider);
 
                 notify("Role Identified! Opening Dashboard...", "green");
