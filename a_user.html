@@ -138,13 +138,33 @@
                 Commit Overwrite Replacement
             </button>
         </form>
+
+        <!-- PHASE 3: Password Redirect Prompt Container (Hidden Initially) -->
+        <div id="password-prompt" class="hidden space-y-4 relative z-10 text-center">
+            <div class="glass-card p-4 rounded-lg space-y-2">
+                <p class="text-xs font-bold text-slate-200">Email Overwrite Complete!</p>
+                <p class="text-[10px] text-slate-400">Do you want to change the password as well?</p>
+            </div>
+            <div class="flex gap-2">
+                <button 
+                    onclick="window.location.href='a_password.html'" 
+                    class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded font-bold transition-all uppercase tracking-wider text-[9px]"
+                >
+                    Yes, Redirect
+                </button>
+                <button 
+                    onclick="location.reload()" 
+                    class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 rounded font-bold transition-all uppercase tracking-wider text-[9px]"
+                >
+                    No, Finish
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
         const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
-        
-        // PASTE YOUR PRIVATE SERVICE ROLE KEY HERE FOR DIRECT PRIVILEGED SYSTEM OVERWRITES
-        const SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTAxODk3NywiZXhwIjoyMDk0NTk0OTc3fQ.yZroS9XpQWo4QkTjmhn61nqxoMVwCzzL7GY158ydOPM"; 
+        const SUPABASE_SERVICE_ROLE_KEY = "YOUR_SUPABASE_SERVICE_ROLE_KEY"; 
 
         const _supabaseAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
             auth: { persistSession: false }
@@ -152,19 +172,20 @@
 
         const lookupForm = document.getElementById('lookup-form');
         const overwriteForm = document.getElementById('overwrite-form');
+        const passwordPrompt = document.getElementById('password-prompt');
         const lookupBtn = document.getElementById('lookup-btn');
         const submitBtn = document.getElementById('submit-btn');
         const badge = document.getElementById('verification-badge');
         const dock = document.getElementById('notification-dock');
 
         let targetUserUUID = "";
+        let oldUserEmail = "";
 
         // Top Right Corner RYG Alert System
         function spawnAlert(type, message) {
             const toast = document.createElement('div');
             toast.className = "toast-active glass-card p-4 rounded-xl flex items-center gap-3 border pointer-events-auto shadow-2xl transition-all";
             
-            // Map configuration dynamically as per RYG (Red, Yellow, Green) structural requirements
             let systemStyles = "";
             if (type === 'red') {
                 systemStyles = "border-rose-500/30 bg-rose-950/40 text-rose-400";
@@ -184,17 +205,15 @@
             
             dock.appendChild(toast);
             
-            // Auto clean-up alert node out of DOM structure after execution lifespan terminates
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateX(100%) scale(0.9)';
                 setTimeout(() => toast.remove(), 400);
-            }, 4500);
+            }, 6000);
         }
 
-        // Verification Security Protocol: Redirects immediately if the admin is unauthenticated
         async function verifyAdminAccess() {
-            const standardClient = supabase.createClient(SUPABASE_URL, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA");
+            const standardClient = supabase.createClient(SUPABASE_URL, "YOUR_SUPABASE_ANON_KEY");
             const { data: { session } } = await standardClient.auth.getSession();
             
             if (!session) {
@@ -202,20 +221,20 @@
             }
         }
 
-        // Phase 1: Search the database core for matching record to overwrite
+        // Phase 1: Search database core
         lookupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const emailInput = document.getElementById('existing-email').value.trim();
+            oldUserEmail = document.getElementById('existing-email').value.trim();
 
             lookupBtn.disabled = true;
             lookupBtn.textContent = "Accessing Core Registry...";
-            spawnAlert('yellow', `Scanning registry table for target mapping: ${emailInput}`);
+            spawnAlert('yellow', `Scanning registry table for target mapping: ${oldUserEmail}`);
 
             try {
                 const { data: { users }, error } = await _supabaseAdmin.auth.admin.listUsers();
                 if (error) throw error;
 
-                const match = users.find(u => u.email.toLowerCase() === emailInput.toLowerCase());
+                const match = users.find(u => u.email.toLowerCase() === oldUserEmail.toLowerCase());
 
                 if (!match) {
                     throw new Error("Target identity could not be matched inside auth.users database.");
@@ -223,7 +242,6 @@
 
                 targetUserUUID = match.id;
                 
-                // Trigger 3D Scale-Down and form transition
                 badge.classList.remove('hidden');
                 lookupForm.classList.add('hidden');
                 overwriteForm.classList.remove('hidden');
@@ -237,7 +255,19 @@
             }
         });
 
-        // Phase 2: Complete direct administrative overwrite of the primary column mapping
+        // Sync custom database tables when email changes
+        async function updateDatabaseTables(oldEmail, newEmail) {
+            const tables = ['students', 'admins', 'faculty_details', 'wardens'];
+            
+            for (const table of tables) {
+                await _supabaseAdmin
+                    .from(table)
+                    .update({ email: newEmail })
+                    .eq('email', oldEmail);
+            }
+        }
+
+        // Phase 2: Overwrite and update steps
         overwriteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const newEmailInput = document.getElementById('new-email').value.trim();
@@ -247,22 +277,27 @@
             spawnAlert('yellow', "Directly overwriting core database columns inside auth.users schema...");
 
             try {
-                // Execute direct atomic overwrite configuration statement
+                // Update Auth Service User
                 const { error } = await _supabaseAdmin.auth.admin.updateUserById(
                     targetUserUUID,
                     { 
                         email: newEmailInput,
-                        email_confirm: true // Force confirms the replacement address so no confirmation link step blocks access
+                        email_confirm: true 
                     }
                 );
 
                 if (error) throw error;
 
-                spawnAlert('green', "Success: Core replacement committed. Target data linkage remains preserved.");
-                
-                setTimeout(() => {
-                    location.reload(); 
-                }, 3000);
+                // Sync custom application tables
+                await updateDatabaseTables(oldUserEmail, newEmailInput);
+
+                // Spawn the specific requested notification banner
+                spawnAlert('yellow', 'Make sure you update the email in all connected database tables as well.');
+                spawnAlert('green', "Core email update executed successfully.");
+
+                // Show phase 3 password redirection option
+                overwriteForm.classList.add('hidden');
+                passwordPrompt.classList.remove('hidden');
 
             } catch (err) {
                 spawnAlert('red', err.message);
