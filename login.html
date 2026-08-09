@@ -163,6 +163,22 @@
             }, 4000);
         }
 
+        // Helper to accurately extract the provider from user metadata or explicit call
+        function detectAuthProvider(user, explicitProvider) {
+            if (explicitProvider) return explicitProvider;
+            
+            const identities = user.identities || [];
+            if (identities.length > 0) {
+                const providerId = identities[0].provider;
+                if (providerId === 'google') return 'Google';
+            }
+            
+            const appProvider = user.app_metadata?.provider;
+            if (appProvider === 'google') return 'Google';
+
+            return 'Email/Password';
+        }
+
         // Record Login Audit Entry to Supabase Table (Login-time only)
         async function recordLoginAudit(user, roleName, providerName) {
             try {
@@ -221,12 +237,8 @@
                     throw new Error(`Authenticated, but (${email}) is not registered in any role table.`);
                 }
 
-                // Determine provider type (Google vs Email/Password)
-                let provider = explicitProvider;
-                if (!provider) {
-                    const appProviders = user.app_metadata?.provider;
-                    provider = (appProviders === 'google') ? 'Google' : 'Email/Password';
-                }
+                // Determine provider type safely via identity inspection
+                const provider = detectAuthProvider(user, explicitProvider);
 
                 // Write entry into audit logs (Login timestamp tracking only)
                 await recordLoginAudit(user, roleName, provider);
@@ -245,7 +257,9 @@
         // Real-time Auth State Listener (handles OAuth redirects & persistent sessions)
         _supabase.auth.onAuthStateChange(async (event, session) => {
             if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
-                await verifyUserAndRedirect(session.user);
+                if (!isRedirecting) {
+                    await verifyUserAndRedirect(session.user);
+                }
             }
         });
 
