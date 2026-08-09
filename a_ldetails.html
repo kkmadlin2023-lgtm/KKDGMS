@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Login Audit & History Console | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;600;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-field {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 15px rgba(129, 140, 248, 0.3);
+            outline: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 w-80"></div>
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- HEADER SECTION -->
+        <header class="glass-panel rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xl">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl font-black italic tracking-wide text-white">
+                        🔐 USER LOGIN AUDIT & SESSION MONITOR
+                    </h1>
+                    <span id="live-badge" class="px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold text-[10px] rounded-full flex items-center gap-1.5 animate-pulse">
+                        <span class="w-2 h-2 bg-emerald-400 rounded-full"></span> REALTIME LIVE
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">
+                    Live session tracking, active logged-in users, login method detection, and full historical log management.
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="clearAuditHistory()" class="px-4 py-2.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 border border-rose-500/30 font-bold text-xs rounded-xl transition cursor-pointer">
+                    🗑️ Clear History Log
+                </button>
+                <a href="w_dashboard.html" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl transition">
+                    ⬅ Dashboard
+                </a>
+            </div>
+        </header>
+
+        <!-- REAL-TIME METRICS CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500 shadow-lg">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Currently Logged In</span>
+                <div id="metric-active" class="text-3xl font-black text-emerald-400 mt-1">0</div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-indigo-500 shadow-lg">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Total Recorded Sessions</span>
+                <div id="metric-total" class="text-3xl font-black text-indigo-400 mt-1">0</div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-blue-500 shadow-lg">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Google OAuth Logins</span>
+                <div id="metric-google" class="text-3xl font-black text-blue-400 mt-1">0</div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-slate-500 shadow-lg">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Password Logins</span>
+                <div id="metric-password" class="text-3xl font-black text-slate-300 mt-1">0</div>
+            </div>
+        </div>
+
+        <!-- SEARCH AND FILTER DESK -->
+        <div class="glass-panel p-6 rounded-3xl space-y-4 shadow-xl">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                <div class="md:col-span-5">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Search Context</label>
+                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search by email, role, or user ID..." class="input-field w-full px-4 py-2.5 rounded-xl text-xs text-white placeholder-slate-500">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Status Filter</label>
+                    <select id="statusFilter" onchange="applyFilters()" class="input-field w-full px-4 py-2.5 rounded-xl text-xs text-slate-300">
+                        <option value="ALL">All Statuses (Active & Logged Out)</option>
+                        <option value="Logged In">🟢 Currently Logged In</option>
+                        <option value="Logged Out">⚪ Logged Out</option>
+                    </select>
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Provider Filter</label>
+                    <select id="providerFilter" onchange="applyFilters()" class="input-field w-full px-4 py-2.5 rounded-xl text-xs text-slate-300">
+                        <option value="ALL">All Authentication Methods</option>
+                        <option value="Email/Password">Email / Password</option>
+                        <option value="Google">Google OAuth</option>
+                    </select>
+                </div>
+                <div class="md:col-span-1 flex items-end">
+                    <button onclick="fetchAuditLogs()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+                        🔄
+                    </button>
+                </div>
+            </div>
+
+            <!-- AUDIT DATA TABLE -->
+            <div class="overflow-x-auto rounded-2xl border border-slate-700/60 bg-slate-950/40">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-bold tracking-widest border-b border-slate-800">
+                            <th class="py-3.5 px-6">Live Status</th>
+                            <th class="py-3.5 px-6">User Email</th>
+                            <th class="py-3.5 px-6">Assigned Role</th>
+                            <th class="py-3.5 px-6">Login Method</th>
+                            <th class="py-3.5 px-6">Login Date & Time</th>
+                            <th class="py-3.5 px-6">Logout Time</th>
+                            <th class="py-3.5 px-6">Session Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditTableBody" class="divide-y divide-slate-800/60 text-xs">
+                        <tr>
+                            <td colspan="7" class="text-center py-10 text-slate-500 font-medium">Connecting to Supabase Realtime stream...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://kymsjrxjfmloibcbages.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let rawAuditData = [];
+
+        function notify(message, type = 'yellow') {
+            const container = document.getElementById('toast-container');
+            const colors = {
+                green: 'bg-emerald-500/20 border-emerald-500 text-emerald-400',
+                red: 'bg-rose-500/20 border-rose-500 text-rose-400',
+                yellow: 'bg-amber-500/20 border-amber-500 text-amber-400'
+            };
+            const toast = document.createElement('div');
+            toast.className = `glass-panel px-5 py-3.5 rounded-2xl border-l-4 ${colors[type]} flex items-center gap-3 shadow-2xl text-xs font-bold`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        async function fetchAuditLogs() {
+            const { data, error } = await _supabase
+                .from('login_audit_logs')
+                .select('*')
+                .order('login_time', { ascending: false });
+
+            if (error) {
+                console.error("Error retrieving audit logs:", error);
+                document.getElementById('auditTableBody').innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-400 font-bold">Failed to load audit table records.</td></tr>`;
+                return;
+            }
+
+            rawAuditData = data || [];
+            updateMetrics();
+            applyFilters();
+        }
+
+        function updateMetrics() {
+            const activeCount = rawAuditData.filter(d => d.status === 'Logged In').length;
+            const googleCount = rawAuditData.filter(d => d.provider === 'Google').length;
+            const passwordCount = rawAuditData.filter(d => d.provider === 'Email/Password').length;
+
+            document.getElementById('metric-active').innerText = activeCount;
+            document.getElementById('metric-total').innerText = rawAuditData.length;
+            document.getElementById('metric-google').innerText = googleCount;
+            document.getElementById('metric-password').innerText = passwordCount;
+        }
+
+        function applyFilters() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
+            const statusVal = document.getElementById('statusFilter').value;
+            const providerVal = document.getElementById('providerFilter').value;
+
+            const filtered = rawAuditData.filter(item => {
+                const matchesSearch = (item.email || '').toLowerCase().includes(searchValue) || 
+                                      (item.role || '').toLowerCase().includes(searchValue);
+                const matchesStatus = statusVal === 'ALL' || item.status === statusVal;
+                const matchesProvider = providerVal === 'ALL' || item.provider === providerVal;
+                return matchesSearch && matchesStatus && matchesProvider;
+            });
+
+            renderTable(filtered);
+        }
+
+        function renderTable(logs) {
+            const body = document.getElementById('auditTableBody');
+            if (logs.length === 0) {
+                body.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-500">No matching login audit logs found.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = logs.map(log => {
+                const isLoggedIn = log.status === 'Logged In';
+                const loginDateObj = new Date(log.login_time);
+                const formattedLogin = loginDateObj.toLocaleDateString() + ' ' + loginDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                let formattedLogout = "—";
+                let durationText = "Active Session";
+
+                if (log.logout_time) {
+                    const logoutDateObj = new Date(log.logout_time);
+                    formattedLogout = logoutDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    
+                    const diffMs = logoutDateObj - loginDateObj;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const hours = Math.floor(diffMins / 60);
+                    const mins = diffMins % 60;
+                    durationText = hours > 0 ? `${hours}h ${mins}m` : `${mins} mins`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-3.5 px-6">
+                            ${isLoggedIn 
+                                ? `<span class="px-2.5 py-1 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">🟢 LOGGED IN</span>`
+                                : `<span class="px-2.5 py-1 rounded-full text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700">LOGGED OUT</span>`
+                            }
+                        </td>
+                        <td class="py-3.5 px-6 font-bold text-slate-200">${escapeHtml(log.email)}</td>
+                        <td class="py-3.5 px-6 font-mono text-indigo-300">${escapeHtml(log.role)}</td>
+                        <td class="py-3.5 px-6 font-semibold ${log.provider === 'Google' ? 'text-blue-400' : 'text-slate-400'}">${escapeHtml(log.provider)}</td>
+                        <td class="py-3.5 px-6 font-mono text-slate-300">${formattedLogin}</td>
+                        <td class="py-3.5 px-6 font-mono text-slate-400">${formattedLogout}</td>
+                        <td class="py-3.5 px-6 font-semibold ${isLoggedIn ? 'text-emerald-400' : 'text-slate-400'}">${durationText}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function clearAuditHistory() {
+            if (!confirm("Are you sure you want to clear all logged out history records?")) return;
+
+            const { error } = await _supabase
+                .from('login_audit_logs')
+                .delete()
+                .eq('status', 'Logged Out');
+
+            if (error) {
+                notify("Failed to clear history: " + error.message, "red");
+            } else {
+                notify("History cleared successfully!", "green");
+                fetchAuditLogs();
+            }
+        }
+
+        function subscribeToRealtimeAudits() {
+            _supabase
+                .channel('realtime_audit_logs')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'login_audit_logs' }, () => {
+                    fetchAuditLogs();
+                })
+                .subscribe();
+        }
+
+        function escapeHtml(str) {
+            return str ? String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+        }
+
+        window.onload = () => {
+            fetchAuditLogs();
+            subscribeToRealtimeAudits();
+        };
+    </script>
+</body>
+</html>
