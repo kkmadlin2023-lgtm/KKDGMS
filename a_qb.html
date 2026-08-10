@@ -3,407 +3,617 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visitor Card | KKDGMS</title>
+    <title>QB | KKDGMS</title>
     <link rel="icon" type="image/x-icon" href="kk.png">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- QRCode JS Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
-    <style>
-        /* High-Performance Print Stylesheet */
-        @media print {
-            /* 1. Hide the entire main dashboard interface cleanly */
-            #main-dashboard-interface {
-                display: none !important;
-            }
-
-            /* 2. Unbind the cards container from its hidden parents and force it to show */
-            #printable-pass-container {
-                display: flex !important;
-                flex-direction: row !important;
-                justify-content: center !important;
-                gap: 20px !important;
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                margin: 0 !important;
-                padding: 10px !important;
-                
-                /* Force browser graphic engines to render background colors and profile photos */
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-scheme: light !important;
-            }
-
-            .printable-card {
-                width: 320px !important;
-                border: 1px solid #000000 !important;
-                box-shadow: none !important;
-                page-break-inside: avoid !important;
-            }
-
-            /* Respect single/both selection when printing */
-            .printable-card.hidden {
-                display: none !important;
-            }
-
-            /* Boost image resolution contrast */
-            .pass-student-img {
-                image-rendering: -webkit-optimize-contrast !important;
-                image-rendering: crisp-edges !important;
-            }
-
-            /* Clear out default browser margin headers/footers */
-            @page {
-                size: auto;
-                margin: 5mm !important;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.0/dist/umd/supabase.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        portal: {
+                            bg: '#f4f7fe',
+                            accent: '#6366f1',
+                            accentHover: '#4f46e5'
+                        }
+                    }
+                }
             }
         }
+    </script>
+    <style>
+        body, div, input, textarea, select, button { transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s; }
+        .auto-resize { 
+            resize: none; 
+            overflow: hidden; 
+            height: auto; 
+            min-height: 2.75rem; 
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans antialiased relative">
+<body class="bg-portal-bg dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen p-4 md:p-8 flex flex-col items-center space-y-6">
 
-    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 w-80 pointer-events-none"></div>
-
-    <div id="main-dashboard-interface" class="min-h-screen p-6 max-w-6xl mx-auto space-y-6">
-        
-        <header class="bg-white border border-gray-200 rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
-            <div>
-                <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <span>🪪</span> Parent Gate Pass & Visitor Desk
-                </h1>
-                <p class="text-xs text-gray-500 mt-1">Generate verified visitor badges with log-ready QR codes linked directly to student database entries.</p>
+    <!-- TOP CONTROL BAR -->
+    <div class="w-full max-w-7xl flex justify-between items-center px-2">
+        <div class="flex items-center space-x-4">
+            <span class="bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">Admin Panel</span>
+            <div id="connection-badge" class="flex items-center space-x-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="admin-display-log" class="tracking-wide">Verifying Credentials...</span>
             </div>
-            <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-                <button onclick="syncStudentDirectory()" class="text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2 rounded-md transition cursor-pointer">
-                    🔄 Sync Student Records
-                </button>
-                <a href="a_dashboard.html" class="px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 transition flex items-center gap-1">
-                    <span>‹</span> Back to Dashboard
-                </a>
-            </div>
-        </header>
+        </div>
+        <button type="button" onclick="toggleThemeSystem()" class="bg-white dark:bg-slate-900 text-slate-600 dark:text-indigo-400 border border-slate-200 dark:border-white/10 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs transition-all duration-200">
+            <i id="theme-toggle-icon" data-lucide="sun" class="w-5 h-5"></i>
+        </button>
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
-            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-xs lg:col-span-4 space-y-4">
-                <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">
-                    1. Select Verified Student
-                </h2>
-                
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Search/Select Student *</label>
-                    <select id="student-selector" onchange="processSelectedStudent(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-hidden focus:border-indigo-500">
-                        <option value="">Querying student directory...</option>
-                    </select>
-                </div>
-
-                <div class="bg-slate-50 p-3 rounded-lg border border-gray-200 space-y-2">
-                    <h3 class="text-xs font-bold text-slate-700 uppercase">2. Select Parent Pass Mode</h3>
-                    <div class="space-y-1.5">
-                        <label class="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
-                            <input type="radio" name="pass-mode" value="both" checked onchange="handleModeChange(this.value)" class="text-indigo-600">
-                            <span>Both Parents (Father & Mother)</span>
-                        </label>
-                        <label class="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
-                            <input type="radio" name="pass-mode" value="father" onchange="handleModeChange(this.value)" class="text-indigo-600">
-                            <span>Father Only</span>
-                        </label>
-                        <label class="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
-                            <input type="radio" name="pass-mode" value="mother" onchange="handleModeChange(this.value)" class="text-indigo-600">
-                            <span>Mother Only</span>
-                        </label>
-                    </div>
-                </div>
-
-                <button onclick="window.print()" id="print-action-btn" disabled class="w-full bg-slate-400 text-white font-bold py-2 rounded-md text-sm transition shadow-2xs cursor-not-allowed flex items-center justify-center gap-2">
-                    🖨️ Print / Save Pass
-                </button>
-            </div>
-
-            <div class="lg:col-span-8 flex flex-col items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 min-h-[450px]">
-                
-                <div id="pass-placeholder" class="text-center space-y-2 max-w-xs">
-                    <div class="text-4xl text-gray-300">🎫</div>
-                    <h3 class="text-sm font-bold text-gray-700">No Target Active</h3>
-                    <p class="text-xs text-gray-400">Select a student row tracking item to populate verified printable tokens.</p>
-                </div>
-
-                <div id="pass-placement-node" class="w-full flex justify-center overflow-x-auto p-2"></div>
-
-            </div>
+    <!-- METRIC SUMMARY RIBBON -->
+    <div class="w-full max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-5 rounded-2xl shadow-xs flex flex-col justify-between">
+            <span class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Total System Records</span>
+            <span id="stat-total" class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">—</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-5 rounded-2xl shadow-xs flex flex-col justify-between">
+            <span class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Live PUBLISH</span>
+            <span id="stat-published" class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">—</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-5 rounded-2xl shadow-xs flex flex-col justify-between">
+            <span class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">DRAFT Items</span>
+            <span id="stat-draft" class="text-3xl font-bold text-amber-500 dark:text-amber-400">—</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-5 rounded-2xl shadow-xs flex flex-col justify-between">
+            <span class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Tracked Subjects</span>
+            <span id="stat-subjects" class="text-3xl font-bold text-slate-700 dark:text-slate-300">—</span>
         </div>
     </div>
 
-    <!-- Dual Passes Container -->
-    <div id="printable-pass-container" class="hidden flex-col sm:flex-row gap-4 items-center justify-center">
-        
-        <!-- FATHER CARD -->
-        <div id="father-card-node" class="printable-card bg-white w-full max-w-[320px] border border-gray-300 rounded-2xl shadow-md overflow-hidden font-sans">
-            <div class="bg-slate-900 text-white p-3 text-center border-b-4 border-emerald-500">
-                <div class="text-[10px] uppercase font-extrabold tracking-widest text-emerald-400">KKDGMS</div>
-                <div class="text-sm font-bold tracking-tight">PARENT VISITOR CARD</div>
-            </div>
-
-            <div class="p-4 flex flex-col items-center text-center space-y-3">
-                <div class="relative">
-                    <img id="father-student-img" src="" alt="Student Profile" class="pass-student-img w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm">
-                    <span class="absolute bottom-0 right-0 bg-emerald-500 border-2 border-white w-3.5 h-3.5 rounded-full"></span>
-                </div>
-
-                <div class="space-y-0.5 w-full">
-                    <div class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Authorized Visitor</div>
-                    <div id="father-visitor-name" class="text-base font-black text-slate-900 tracking-tight uppercase">—</div>
-                    <div class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block border border-emerald-100">Father</div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-x-2 gap-y-2 text-left w-full bg-slate-50 p-2.5 rounded-xl border border-gray-100">
-                    <div>
-                        <div class="text-[9px] uppercase font-bold text-gray-400">Student Name</div>
-                        <div id="father-student-name" class="text-xs font-bold text-slate-900 tracking-tight uppercase truncate">—</div>
-                    </div>
-                    <div>
-                        <div class="text-[9px] uppercase font-bold text-gray-400">Class & Sec</div>
-                        <div id="father-student-meta" class="text-xs font-bold text-gray-800 truncate">—</div>
-                    </div>
-                </div>
-
-                <!-- QR Code Block -->
-                <div class="flex flex-col items-center justify-center pt-1">
-                    <div id="father-qrcode" class="p-1.5 bg-white border border-gray-200 rounded-lg shadow-2xs"></div>
-                    <span class="text-[8px] font-mono font-bold text-gray-400 mt-1 uppercase">Scan for Gate Log Entry</span>
+    <!-- MAIN ADMIN BULK INGEST ENGINE -->
+    <div class="w-full max-w-7xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-5 md:p-8 space-y-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-100 dark:border-white/5 gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-xl text-indigo-600 dark:text-indigo-400"><i data-lucide="shield-alert" class="w-6 h-6"></i></div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Administrative Entry Batcher</h1>
                 </div>
             </div>
+            <button type="button" onclick="appendQuestionRow()" class="inline-flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 font-semibold text-sm py-2.5 px-4 rounded-xl transition shadow-xs">
+                <i data-lucide="plus" class="w-4 h-4"></i><span>Add Record Slot</span>
+            </button>
+        </div>
 
-            <div class="bg-gray-50 border-t border-gray-100 px-3 py-1.5 text-center text-[9px] text-gray-400 font-medium">
-                Valid for designated academic period only. Non-transferable.
+        <form id="bulk-form" class="space-y-6" onsubmit="event.preventDefault();">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Target Subject Register</label>
+                    <input type="text" id="global-subject" required class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-xs" placeholder="e.g., Physics">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Target Topic Index</label>
+                    <input type="text" id="global-topic" required class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-xs" placeholder="e.g., Thermodynamics">
+                </div>
+            </div>
+            
+            <div id="bulk-container" class="space-y-4"></div>
+            
+            <div class="flex items-center justify-end pt-4 border-t border-slate-100 dark:border-white/5 space-x-3">
+                <button type="button" onclick="submitBulkData('Draft')" class="w-40 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider py-3 rounded-xl transition"><i data-lucide="save" class="w-4 h-4 inline mr-1.5"></i> Force As DRAFT</button>
+                <button type="button" onclick="submitBulkData('Published')" class="w-40 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs uppercase tracking-wider py-3 rounded-xl transition shadow-md shadow-indigo-600/10"><i data-lucide="shield-check" class="w-4 h-4 inline mr-1.5"></i> Force As PUBLISH</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- REPOSITORY WORKFLOW REGISTER -->
+    <div class="w-full max-w-7xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-5 md:p-8 space-y-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center border-b border-slate-100 dark:border-white/5 pb-4 gap-4">
+            <div class="flex items-center justify-between lg:justify-start lg:space-x-4">
+                <h2 class="text-base font-bold text-slate-800 dark:text-white flex items-center tracking-tight"><i data-lucide="database" class="w-5 h-5 mr-2 text-indigo-500"></i>Master Vault Records</h2>
+            </div>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <input type="text" id="search-filter" oninput="loadData()" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-white w-full sm:w-72 shadow-xs" placeholder="Scan records globally...">
+                <button onclick="purgeEmptyRegisters()" class="text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 font-semibold uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all shrink-0"><i data-lucide="trash-2" class="w-4 h-4 inline mr-1.5"></i> Cleanup Diagnostics</button>
             </div>
         </div>
 
-        <!-- MOTHER CARD -->
-        <div id="mother-card-node" class="printable-card bg-white w-full max-w-[320px] border border-gray-300 rounded-2xl shadow-md overflow-hidden font-sans">
-            <div class="bg-slate-900 text-white p-3 text-center border-b-4 border-indigo-500">
-                <div class="text-[10px] uppercase font-extrabold tracking-widest text-indigo-400">KKDGMS</div>
-                <div class="text-sm font-bold tracking-tight">PARENT VISITOR CARD</div>
+        <div id="repository-container" class="space-y-6">
+            <div class="text-center py-12 text-slate-400 font-medium text-sm tracking-wide">Parsing master storage records...</div>
+        </div>
+    </div>
+
+    <!-- MODAL OVERRIDE PANEL -->
+    <div id="edit-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm hidden items-start justify-center p-4 z-50 overflow-y-auto">
+        <div class="w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 md:p-8 my-8 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-3">
+                <h2 class="text-base font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">Admin Vault Override</h2>
+                <span id="modal-id-badge" class="font-mono text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-md border border-slate-200 dark:border-white/5">ID: —</span>
             </div>
-
-            <div class="p-4 flex flex-col items-center text-center space-y-3">
-                <div class="relative">
-                    <img id="mother-student-img" src="" alt="Student Profile" class="pass-student-img w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm">
-                    <span class="absolute bottom-0 right-0 bg-indigo-500 border-2 border-white w-3.5 h-3.5 rounded-full"></span>
-                </div>
-
-                <div class="space-y-0.5 w-full">
-                    <div class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Authorized Visitor</div>
-                    <div id="mother-visitor-name" class="text-base font-black text-slate-900 tracking-tight uppercase">—</div>
-                    <div class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-block border border-indigo-100">Mother</div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-x-2 gap-y-2 text-left w-full bg-slate-50 p-2.5 rounded-xl border border-gray-100">
+            <input type="hidden" id="edit-id">
+            <input type="hidden" id="edit-entry-type">
+            
+            <div class="space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <div class="text-[9px] uppercase font-bold text-gray-400">Student Name</div>
-                        <div id="mother-student-name" class="text-xs font-bold text-slate-900 tracking-tight uppercase truncate">—</div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Marks Weightage</label>
+                        <input type="number" id="edit-marks" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
                     </div>
                     <div>
-                        <div class="text-[9px] uppercase font-bold text-gray-400">Class & Sec</div>
-                        <div id="mother-student-meta" class="text-xs font-bold text-gray-800 truncate">—</div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Difficulty</label>
+                        <select id="edit-difficulty" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                            <option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Status Flag</label>
+                        <select id="edit-status" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+                            <option value="Draft">Draft</option><option value="Published">Published</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- QR Code Block -->
-                <div class="flex flex-col items-center justify-center pt-1">
-                    <div id="mother-qrcode" class="p-1.5 bg-white border border-gray-200 rounded-lg shadow-2xs"></div>
-                    <span class="text-[8px] font-mono font-bold text-gray-400 mt-1 uppercase">Scan for Gate Log Entry</span>
+                <!-- QA Fields Container -->
+                <div id="edit-qa-container" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Question Statement</label>
+                        <textarea id="edit-question" oninput="adjustTextAreaHeight(this)" class="auto-resize w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 leading-relaxed transition"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Answer Format</label>
+                        <select id="edit-format" onchange="toggleModalAnswerFormat()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition">
+                            <option value="points">Points List</option>
+                            <option value="passage">Passage Text</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Answer Payload</label>
+                        <textarea id="edit-answer" oninput="adjustTextAreaHeight(this)" class="auto-resize w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 leading-relaxed transition"></textarea>
+                    </div>
+                </div>
+
+                <!-- Drive Fields Container -->
+                <div id="edit-drive-container" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Resource Title</label>
+                        <input type="text" id="edit-title" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Resource Subtitle</label>
+                        <input type="text" id="edit-subtitle" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Google Drive URL</label>
+                        <input type="url" id="edit-drive-url" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition">
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-gray-50 border-t border-gray-100 px-3 py-1.5 text-center text-[9px] text-gray-400 font-medium">
-                Valid for designated academic period only. Non-transferable.
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-white/5">
+                <button onclick="closeEditModal()" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-xs font-semibold rounded-xl uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition">Abort Changes</button>
+                <button onclick="saveUpdatedQuestion()" class="px-5 py-2.5 bg-indigo-600 text-white text-xs font-semibold rounded-xl uppercase tracking-wider hover:bg-indigo-700 transition shadow-md shadow-indigo-600/10">Commit Data Changes</button>
             </div>
         </div>
-
     </div>
 
     <script>
         const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let LOGGED_STUDENTS_ARRAY = [];
-        let ACTIVE_STUDENT_OBJECT = null;
-        let SELECTED_PASS_MODE = 'both'; // 'both', 'father', or 'mother'
-
-        const studentSelector = document.getElementById('student-selector');
-        const printableContainer = document.getElementById('printable-pass-container');
-        const passPlacementNode = document.getElementById('pass-placement-node');
-        const passPlaceholder = document.getElementById('pass-placeholder');
-        const printBtn = document.getElementById('print-action-btn');
-        const toastContainer = document.getElementById('toast-container');
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        const fatherCardNode = document.getElementById('father-card-node');
-        const motherCardNode = document.getElementById('mother-card-node');
+        let rowCount = 0;
+        let cachedData = [];
 
-        function triggerToast(message, variant = 'success') {
-            const toast = document.createElement('div');
-            toast.className = "p-4 rounded-lg shadow-xl text-white font-medium text-sm transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-start gap-3 border";
-            if (variant === 'success') toast.className += " bg-emerald-600 border-emerald-500";
-            else if (variant === 'warning') toast.className += " bg-amber-500 border-amber-400 text-amber-950";
-            else if (variant === 'error') toast.className += " bg-rose-600 border-rose-500";
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            updateThemeIconUI();
+            verifyAdminAuthSession();
+        });
+
+        async function verifyAdminAuthSession() {
+            try {
+                const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
+                if (sessionErr) throw sessionErr;
+
+                if (!session) {
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                document.getElementById('admin-display-log').innerText = `Sync Live (${session.user.email})`;
+                appendQuestionRow(); 
+                loadData();
+            } catch (err) {
+                console.error(err);
+                window.location.href = "login.html";
+            }
+        }
+
+        function toggleThemeSystem() {
+            document.documentElement.classList.toggle('dark');
+            updateThemeIconUI();
+        }
+
+        function updateThemeIconUI() {
+            const iconEl = document.getElementById('theme-toggle-icon');
+            iconEl.setAttribute('data-lucide', document.documentElement.classList.contains('dark') ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
+
+        function adjustTextAreaHeight(element) {
+            element.style.height = 'auto';
+            element.style.height = element.scrollHeight + 'px';
+        }
+
+        function toggleRowType(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            const entryType = row.querySelector('.r-entry-type').value;
+            const qaFields = row.querySelector('.r-qa-fields');
+            const driveFields = row.querySelector('.r-drive-fields');
+
+            if (entryType === 'qa') {
+                qaFields.classList.remove('hidden');
+                driveFields.classList.add('hidden');
+            } else {
+                qaFields.classList.add('hidden');
+                driveFields.classList.remove('hidden');
+            }
+        }
+
+        function appendQuestionRow() {
+            rowCount++;
+            const container = document.getElementById('bulk-container');
+            const row = document.createElement('div');
+            const currentId = rowCount;
+            row.id = `row-${currentId}`;
+            row.className = "q-row bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-white/5 p-4 md:p-5 rounded-2xl relative grid grid-cols-1 md:grid-cols-12 gap-4 items-start shadow-xs transition hover:border-slate-300 dark:hover:border-white/10";
             
-            toast.innerHTML = `<span>⚡</span> <div class="flex-1">${message}</div>`;
-            toastContainer.appendChild(toast);
-            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'scale-95');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            row.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-3 right-3 text-slate-400 hover:text-rose-500 hover:scale-110 transition duration-150"><i data-lucide="x" class="w-5 h-5"></i></button>
+                
+                <div class="md:col-span-3 space-y-3 pt-3">
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Entry Type</label>
+                        <select onchange="toggleRowType(${currentId})" class="r-entry-type w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
+                            <option value="qa" selected>Question & Answer</option>
+                            <option value="drive">Drive Resource</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Marks</label>
+                            <input type="number" value="2" class="r-marks w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="Marks">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Difficulty</label>
+                            <select class="r-diff w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
+                                <option>Easy</option>
+                                <option selected>Medium</option>
+                                <option>Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-9 space-y-3">
+                    <!-- Q&A Fields -->
+                    <div class="r-qa-fields space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                            <div class="md:col-span-1">
+                                <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Answer Format</label>
+                                <select class="r-format w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
+                                    <option value="points">Points List</option>
+                                    <option value="passage">Passage Text</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Question Statement</label>
+                                <textarea oninput="adjustTextAreaHeight(this)" class="auto-resize r-question w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 leading-relaxed" placeholder="Question statement..."></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Answer Criteria (New lines map to array points if format is Points)</label>
+                            <textarea oninput="adjustTextAreaHeight(this)" class="auto-resize r-answer w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 leading-relaxed" placeholder="Answer content..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Drive Fields -->
+                    <div class="r-drive-fields space-y-3 hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Title</label>
+                                <input type="text" class="r-title w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="e.g., Chapter 1 Notes PDF">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Subtitle</label>
+                                <input type="text" class="r-subtitle w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="e.g., Supplementary reading material">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Google Drive URL</label>
+                            <input type="url" class="r-drive-url w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="https://drive.google.com/...">
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+            lucide.createIcons();
         }
 
-        async function syncStudentDirectory() {
-            studentSelector.innerHTML = `<option value="">Reading data nodes...</option>`;
-            const { data, error } = await _supabase.from('students').select('*').order('full_name', { ascending: true });
+        async function submitBulkData(status) {
+            const subject = document.getElementById('global-subject').value.trim();
+            const topic = document.getElementById('global-topic').value.trim();
+            if(!subject || !topic) return alert("Define ingestion namespace configurations (Subject and Topic).");
 
-            if (error) {
-                triggerToast(`Directory Sync Aborted: ${error.message}`, 'error');
+            const rows = document.querySelectorAll('.q-row');
+            if(!rows.length) return;
+
+            const payload = Array.from(rows).map(row => {
+                const entryType = row.querySelector('.r-entry-type').value;
+                const marks = parseInt(row.querySelector('.r-marks').value) || 2;
+                const difficulty = row.querySelector('.r-diff').value;
+
+                if (entryType === 'qa') {
+                    const format = row.querySelector('.r-format').value;
+                    const rawAnswer = row.querySelector('.r-answer').value;
+                    return {
+                        subject_name: subject,
+                        topic_name: topic,
+                        entry_type: 'qa',
+                        marks_weightage: marks,
+                        difficulty_level: difficulty,
+                        question_text: row.querySelector('.r-question').value.trim(),
+                        answer_format: format,
+                        answer_points: format === 'points' ? rawAnswer.split('\n').map(p=>p.trim()).filter(Boolean) : null,
+                        answer_passage: format === 'passage' ? rawAnswer.trim() : null,
+                        title: null,
+                        subtitle: null,
+                        drive_url: null,
+                        status: status
+                    };
+                } else {
+                    return {
+                        subject_name: subject,
+                        topic_name: topic,
+                        entry_type: 'drive',
+                        marks_weightage: marks,
+                        difficulty_level: difficulty,
+                        title: row.querySelector('.r-title').value.trim(),
+                        subtitle: row.querySelector('.r-subtitle').value.trim(),
+                        drive_url: row.querySelector('.r-drive-url').value.trim(),
+                        question_text: null,
+                        answer_format: null,
+                        answer_points: null,
+                        answer_passage: null,
+                        status: status
+                    };
+                }
+            });
+
+            const { error } = await supabase.from('question_bank').insert(payload);
+            if (!error) {
+                document.getElementById('bulk-container').innerHTML = '';
+                appendQuestionRow();
+                loadData();
+            } else {
+                alert("Database insertion failed: " + error.message);
+            }
+        }
+
+        async function updateDashboardMetrics(data) {
+            document.getElementById('stat-total').innerText = data.length;
+            document.getElementById('stat-published').innerText = data.filter(q => q.status === 'Published').length;
+            document.getElementById('stat-draft').innerText = data.filter(q => q.status === 'Draft').length;
+            
+            const uniqueSubjects = [...new Set(data.map(q => q.subject_name))].length;
+            document.getElementById('stat-subjects').innerText = uniqueSubjects;
+        }
+
+        async function loadData() {
+            const container = document.getElementById('repository-container');
+            const filter = document.getElementById('search-filter').value.trim();
+            
+            let query = supabase.from('question_bank').select('*').order('created_at', { ascending: false });
+            if (filter) query = query.or(`subject_name.ilike.%${filter}%,topic_name.ilike.%${filter}%,question_text.ilike.%${filter}%,title.ilike.%${filter}%`);
+            
+            const { data, error } = await query;
+            if (error) return;
+
+            cachedData = data;
+            updateDashboardMetrics(data);
+
+            if (!data.length) {
+                container.innerHTML = `<div class="text-center text-slate-400 py-12 font-medium text-sm tracking-wide bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl">Empty System Registry Vault.</div>`;
                 return;
             }
 
-            LOGGED_STUDENTS_ARRAY = data;
-            studentSelector.innerHTML = `<option value="">-- Choose Existing Student --</option>`;
-            data.forEach(student => {
-                const opt = document.createElement('option');
-                opt.value = student.id;
-                opt.innerText = `${escapeHtml(student.full_name)} (${escapeHtml(student.student_class || 'N/A')}) [ID: ${escapeHtml(student.user_id || '—')}]`;
-                studentSelector.appendChild(opt);
-            });
-            triggerToast(`Cached ${data.length} student rows.`, 'success');
+            const grouped = data.reduce((acc, curr) => {
+                if (!acc[curr.subject_name]) acc[curr.subject_name] = {};
+                if (!acc[curr.subject_name][curr.topic_name]) acc[curr.subject_name][curr.topic_name] = [];
+                acc[curr.subject_name][curr.topic_name].push(curr);
+                return acc;
+            }, {});
+
+            renderAdminGroupedUI(grouped, container);
         }
 
-        function processSelectedStudent(id) {
-            if (!id) {
-                passPlaceholder.classList.remove('hidden');
-                printableContainer.classList.add('hidden');
-                printableContainer.classList.remove('flex');
-                passPlacementNode.innerHTML = '';
-                printBtn.disabled = true;
-                printBtn.className = "w-full bg-slate-400 text-white font-bold py-2 rounded-md text-sm transition cursor-not-allowed flex items-center justify-center gap-2";
-                return;
-            }
+        function renderAdminGroupedUI(groupedData, container) {
+            let html = "";
+            for (const [subject, topics] of Object.entries(groupedData)) {
+                html += `
+                <div class="bg-slate-50 dark:bg-slate-950/40 border-l-4 border-indigo-500 border border-slate-200/60 dark:border-white/5 rounded-2xl p-5 md:p-6 shadow-xs">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-3 border-b border-slate-200/60 dark:border-white/5 gap-3">
+                        <h2 class="text-base font-bold text-slate-800 dark:text-white flex items-center tracking-tight">
+                            <i data-lucide="folder-archive" class="w-5 h-5 mr-2 text-indigo-500"></i> ${subject}
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="batchModifyStatus('${subject}', 'Published')" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/40 transition">PUBLISH ALL</button>
+                            <button onclick="batchModifyStatus('${subject}', 'Draft')" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/40 transition">DRAFT ALL</button>
+                            <button onclick="batchDeleteSubject('${subject}')" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition">DELETE ALL</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">`;
 
-            ACTIVE_STUDENT_OBJECT = LOGGED_STUDENTS_ARRAY.find(s => String(s.id) === String(id));
-            if (ACTIVE_STUDENT_OBJECT) {
-                passPlaceholder.classList.add('hidden');
+                for (const [topic, questions] of Object.entries(topics)) {
+                    html += `
+                        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-4 md:p-5 shadow-xs">
+                            <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center"><i data-lucide="layers" class="w-4 h-4 mr-1.5 text-slate-400"></i> ${topic}</h3>
+                            <div class="space-y-3">`;
+
+                    questions.forEach(q => {
+                        const isPub = q.status === 'Published';
+                        const currentStatusText = isPub ? 'PUBLISH' : 'DRAFT';
+                        const isDrive = q.entry_type === 'drive';
+
+                        html += `
+                            <div class="flex flex-col sm:flex-row items-start justify-between p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-slate-950/30 gap-4 hover:border-slate-200 dark:hover:border-white/10 transition">
+                                <div class="w-full sm:w-[88%] space-y-2">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <button onclick="toggleSingleStatus(${q.id}, '${q.status}')" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase transition-all tracking-wide ${isPub ? 'bg-emerald-500 text-white border-emerald-600 shadow-xs' : 'bg-amber-500 text-white border-amber-600 shadow-xs'}">
+                                            ${currentStatusText} ⇄
+                                        </button>
+                                        <span class="text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-white dark:bg-slate-900">${q.entry_type}</span>
+                                        <span class="text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-white dark:bg-slate-900">${q.difficulty_level}</span>
+                                        <span class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900">${q.marks_weightage}M</span>
+                                    </div>
+                                    
+                                    ${isDrive ? `
+                                        <div class="space-y-1">
+                                            <p class="text-sm font-bold text-slate-800 dark:text-white leading-relaxed break-words">${q.title || 'Untitled Resource'}</p>
+                                            ${q.subtitle ? `<p class="text-xs text-slate-500 dark:text-slate-400">${q.subtitle}</p>` : ''}
+                                            ${q.drive_url ? `<a href="${q.drive_url}" target="_blank" class="inline-flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-1"><i data-lucide="external-link" class="w-3.5 h-3.5 mr-1"></i> Open Drive Resource</a>` : ''}
+                                        </div>
+                                    ` : `
+                                        <p class="text-sm font-bold text-slate-800 dark:text-white leading-relaxed break-words">Q: ${q.question_text || 'No Question Text'}</p>
+                                        <div class="text-sm text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900/60 py-1.5 px-3 rounded-xl border border-slate-100 dark:border-white/5 whitespace-pre-wrap break-words leading-relaxed shadow-2xs h-auto min-h-0">
+                                            ${q.answer_format === 'points' && Array.isArray(q.answer_points) ? `<ul class="list-disc pl-5 space-y-0.5">${q.answer_points.map(p=>`<li>${p}</li>`).join('')}</ul>` : (q.answer_passage || '')}
+                                        </div>
+                                    `}
+                                </div>
+                                
+                                <div class="flex sm:flex-col gap-2 shrink-0 self-end sm:self-start pt-1">
+                                    <button onclick="openEditModal(${q.id})" class="inline-flex items-center justify-center font-bold text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-2 rounded-xl transition shadow-2xs" title="EDIT Configuration">EDIT</button>
+                                    <button onclick="deleteQuestion(${q.id})" class="inline-flex items-center justify-center font-bold text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl transition border border-rose-100" title="DELETE Entry">DELETE</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                }
+                html += `</div></div>`;
+            }
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function batchModifyStatus(subjectName, targetStatus) {
+            const { error } = await supabase.from('question_bank').update({ status: targetStatus }).eq('subject_name', subjectName);
+            if (!error) loadData();
+        }
+
+        async function toggleSingleStatus(id, currentStatus) {
+            const target = currentStatus === 'Published' ? 'Draft' : 'Published';
+            const { error } = await supabase.from('question_bank').update({ status: target }).eq('id', id);
+            if (!error) loadData();
+        }
+
+        async function batchDeleteSubject(subjectName) {
+            if (confirm(`ADMIN WARNING: Completely wipe all records attached to "${subjectName}"?`)) {
+                const { error } = await supabase.from('question_bank').delete().eq('subject_name', subjectName);
+                if (!error) loadData();
+            }
+        }
+
+        function openEditModal(id) {
+            const q = cachedData.find(item => item.id === id);
+            if (!q) return;
+
+            document.getElementById('edit-id').value = q.id;
+            document.getElementById('edit-entry-type').value = q.entry_type;
+            document.getElementById('modal-id-badge').innerText = `ID: ${q.id} (${q.entry_type})`;
+            
+            document.getElementById('edit-marks').value = q.marks_weightage;
+            document.getElementById('edit-difficulty').value = q.difficulty_level;
+            document.getElementById('edit-status').value = q.status;
+
+            const qaContainer = document.getElementById('edit-qa-container');
+            const driveContainer = document.getElementById('edit-drive-container');
+
+            if (q.entry_type === 'qa') {
+                qaContainer.classList.remove('hidden');
+                driveContainer.classList.add('hidden');
+
+                const qInput = document.getElementById('edit-question');
+                qInput.value = q.question_text || '';
                 
-                passPlacementNode.appendChild(printableContainer);
-                printableContainer.classList.remove('hidden');
-                printableContainer.classList.add('flex');
+                document.getElementById('edit-format').value = q.answer_format || 'passage';
                 
-                printBtn.disabled = false;
-                printBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-md text-sm transition shadow-2xs cursor-pointer flex items-center justify-center gap-2";
-                
-                compilePassCards();
+                const aInput = document.getElementById('edit-answer');
+                aInput.value = q.answer_format === 'points' && Array.isArray(q.answer_points) ? q.answer_points.join('\n') : (q.answer_passage || '');
+
+                setTimeout(() => {
+                    adjustTextAreaHeight(qInput);
+                    adjustTextAreaHeight(aInput);
+                }, 20);
+            } else {
+                qaContainer.classList.add('hidden');
+                driveContainer.classList.remove('hidden');
+
+                document.getElementById('edit-title').value = q.title || '';
+                document.getElementById('edit-subtitle').value = q.subtitle || '';
+                document.getElementById('edit-drive-url').value = q.drive_url || '';
+            }
+
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+        async function saveUpdatedQuestion() {
+            const id = document.getElementById('edit-id').value;
+            const entryType = document.getElementById('edit-entry-type').value;
+
+            let payload = {
+                marks_weightage: parseInt(document.getElementById('edit-marks').value) || 2,
+                difficulty_level: document.getElementById('edit-difficulty').value,
+                status: document.getElementById('edit-status').value
+            };
+
+            if (entryType === 'qa') {
+                const format = document.getElementById('edit-format').value;
+                const rawAns = document.getElementById('edit-answer').value;
+
+                payload.question_text = document.getElementById('edit-question').value.trim();
+                payload.answer_format = format;
+                payload.answer_points = format === 'points' ? rawAns.split('\n').map(p=>p.trim()).filter(Boolean) : null;
+                payload.answer_passage = format === 'passage' ? rawAns.trim() : null;
+            } else {
+                payload.title = document.getElementById('edit-title').value.trim();
+                payload.subtitle = document.getElementById('edit-subtitle').value.trim();
+                payload.drive_url = document.getElementById('edit-drive-url').value.trim();
+            }
+
+            const { error } = await supabase.from('question_bank').update(payload).eq('id', id);
+            if(!error) { closeEditModal(); loadData(); }
+            else { alert("Failed to save changes: " + error.message); }
+        }
+
+        async function deleteQuestion(id) {
+            if(confirm("Permanently destroy registry document record?")) {
+                const { error } = await supabase.from('question_bank').delete().eq('id', id);
+                if(!error) loadData();
             }
         }
 
-        function handleModeChange(mode) {
-            SELECTED_PASS_MODE = mode;
-            if (ACTIVE_STUDENT_OBJECT) {
-                compilePassCards();
-            }
+        async function purgeEmptyRegisters() {
+            loadData();
         }
-
-        function compilePassCards() {
-            if (!ACTIVE_STUDENT_OBJECT) return;
-
-            const studentImg = ACTIVE_STUDENT_OBJECT.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
-            const studentName = ACTIVE_STUDENT_OBJECT.full_name || 'N/A';
-            const classMapping = `${ACTIVE_STUDENT_OBJECT.student_class || '—'} / ${ACTIVE_STUDENT_OBJECT.section || '—'}`;
-            const fatherName = ACTIVE_STUDENT_OBJECT.father_name || 'Father Name Omitted';
-            const motherName = ACTIVE_STUDENT_OBJECT.mother_name || 'Mother Name Omitted';
-
-            // Show/Hide Cards Based on Selection
-            if (SELECTED_PASS_MODE === 'both') {
-                fatherCardNode.classList.remove('hidden');
-                motherCardNode.classList.remove('hidden');
-            } else if (SELECTED_PASS_MODE === 'father') {
-                fatherCardNode.classList.remove('hidden');
-                motherCardNode.classList.add('hidden');
-            } else if (SELECTED_PASS_MODE === 'mother') {
-                fatherCardNode.classList.add('hidden');
-                motherCardNode.classList.remove('hidden');
-            }
-
-            // Populate & Generate Father Card (if visible)
-            if (SELECTED_PASS_MODE === 'both' || SELECTED_PASS_MODE === 'father') {
-                document.getElementById('father-student-img').src = studentImg;
-                document.getElementById('father-visitor-name').innerText = fatherName;
-                document.getElementById('father-student-name').innerText = studentName;
-                document.getElementById('father-student-meta').innerText = classMapping;
-
-                const fatherPayload = JSON.stringify({
-                    student_title: studentName,
-                    class_mapping: classMapping,
-                    authorized_parent: fatherName,
-                    relation: 'Father'
-                });
-                generateQRCode('father-qrcode', fatherPayload);
-            }
-
-            // Populate & Generate Mother Card (if visible)
-            if (SELECTED_PASS_MODE === 'both' || SELECTED_PASS_MODE === 'mother') {
-                document.getElementById('mother-student-img').src = studentImg;
-                document.getElementById('mother-visitor-name').innerText = motherName;
-                document.getElementById('mother-student-name').innerText = studentName;
-                document.getElementById('mother-student-meta').innerText = classMapping;
-
-                const motherPayload = JSON.stringify({
-                    student_title: studentName,
-                    class_mapping: classMapping,
-                    authorized_parent: motherName,
-                    relation: 'Mother'
-                });
-                generateQRCode('mother-qrcode', motherPayload);
-            }
-
-            triggerToast(`Pass cards refreshed for mode: ${SELECTED_PASS_MODE.toUpperCase()}`, 'success');
-        }
-
-        function generateQRCode(elementId, textPayload) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = ''; // Clear previous QR
-
-            new QRCode(container, {
-                text: textPayload,
-                width: 85,
-                height: 85,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
-
-        // Before sending to print pipeline, move the card directly under <body> to bypass any hidden parents
-        window.onbeforeprint = () => {
-            if (ACTIVE_STUDENT_OBJECT) {
-                document.body.appendChild(printableContainer);
-            }
-        };
-
-        // Put it back into the preview box after printing completes
-        window.onafterprint = () => {
-            if (ACTIVE_STUDENT_OBJECT) {
-                passPlacementNode.appendChild(printableContainer);
-            }
-        };
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        window.onload = () => { syncStudentDirectory(); };
     </script>
 </body>
 </html>

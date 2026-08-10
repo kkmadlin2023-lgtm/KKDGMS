@@ -45,307 +45,491 @@
             color: #ffffff !important;
             font-weight: 700 !important;
         }
+
+        .sidebar-transition {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .submenu-hidden {
+            display: none;
+        }
+
+        .submenu-open {
+            display: block;
+        }
     </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 antialiased" x-data="adminPortalApp()" x-init="initializeAdmin()">
+<body class="bg-slate-100 font-sans text-slate-800 antialiased flex min-h-screen" x-data="adminPortalApp()" x-init="initializeAdmin()">
 
-    <!-- Admin Master Header -->
-    <header class="admin-gradient border-b-4 border-red-600 sticky top-0 z-40 px-4 sm:px-6 py-4 flex flex-col xl:flex-row justify-between items-center gap-4 shadow-lg">
-        <div class="flex items-center gap-3 text-center sm:text-left flex-col sm:flex-row w-full xl:w-auto">
-            <div class="bg-red-600 p-2 rounded-lg text-white shadow-md mx-auto sm:mx-0">
-                <i data-lucide="shield-alert" class="w-6 h-6"></i>
-            </div>
-            <div>
-                <h1 class="text-lg sm:text-xl font-black text-white tracking-tight leading-none">ADMINISTRATOR MASTER PORTAL</h1>
-                <div class="flex items-center justify-center sm:justify-start gap-2 mt-1.5">
-                    <span class="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                    <p class="text-xs text-slate-300 font-medium tracking-widest uppercase">Global Mark Synchronization Override</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- System Health / Status Panel -->
-        <div class="flex flex-col md:flex-row items-center gap-3 bg-slate-800/80 px-4 py-3 md:py-2 rounded-xl xl:rounded-lg border border-slate-700 shadow-inner w-full xl:w-auto justify-between md:justify-end">
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">System Link:</span>
-                <div class="flex gap-2 items-center">
-                    <div class="w-3 h-3 rounded-full transition-all duration-500 relative" 
-                         :class="statusLight === 'red' ? 'bg-red-500 shadow-[0_0_12px_#ef4444] animate-pulse' : 'bg-slate-600'"></div>
-                    <div class="w-3 h-3 rounded-full transition-all duration-500 relative" 
-                         :class="statusLight === 'yellow' ? 'bg-amber-500 shadow-[0_0_12px_#f59e0b] animate-pulse' : 'bg-slate-600'"></div>
-                    <div class="w-3 h-3 rounded-full transition-all duration-500 relative" 
-                         :class="statusLight === 'green' ? 'bg-emerald-500 shadow-[0_0_12px_#10b981]' : 'bg-slate-600'"></div>
-                </div>
-                <div class="hidden md:block h-4 w-px bg-slate-600 mx-1"></div>
-            </div>
-            <div class="flex items-center gap-2">
-                <template x-if="statusLight === 'yellow'">
-                    <i data-lucide="loader-2" class="w-3.5 h-3.5 text-amber-400 animate-spin"></i>
-                </template>
-                <span class="text-xs font-bold text-white text-center md:text-left min-w-[150px]" x-text="statusMessage"></span>
-            </div>
-            <div class="w-full md:w-auto mt-2 md:mt-0">
-                <a href="a_dashboard.html" class="px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 transition flex items-center justify-center gap-1 w-full">
-                    <span>‹</span> Back to Dashboard
-                </a>
-            </div>
-        </div>
-    </header>
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" onclick="toggleSidebarMenu()" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs hidden lg:hidden transition-opacity"></div>
 
-    <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-8">
-        
-        <!-- Admin Analytics Overview -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" x-cloak>
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
-                <div class="bg-blue-100 p-3 rounded-lg text-blue-700"><i data-lucide="database" class="w-6 h-6"></i></div>
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase">Total Logged Exams</p>
-                    <p class="text-2xl font-black text-slate-900" x-text="stats.totalExams"></p>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
-                <div class="bg-emerald-100 p-3 rounded-lg text-emerald-700"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase">Published Sheets</p>
-                    <p class="text-2xl font-black text-emerald-700" x-text="stats.published"></p>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
-                <div class="bg-amber-100 p-3 rounded-lg text-amber-700"><i data-lucide="file-edit" class="w-6 h-6"></i></div>
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase">Pending Drafts</p>
-                    <p class="text-2xl font-black text-amber-700" x-text="stats.drafts"></p>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
-                <div class="bg-slate-100 p-3 rounded-lg text-slate-700"><i data-lucide="users" class="w-6 h-6"></i></div>
-                <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase">Classes Tracked</p>
-                    <p class="text-2xl font-black text-slate-900" x-text="stats.totalClasses"></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- UPPER HALF: MASTER OVERRIDE WORKSPACE -->
-        <section class="space-y-4">
-            <div class="border-b-2 border-slate-300 pb-2 flex items-center gap-2">
-                <span class="bg-red-100 text-red-800 font-bold text-xs px-2.5 py-1 rounded-md border border-red-200">MASTER ENGINE 01</span>
-                <h2 class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">Data Inspection & Override Workspace</h2>
-            </div>
-
-            <!-- Global Search & Configuration Form -->
-            <div class="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:grid-5 items-end">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target Exam *</label>
-                        <input type="text" x-model="filters.exam" placeholder="e.g., Final 2026" 
-                               class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none font-semibold">
+    <!-- Enterprise Sidebar Navigation -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-[#1e293b]/90 backdrop-blur-xl text-slate-200 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-700/50 flex flex-col justify-between shadow-2xl" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-700/50 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-500/20">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target Class *</label>
-                        <select x-model="filters.class" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none font-semibold">
-                            <option value="">-- View All Classes --</option>
-                            <template x-for="item in existingClasses" :key="item">
-                                <option :value="item" x-text="item"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target Section *</label>
-                        <select x-model="filters.section" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none font-semibold">
-                            <option value="">-- View All Sections --</option>
-                            <template x-for="item in existingSections" :key="item">
-                                <option :value="item" x-text="item"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <button @click="loadMasterData()" :disabled="!filters.exam || !filters.class || !filters.section || isFetching"
-                            class="w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md transition flex justify-center items-center gap-2 cursor-pointer h-[38px] sm:col-span-2 lg:col-span-1">
-                        <i data-lucide="scan-eye" class="w-4 h-4" :class="{'animate-pulse': isFetching}"></i> 
-                        <span x-text="isFetching ? 'Locating...' : 'Inspect Records'"></span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Admin Editor Table Section -->
-            <div x-show="students.length > 0" x-cloak class="bg-white rounded-xl border border-red-200 shadow-md overflow-hidden transition-all duration-300">
-                <div class="p-4 border-b border-slate-200 bg-red-50/30 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="unlock" class="w-5 h-5 text-red-600"></i>
-                        <h3 class="text-sm font-bold text-red-700">Master Editing Enabled</h3>
-                    </div>
-                    
-                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                        <button @click="executeMasterSync('draft')" :disabled="isSaving" class="flex-1 md:flex-initial justify-center bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer shadow-sm">
-                            <i data-lucide="rotate-ccw" class="w-4 h-4 text-slate-500"></i> Force Revert to Draft
-                        </button>
-                        <button @click="executeMasterSync('published')" :disabled="isSaving" class="flex-1 md:flex-initial justify-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer shadow-sm">
-                            <i data-lucide="shield-check" class="w-4 h-4"></i> Force Publish Override
-                        </button>
+                        <span class="font-bold text-sm text-white tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Admin Management Hub</span>
                     </div>
                 </div>
-
-                <div class="overflow-x-auto w-full touch-pan-x">
-                    <div class="min-w-[800px]">
-                        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-                            <thead class="bg-slate-800 text-white font-bold uppercase tracking-wider text-xs">
-                                <tr>
-                                    <th scope="col" class="px-4 sm:px-6 py-4 w-20">UID</th>
-                                    <th scope="col" class="px-4 sm:px-6 py-4">Student Name</th>
-                                    <template x-for="subject in subjects" :key="subject">
-                                        <th scope="col" class="px-4 sm:px-6 py-4 relative group min-w-[140px]">
-                                            <span x-text="subject"></span>
-                                            <button @click="removeSubjectColumn(subject)" class="hidden group-hover:inline-block absolute top-1.5 right-1.5 text-red-400 hover:text-red-300 cursor-pointer transition">
-                                                <i data-lucide="x-circle" class="w-4 h-4"></i>
-                                            </button>
-                                        </th>
-                                    </template>
-                                    <th scope="col" class="px-4 py-4 w-12 text-center bg-slate-900 border-l border-slate-700">
-                                        <button @click="addSubjectColumnPrompt()" class="p-1 rounded-md bg-slate-700 hover:bg-slate-600 text-white cursor-pointer shadow-sm transition">
-                                            <i data-lucide="plus" class="w-4 h-4"></i>
-                                        </button>
-                                    </th>
-                                    <th scope="col" class="px-4 sm:px-6 py-4 w-28 font-extrabold text-slate-300 bg-slate-900">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200 bg-white">
-                                <template x-for="student in students" :key="student.id">
-                                    <tr class="hover:bg-slate-50 transition-colors">
-                                        <td class="px-4 sm:px-6 py-3 font-mono text-xs text-slate-400" x-text="student.id"></td>
-                                        <td class="px-4 sm:px-6 py-3 font-bold text-slate-900" x-text="student.full_name"></td>
-                                        <template x-for="subject in subjects" :key="subject">
-                                            <td class="px-4 py-2">
-                                                <input type="number" min="0" max="100" placeholder="0"
-                                                       x-model.number="student.scores[subject]"
-                                                       @input="triggerUnsavedWarningState()"
-                                                       class="w-20 bg-slate-100 border border-slate-300 rounded px-2.5 py-1 text-center font-bold text-slate-800 focus:bg-white focus:outline-red-500 focus:border-red-500 transition-all">
-                                            </td>
-                                        </template>
-                                        <td class="px-4 py-2 bg-slate-50/50"></td> 
-                                        <td class="px-4 sm:px-6 py-3 font-black text-base text-slate-800 bg-slate-100/50" x-text="calculateStudentSum(student.scores)"></td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="p-2 bg-slate-200/60 text-center text-[11px] text-slate-500 font-medium block touch-none select-none lg:hidden">
-                    <!-- Swipe horizontally to review data layout -->
-                </div>
-            </div>
-
-            <!-- Workspace Idle Cover State -->
-            <div x-show="students.length === 0" class="bg-white border border-dashed border-slate-300 rounded-xl p-8 sm:p-12 text-center shadow-sm">
-                <div class="text-slate-400 max-w-md mx-auto space-y-3">
-                    <i data-lucide="hard-drive" class="w-12 h-12 mx-auto stroke-1 text-slate-300"></i>
-                    <h3 class="text-sm sm:text-base font-bold text-slate-700">Master Workspace Idle</h3>
-                    <p class="text-xs text-slate-500">Query specific records or select an entry from the Global Archive below to force modifications.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- LOWER HALF: GLOBAL DATABASE ARCHIVE -->
-        <section class="space-y-4">
-            <div class="border-b-2 border-slate-300 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <span class="bg-blue-100 text-blue-800 font-bold text-xs px-2.5 py-1 rounded-md border border-blue-200">GLOBAL ENGINE 02</span>
-                    <h2 class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">Global Audit & Session Archive</h2>
-                </div>
-                <button @click="loadGlobalSessions()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 py-1.5 px-3 rounded-lg flex items-center gap-1 font-bold transition cursor-pointer shadow-sm self-start sm:self-auto">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reload Database
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
 
-            <!-- Global Archive Filters -->
-            <div class="bg-slate-800 p-4 rounded-xl shadow-md flex flex-col md:flex-row gap-4 items-center justify-between border border-slate-700">
-                <div class="relative w-full md:max-w-md flex items-center gap-2">
-                    <div class="relative w-full">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                            <i data-lucide="search" class="w-4 h-4"></i>
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
+                
+                <!-- Admissions Submenu Parent Accordion -->
+                <div>
+                    <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-indigo-400 rounded-xl transition font-medium cursor-pointer group">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition"></i>
+                            <span>ADMISSION FORMS</span>
                         </span>
-                        <input type="text" x-model="historySearchQuery" placeholder="Search entire DB by Exam or Class..." 
-                               class="w-full bg-slate-900 border border-slate-600 pl-9 pr-4 py-2 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-500">
+                        <i id="submenu-arrow-indicator" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="admissions-submenu" class="submenu-hidden pl-7 pr-1 mt-1 space-y-1 bg-slate-900/40 rounded-xl border border-slate-700/40 py-1.5">
+                        <a href="a_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-indigo-400 hover:bg-slate-800/60 rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                            <span>Admin Admission Form</span>
+                        </a>
+                        <a href="f_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-indigo-400 hover:bg-slate-800/60 rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                            <span>Faculty Admission Form</span>
+                        </a>
+                        <a href="s_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-indigo-400 hover:bg-slate-800/60 rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                            <span>Student Admission Form</span>
+                        </a>
+                        <a href="w_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-indigo-400 hover:bg-slate-800/60 rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                            <span>Warden Admission Form</span>
+                        </a>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-                    <span class="text-xs font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status Filter:</span>
-                    <select x-model="historyStatusFilter" class="bg-slate-900 border border-slate-600 text-white rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer font-bold">
-                        <option value="all">View All Records</option>
-                        <option value="draft">Drafts (Pending)</option>
-                        <option value="published">Published (Final)</option>
-                    </select>
+                <!-- Navigation Module Links -->
+                <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY ASSIGNING PAGE</span>
+                </a>
+                
+                <a href="a_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
+                    <span>ATTENDANCE VIEW</span>
+                </a>
+
+                <a href="a_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="a_bonafide.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
+                    <span>BONAFIDE FORM</span>
+                </a>
+
+                <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
+                    <span>ANNOUNCEMENT EDIT</span>
+                </a>
+
+                <a href="a_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QUESTION BANK</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">System Records</div>
+
+                <a href="a_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>ADMIN DATABASE</span>
+                </a>
+
+                <a href="f_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DATABASE</span>
+                </a>
+
+                <a href="s_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT DATABASE</span>
+                </a>
+
+                <a href="w_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>WARDEN DATABASE</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governance</div>
+
+                <a href="a_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE CONFIRMING PAGE</span>
+                </a>
+
+                <a href="a_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-xl transition font-medium">
+                    <i data-lucide="award" class="w-4 h-4 text-indigo-400"></i>
+                    <span>MARKSHEET VIEW</span>
+                </a>
+
+                <a href="a_user.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                    <span>USER UPDATES</span>
+                </a>
+
+                <a href="a_password.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
+                    <span>PASSWORD UPDATES</span>
+                </a>
+                
+                <a href="a_ldetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
+                    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i>
+                    <span>Login Audit Log</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-700/50 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all border border-rose-500/20 hover:border-transparent cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Layout Structure -->
+    <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+        <!-- Admin Master Header -->
+        <header class="admin-gradient border-b-4 border-red-600 sticky top-0 z-40 px-4 sm:px-6 py-4 flex flex-col xl:flex-row justify-between items-center gap-4 shadow-lg">
+            <div class="flex items-center gap-3 text-center sm:text-left flex-col sm:flex-row w-full xl:w-auto">
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer self-start sm:self-auto">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="bg-red-600 p-2 rounded-lg text-white shadow-md mx-auto sm:mx-0">
+                    <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-black text-white tracking-tight leading-none">ADMINISTRATOR MASTER PORTAL</h1>
+                    <div class="flex items-center justify-center sm:justify-start gap-2 mt-1.5">
+                        <span class="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+                        <p class="text-xs text-slate-300 font-medium tracking-widest uppercase">Global Mark Synchronization Override</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Health / Status Panel -->
+            <div class="flex flex-col md:flex-row items-center gap-3 bg-slate-800/80 px-4 py-3 md:py-2 rounded-xl xl:rounded-lg border border-slate-700 shadow-inner w-full xl:w-auto justify-between md:justify-end">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">System Link:</span>
+                    <div class="flex gap-2 items-center">
+                        <div class="w-3 h-3 rounded-full transition-all duration-500 relative" 
+                             :class="statusLight === 'red' ? 'bg-red-500 shadow-[0_0_12px_#ef4444] animate-pulse' : 'bg-slate-600'"></div>
+                        <div class="w-3 h-3 rounded-full transition-all duration-500 relative" 
+                             :class="statusLight === 'yellow' ? 'bg-amber-500 shadow-[0_0_12px_#f59e0b] animate-pulse' : 'bg-slate-600'"></div>
+                        <div class="w-3 h-3 rounded-full transition-all duration-500 relative" 
+                             :class="statusLight === 'green' ? 'bg-emerald-500 shadow-[0_0_12px_#10b981]' : 'bg-slate-600'"></div>
+                    </div>
+                    <div class="hidden md:block h-4 w-px bg-slate-600 mx-1"></div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <template x-if="statusLight === 'yellow'">
+                        <i data-lucide="loader-2" class="w-3.5 h-3.5 text-amber-400 animate-spin"></i>
+                    </template>
+                    <span class="text-xs font-bold text-white text-center md:text-left min-w-[150px]" x-text="statusMessage"></span>
+                </div>
+                <div class="w-full md:w-auto mt-2 md:mt-0">
+                    <a href="a_dashboard.html" class="px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 transition flex items-center justify-center gap-1 w-full">
+                        <span>‹</span> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-8 w-full">
+            
+            <!-- Admin Analytics Overview -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" x-cloak>
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
+                    <div class="bg-blue-100 p-3 rounded-lg text-blue-700"><i data-lucide="database" class="w-6 h-6"></i></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 uppercase">Total Logged Exams</p>
+                        <p class="text-2xl font-black text-slate-900" x-text="stats.totalExams"></p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
+                    <div class="bg-emerald-100 p-3 rounded-lg text-emerald-700"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 uppercase">Published Sheets</p>
+                        <p class="text-2xl font-black text-emerald-700" x-text="stats.published"></p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
+                    <div class="bg-amber-100 p-3 rounded-lg text-amber-700"><i data-lucide="file-edit" class="w-6 h-6"></i></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 uppercase">Pending Drafts</p>
+                        <p class="text-2xl font-black text-amber-700" x-text="stats.drafts"></p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
+                    <div class="bg-slate-100 p-3 rounded-lg text-slate-700"><i data-lucide="users" class="w-6 h-6"></i></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 uppercase">Classes Tracked</p>
+                        <p class="text-2xl font-black text-slate-900" x-text="stats.totalClasses"></p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Historical Aggregated Session List -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-md overflow-hidden" id="admin-pdf-container">
-                <div class="overflow-x-auto w-full touch-pan-x">
-                    <div class="min-w-[900px]">
-                        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-                            <thead class="bg-slate-100 text-slate-600 font-black uppercase tracking-wider text-xs">
-                                <tr>
-                                    <th scope="col" class="px-6 py-4">Master Exam Ref</th>
-                                    <th scope="col" class="px-6 py-4">Class Target</th>
-                                    <th scope="col" class="px-6 py-4 text-center">Section Target</th>
-                                    <th scope="col" class="px-6 py-4 text-center">Roster Volume</th>
-                                    <th scope="col" class="px-6 py-4 text-center">Global Status</th>
-                                    <th scope="col" class="px-6 py-4 text-right">Master Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200 bg-white">
-                                <template x-for="session in filteredGlobalSessions" :key="session.key">
-                                    <tr class="hover:bg-blue-50 transition-colors group">
-                                        <td class="px-6 py-4 font-bold text-slate-900" x-text="session.exam_name"></td>
-                                        <td class="px-6 py-4 font-semibold text-slate-700" x-text="session.student_class"></td>
-                                        <td class="px-6 py-4 text-center font-black text-blue-600" x-text="session.section"></td>
-                                        <td class="px-6 py-4 text-center">
-                                            <span class="bg-slate-100 text-slate-600 py-1 px-2.5 rounded-md font-bold text-xs" x-text="`${session.count} Entries`"></span>
-                                        </td>
-                                        <td class="px-6 py-4 text-center">
-                                            <!-- Animated Verified Badge (Pulse Effect) -->
-                                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider border transition-all duration-300"
-                                                  :class="session.status === 'published' ? 'bg-emerald-100 text-emerald-800 border-emerald-300 verified-badge-animate' : 'bg-amber-100 text-amber-800 border-amber-200'">
-                                                <i :data-lucide="session.status === 'published' ? 'badge-check' : 'clock'" 
-                                                   class="w-4 h-4 transition-transform duration-300"
-                                                   :class="session.status === 'published' ? 'text-emerald-600' : 'text-amber-600'"></i>
-                                                <span x-text="session.status === 'published' ? 'Verified' : session.status"></span>
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-right space-x-2">
-                                            <button @click="loadSessionToMaster(session)" title="Load into Override Workspace" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white p-2 rounded-lg transition inline-flex items-center gap-1 cursor-pointer shadow-sm border border-slate-300">
-                                                <i data-lucide="scan-text" class="w-4 h-4"></i>
+            <!-- UPPER HALF: MASTER OVERRIDE WORKSPACE -->
+            <section class="space-y-4">
+                <div class="border-b-2 border-slate-300 pb-2 flex items-center gap-2">
+                    <span class="bg-red-100 text-red-800 font-bold text-xs px-2.5 py-1 rounded-md border border-red-200">MASTER ENGINE 01</span>
+                    <h2 class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">Data Inspection & Override Workspace</h2>
+                </div>
+
+                <!-- Global Search & Configuration Form -->
+                <div class="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target Exam *</label>
+                            <input type="text" x-model="filters.exam" placeholder="e.g., Final 2026" 
+                                   class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target Class *</label>
+                            <select x-model="filters.class" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none font-semibold">
+                                <option value="">-- View All Classes --</option>
+                                <template x-for="item in existingClasses" :key="item">
+                                    <option :value="item" x-text="item"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target Section *</label>
+                            <select x-model="filters.section" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none font-semibold">
+                                <option value="">-- View All Sections --</option>
+                                <template x-for="item in existingSections" :key="item">
+                                    <option :value="item" x-text="item"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <button @click="loadMasterData()" :disabled="!filters.exam || !filters.class || !filters.section || isFetching"
+                                class="w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md transition flex justify-center items-center gap-2 cursor-pointer h-[38px] sm:col-span-2 lg:col-span-1">
+                            <i data-lucide="scan-eye" class="w-4 h-4" :class="{'animate-pulse': isFetching}"></i> 
+                            <span x-text="isFetching ? 'Locating...' : 'Inspect Records'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin Editor Table Section -->
+                <div x-show="students.length > 0" x-cloak class="bg-white rounded-xl border border-red-200 shadow-md overflow-hidden transition-all duration-300">
+                    <div class="p-4 border-b border-slate-200 bg-red-50/30 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="unlock" class="w-5 h-5 text-red-600"></i>
+                            <h3 class="text-sm font-bold text-red-700">Master Editing Enabled</h3>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                            <button @click="executeMasterSync('draft')" :disabled="isSaving" class="flex-1 md:flex-initial justify-center bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer shadow-sm">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4 text-slate-500"></i> Force Revert to Draft
+                            </button>
+                            <button @click="executeMasterSync('published')" :disabled="isSaving" class="flex-1 md:flex-initial justify-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer shadow-sm">
+                                <i data-lucide="shield-check" class="w-4 h-4"></i> Force Publish Override
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto w-full touch-pan-x">
+                        <div class="min-w-[800px]">
+                            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                                <thead class="bg-slate-800 text-white font-bold uppercase tracking-wider text-xs">
+                                    <tr>
+                                        <th scope="col" class="px-4 sm:px-6 py-4 w-20">UID</th>
+                                        <th scope="col" class="px-4 sm:px-6 py-4">Student Name</th>
+                                        <template x-for="subject in subjects" :key="subject">
+                                            <th scope="col" class="px-4 sm:px-6 py-4 relative group min-w-[140px]">
+                                                <span x-text="subject"></span>
+                                                <button @click="removeSubjectColumn(subject)" class="hidden group-hover:inline-block absolute top-1.5 right-1.5 text-red-400 hover:text-red-300 cursor-pointer transition">
+                                                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                                </button>
+                                            </th>
+                                        </template>
+                                        <th scope="col" class="px-4 py-4 w-12 text-center bg-slate-900 border-l border-slate-700">
+                                            <button @click="addSubjectColumnPrompt()" class="p-1 rounded-md bg-slate-700 hover:bg-slate-600 text-white cursor-pointer shadow-sm transition">
+                                                <i data-lucide="plus" class="w-4 h-4"></i>
                                             </button>
-                                            <button @click="adminDownloadPDF(session)" title="Generate Official Report" class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition inline-flex items-center gap-1 cursor-pointer shadow-sm border border-blue-200">
-                                                <i data-lucide="download" class="w-4 h-4"></i>
-                                            </button>
-                                            <button @click="forceDeleteSession(session)" title="Force Purge from Database" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-2 rounded-lg transition inline-flex items-center gap-1 cursor-pointer shadow-sm border border-red-200">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
+                                        </th>
+                                        <th scope="col" class="px-4 sm:px-6 py-4 w-28 font-extrabold text-slate-300 bg-slate-900">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    <template x-for="student in students" :key="student.id">
+                                        <tr class="hover:bg-slate-50 transition-colors">
+                                            <td class="px-4 sm:px-6 py-3 font-mono text-xs text-slate-400" x-text="student.id"></td>
+                                            <td class="px-4 sm:px-6 py-3 font-bold text-slate-900" x-text="student.full_name"></td>
+                                            <template x-for="subject in subjects" :key="subject">
+                                                <td class="px-4 py-2">
+                                                    <input type="number" min="0" max="100" placeholder="0"
+                                                           x-model.number="student.scores[subject]"
+                                                           @input="triggerUnsavedWarningState()"
+                                                           class="w-20 bg-slate-100 border border-slate-300 rounded px-2.5 py-1 text-center font-bold text-slate-800 focus:bg-white focus:outline-red-500 focus:border-red-500 transition-all">
+                                                </td>
+                                            </template>
+                                            <td class="px-4 py-2 bg-slate-50/50"></td> 
+                                            <td class="px-4 sm:px-6 py-3 font-black text-base text-slate-800 bg-slate-100/50" x-text="calculateStudentSum(student.scores)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workspace Idle Cover State -->
+                <div x-show="students.length === 0" class="bg-white border border-dashed border-slate-300 rounded-xl p-8 sm:p-12 text-center shadow-sm">
+                    <div class="text-slate-400 max-w-md mx-auto space-y-3">
+                        <i data-lucide="hard-drive" class="w-12 h-12 mx-auto stroke-1 text-slate-300"></i>
+                        <h3 class="text-sm sm:text-base font-bold text-slate-700">Master Workspace Idle</h3>
+                        <p class="text-xs text-slate-500">Query specific records or select an entry from the Global Archive below to force modifications.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LOWER HALF: GLOBAL DATABASE ARCHIVE -->
+            <section class="space-y-4">
+                <div class="border-b-2 border-slate-300 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-800 font-bold text-xs px-2.5 py-1 rounded-md border border-blue-200">GLOBAL ENGINE 02</span>
+                        <h2 class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">Global Audit & Session Archive</h2>
+                    </div>
+                    <button @click="loadGlobalSessions()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 py-1.5 px-3 rounded-lg flex items-center gap-1 font-bold transition cursor-pointer shadow-sm self-start sm:self-auto">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reload Database
+                    </button>
+                </div>
+
+                <!-- Global Archive Filters -->
+                <div class="bg-slate-800 p-4 rounded-xl shadow-md flex flex-col md:flex-row gap-4 items-center justify-between border border-slate-700">
+                    <div class="relative w-full md:max-w-md flex items-center gap-2">
+                        <div class="relative w-full">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </span>
+                            <input type="text" x-model="historySearchQuery" placeholder="Search entire DB by Exam or Class..." 
+                                   class="w-full bg-slate-900 border border-slate-600 pl-9 pr-4 py-2 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-500">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                        <span class="text-xs font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status Filter:</span>
+                        <select x-model="historyStatusFilter" class="bg-slate-900 border border-slate-600 text-white rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer font-bold">
+                            <option value="all">View All Records</option>
+                            <option value="draft">Drafts (Pending)</option>
+                            <option value="published">Published (Final)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Historical Aggregated Session List -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-md overflow-hidden" id="admin-pdf-container">
+                    <div class="overflow-x-auto w-full touch-pan-x">
+                        <div class="min-w-[900px]">
+                            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-600 font-black uppercase tracking-wider text-xs">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-4">Master Exam Ref</th>
+                                        <th scope="col" class="px-6 py-4">Class Target</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Section Target</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Roster Volume</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Global Status</th>
+                                        <th scope="col" class="px-6 py-4 text-right">Master Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    <template x-for="session in filteredGlobalSessions" :key="session.key">
+                                        <tr class="hover:bg-blue-50 transition-colors group">
+                                            <td class="px-6 py-4 font-bold text-slate-900" x-text="session.exam_name"></td>
+                                            <td class="px-6 py-4 font-semibold text-slate-700" x-text="session.student_class"></td>
+                                            <td class="px-6 py-4 text-center font-black text-blue-600" x-text="session.section"></td>
+                                            <td class="px-6 py-4 text-center">
+                                                <span class="bg-slate-100 text-slate-600 py-1 px-2.5 rounded-md font-bold text-xs" x-text="`${session.count} Entries`"></span>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <!-- Animated Verified Badge (Pulse Effect) -->
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider border transition-all duration-300"
+                                                      :class="session.status === 'published' ? 'bg-emerald-100 text-emerald-800 border-emerald-300 verified-badge-animate' : 'bg-amber-100 text-amber-800 border-amber-200'">
+                                                    <i :data-lucide="session.status === 'published' ? 'badge-check' : 'clock'" 
+                                                       class="w-4 h-4 transition-transform duration-300"
+                                                       :class="session.status === 'published' ? 'text-emerald-600' : 'text-amber-600'"></i>
+                                                    <span x-text="session.status === 'published' ? 'Verified' : session.status"></span>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right space-x-2">
+                                                <button @click="loadSessionToMaster(session)" title="Load into Override Workspace" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white p-2 rounded-lg transition inline-flex items-center gap-1 cursor-pointer shadow-sm border border-slate-300">
+                                                    <i data-lucide="scan-text" class="w-4 h-4"></i>
+                                                </button>
+                                                <button @click="adminDownloadPDF(session)" title="Generate Official Report" class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition inline-flex items-center gap-1 cursor-pointer shadow-sm border border-blue-200">
+                                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                                </button>
+                                                <button @click="forceDeleteSession(session)" title="Force Purge from Database" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-2 rounded-lg transition inline-flex items-center gap-1 cursor-pointer shadow-sm border border-red-200">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="filteredGlobalSessions.length === 0">
+                                        <td colspan="6" class="px-6 py-12 text-center text-slate-500 font-semibold bg-slate-50">
+                                            <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-400"></i>
+                                            No global records matching the current constraints.
                                         </td>
                                     </tr>
-                                </template>
-                                <tr x-show="filteredGlobalSessions.length === 0">
-                                    <td colspan="6" class="px-6 py-12 text-center text-slate-500 font-semibold bg-slate-50">
-                                        <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-400"></i>
-                                        No global records matching the current constraints.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                <div class="p-2 bg-slate-100 text-center text-[11px] text-slate-400 font-medium block touch-none select-none lg:hidden">
-                    <!-- Swipe horizontally to scan current archive files -->
-                </div>
-            </div>
-        </section>
-    </main>
+            </section>
+        </main>
+    </div>
 
     <script>
         const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
         const supabaseClientInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Initialize Lucide Icons
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+        });
+
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        function toggleAdmissionsSubmenu() {
+            const submenu = document.getElementById('admissions-submenu');
+            const arrow = document.getElementById('submenu-arrow-indicator');
+            submenu.classList.toggle('submenu-hidden');
+            submenu.classList.toggle('submenu-open');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        async function triggerSystemLogout() {
+            await supabaseClientInstance.auth.signOut();
+            window.location.href = "login.html";
+        }
 
         function adminPortalApp() {
             return {
