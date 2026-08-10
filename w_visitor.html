@@ -81,7 +81,7 @@
             border: none !important;
         }
 
-        /* Moving Laser Beam Animation */
+        /* Realistic Moving Laser Beam Animation */
         @keyframes scanBeam {
             0% {
                 top: 5%;
@@ -131,8 +131,8 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            <!-- Left Side/Aside: Scanner & Manual Lookup -->
-            <aside class="lg:col-span-5 space-y-6">
+            <!-- Left Side: Scanner & Manual Lookup -->
+            <div class="lg:col-span-5 space-y-6">
                 
                 <!-- 1. Live Camera QR Scanner Card with Animated Laser -->
                 <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
@@ -207,10 +207,10 @@
                     </div>
                 </div>
 
-            </aside>
+            </div>
 
             <!-- Right Side: Analytics & Controls -->
-            <main class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs lg:col-span-7 space-y-6">
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs lg:col-span-7 space-y-6">
                 <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">
                     🔎 Data Filter & History Operations Desk
                 </h2>
@@ -241,7 +241,7 @@
                         <div id="stat-completed" class="text-xl font-black text-emerald-950 mt-0.5">0</div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
 
         <!-- Real-Time Log Table -->
@@ -406,7 +406,7 @@
             }
 
             scannerPlaceholder.classList.add('hidden');
-            scannerLaser.classList.remove('hidden');
+            scannerLaser.classList.remove('hidden'); // Show laser beam
             scannerStatusBadge.innerText = "Active Scanning";
             scannerStatusBadge.className = "text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold animate-pulse";
 
@@ -444,7 +444,7 @@
 
         function resetScannerUI() {
             scannerPlaceholder.classList.remove('hidden');
-            scannerLaser.classList.add('hidden');
+            scannerLaser.classList.add('hidden'); // Hide laser beam
             scannerStatusBadge.innerText = "Idle";
             scannerStatusBadge.className = "text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold";
             
@@ -457,6 +457,7 @@
 
         async function onScanSuccess(decodedText, decodedResult) {
             const now = Date.now();
+            // Prevent duplicate triggers within 4 seconds for the same QR
             if (decodedText === lastScannedPayload && (now - lastScanTime) < 4000) {
                 return;
             }
@@ -467,6 +468,7 @@
             try {
                 const parsedData = JSON.parse(decodedText);
                 
+                // Validate payload properties
                 if (!parsedData.student_title || !parsedData.authorized_parent) {
                     triggerToast("Invalid Pass QR Code structure.", "warning");
                     return;

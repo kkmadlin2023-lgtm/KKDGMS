@@ -6,23 +6,24 @@
     <title>Parent Leave Approval | KKDGMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- QRCode.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <!-- ========================================================= -->
-<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
-<!-- ========================================================= -->
-<script>
-    (function() {
-        const currentUrl = new URL(window.location.href);
-        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+    <!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+    <!-- ========================================================= -->
+    <script>
+        (function() {
+            const currentUrl = new URL(window.location.href);
+            const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
 
-        // Prevent infinite loops if we are already on redirect.html
-        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
-            // Encode target URL so query params (like ?leave_id=123) are preserved
-            const targetUrl = encodeURIComponent(window.location.href);
-            window.location.replace(`redirect.html?target=${targetUrl}`);
-        }
-    })();
-</script>
-<!-- ========================================================= -->
+            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+                const targetUrl = encodeURIComponent(window.location.href);
+                window.location.replace(`redirect.html?target=${targetUrl}`);
+            }
+        })();
+    </script>
+    <!-- ========================================================= -->
     <style>
         /* 3D Perspective & Flip Styles */
         .perspective-1000 {
@@ -42,7 +43,6 @@
         .flipped {
             transform: rotateY(180deg);
         }
-        /* Modern Glass & Elevation Depth Effects based on UI reference */
         .card-light-shadow {
             box-shadow: 0 10px 30px -5px rgba(108, 71, 255, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
         }
@@ -121,7 +121,14 @@
                         Parent Status: <span id="current-status-text">PENDING</span>
                     </div>
 
-                    <!-- Already Approved Special Note (Shown if re-opened after approval) -->
+                    <!-- QR Code Display Box -->
+                    <div class="p-4 bg-[#f8f7fc] border border-purple-100 rounded-2xl flex flex-col items-center justify-center text-center space-y-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gate Verification QR</span>
+                        <div id="qrcode" class="p-2 bg-white border border-slate-200 rounded-xl shadow-xs"></div>
+                        <span class="text-[9px] text-slate-400 font-mono">Contains ID, Gate Out, Warden Approval & Warden Name</span>
+                    </div>
+
+                    <!-- Already Approved Special Note -->
                     <div id="approved-note-box" class="hidden p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-2xl flex items-center gap-3">
                         <img src="verified.png" alt="Verified" class="w-8 h-8 object-contain shrink-0" onerror="this.src='https://cdn-icons-png.flaticon.com/512/7595/7595183.png'">
                         <div>
@@ -200,7 +207,7 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons (Hidden when already approved/rejected) -->
+                <!-- Action Buttons -->
                 <div id="action-buttons-container" class="p-5 bg-[#f8f7fc] border-t border-purple-100 grid grid-cols-2 gap-3">
                     <button onclick="updateParentApproval('REJECTED')" class="btn-3d w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer flex justify-center items-center gap-1.5 shadow-sm">
                         <span>✖</span> Reject
@@ -211,7 +218,7 @@
                 </div>
             </div>
 
-            <!-- BACK FACE: Flipped Success / Verification Screen -->
+            <!-- BACK FACE: Flipped Success Screen -->
             <div id="card-back" class="absolute top-0 left-0 w-full h-full rotate-y-180 backface-hidden bg-white rounded-3xl card-light-shadow border border-purple-200 p-6 flex flex-col items-center justify-center text-center space-y-4">
                 <div class="relative">
                     <div class="absolute -inset-2 bg-purple-200/50 rounded-full blur-md animate-pulse"></div>
@@ -247,6 +254,7 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let activeLeaveRecord = null;
+        let qrCodeInstance = null;
 
         function getLeaveIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -319,7 +327,31 @@
                 document.getElementById('card-warden-in').innerText = record.gate_in_warden_name;
             }
 
+            // Generate QR Code with required details
+            generateQRCode(record);
+
             updateStatusBannerView(record.parent_approval);
+        }
+
+        function generateQRCode(record) {
+            const qrPayload = JSON.stringify({
+                id: record.id,
+                warden_approval: record.warden_approval || 'PENDING',
+                gate_out_time: record.gate_out_time || null,
+                gate_out_warden_name: record.gate_out_warden_name || null
+            });
+
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = ""; // Clear existing QR
+
+            qrCodeInstance = new QRCode(qrContainer, {
+                text: qrPayload,
+                width: 128,
+                height: 128,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
         }
 
         function updateStatusBannerView(status) {
