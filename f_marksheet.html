@@ -39,261 +39,325 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 antialiased" x-data="markEntryApp()" x-init="initializePortal()">
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col md:flex-row" x-data="markEntryApp()" x-init="initializePortal()">
 
-    <!-- Header Navigation Bar -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-6 py-4 flex flex-col xl:flex-row justify-between items-center gap-4 shadow-sm">
-        <div class="flex items-center gap-3 text-center sm:text-left flex-col sm:flex-row w-full xl:w-auto">
-            <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-md mx-auto sm:mx-0">
-                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+    <!-- Mobile Topbar Header -->
+    <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 p-1.5 rounded-lg text-white">
+                <i data-lucide="graduation-cap" class="w-5 h-5"></i>
             </div>
-            <div>
-                <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-tight">Synchronized Marks Management Engine</h1>
-                <p class="text-xs text-slate-500 font-medium mt-1">Dual-Engine Workspace & Historical Archiver</p>
-            </div>
+            <span class="font-bold tracking-wider text-sm uppercase">KKDGMS Portal</span>
         </div>
-        
-        <!-- Live Synchronizer Status Indicator -->
-        <div class="flex flex-col md:flex-row items-center gap-3 bg-slate-100 p-3 md:py-2 md:px-4 rounded-2xl md:rounded-full border border-slate-200 w-full xl:w-auto justify-between md:justify-end">
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Sync Engine:</span>
-                <div class="flex gap-1.5">
-                    <div class="w-3 h-3 rounded-full transition-all duration-300" :class="statusLight === 'red' ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-slate-300'"></div>
-                    <div class="w-3 h-3 rounded-full transition-all duration-300" :class="statusLight === 'yellow' ? 'bg-amber-500 shadow-[0_0_8px_#f59e0b]' : 'bg-slate-300'"></div>
-                    <div class="w-3 h-3 rounded-full transition-all duration-300" :class="statusLight === 'green' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-300'"></div>
-                </div>
-                <div class="hidden md:block h-4 w-px bg-slate-300 mx-1"></div>
-            </div>
-            <span class="text-xs font-semibold text-slate-700 text-center md:text-left min-w-[150px]" x-text="statusMessage"></span>
-            <div class="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end mt-2 md:mt-0">
-                <a href="f_dashboard.html" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition flex items-center justify-center gap-1 flex-1 md:flex-initial">
-                    <span>‹</span> Dashboard
-                </a>
-                <button @click="terminatePortalSession()" class="px-3 py-2 border border-slate-200 bg-white rounded-xl text-xs font-bold text-red-500 hover:bg-rose-50 hover:text-rose-700 transition cursor-pointer flex-1 md:flex-initial">
-                    LOGOUT
-                </button>
-            </div>
-        </div>
+        <button @click="sidebarOpen = !sidebarOpen" class="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
+            <i data-lucide="menu" class="w-6 h-6" x-show="!sidebarOpen"></i>
+            <i data-lucide="x" class="w-6 h-6" x-show="sidebarOpen" x-cloak></i>
+        </button>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-8 sm:space-y-12">
-        
-        <!-- UPPER HALF: MARK ENTRY WORKSPACE -->
-        <section class="space-y-6">
-            <div class="border-b border-slate-200 pb-3 flex items-center gap-2">
-                <span class="bg-indigo-100 text-indigo-700 font-bold text-xs px-2.5 py-1 rounded-md">ENGINE 01</span>
-                <h2 class="text-base sm:text-lg font-bold text-slate-900">Active Marksheet Entry Workspace</h2>
-            </div>
+    <!-- Sidebar Overlay for Mobile -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" x-cloak
+         class="fixed inset-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-xs transition-opacity"></div>
 
-            <!-- Configuration Form -->
-            <div class="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-xs">
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 items-end">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Exam Name *</label>
-                        <input type="text" x-model="filters.exam" @input="cacheLocalWorkspaceState()" placeholder="e.g., Mid-Term 2026" 
-                               class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Class *</label>
-                        <select x-model="filters.class" @change="cacheLocalWorkspaceState()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
-                            <option value="">-- Choose Class --</option>
-                            <template x-for="item in existingClasses" :key="item">
-                                <option :value="item" x-text="item"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Section *</label>
-                        <select x-model="filters.section" @change="cacheLocalWorkspaceState()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
-                            <option value="">-- Choose Section --</option>
-                            <template x-for="item in existingSections" :key="item">
-                                <option :value="item" x-text="item"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <button @click="loadDataSessionPipeline()" :disabled="!filters.exam || !filters.class || !filters.section || isFetching"
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-semibold py-2 px-4 rounded-lg text-sm shadow-xs transition flex justify-center items-center gap-2 cursor-pointer border border-transparent h-[38px] sm:col-span-2 md:col-span-1">
-                        <i data-lucide="database-zap" class="w-4 h-4" :class="{'animate-bounce': isFetching}"></i> 
-                        <span x-text="isFetching ? 'Fetching Data...' : 'Fetch & Sync Data'"></span>
-                    </button>
+    <!-- Navigation Aside Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+           class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col justify-between transition-transform duration-300 ease-in-out shrink-0 border-r border-slate-800">
+        
+        <div class="p-5 space-y-6">
+            <!-- Brand Logo Header -->
+            <div class="flex items-center gap-3 px-2">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-600/30">
+                    <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white tracking-wider text-base leading-none">KKDGMS</h1>
+                    <p class="text-[10px] text-indigo-400 font-semibold tracking-widest uppercase mt-1">Faculty Portal</p>
                 </div>
             </div>
 
-            <!-- Grading Table Section -->
-            <div x-show="students.length > 0" x-cloak class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
-                <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div class="relative w-full lg:max-w-md">
+            <!-- Navigation Links -->
+            <nav class="space-y-1.5 pt-4">
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">Navigation</div>
+                <a href="f_dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all group">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 transition-all">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Marks Entry</span>
+                </a>
+            </nav>
+
+            <!-- System Metrics & Engine Status -->
+            <div class="pt-4 border-t border-slate-800/80 space-y-3">
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3">Sync Diagnostics</div>
+                
+                <div class="bg-slate-800/50 rounded-xl p-3 border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between text-xs font-semibold">
+                        <span class="text-slate-400">Engine State:</span>
+                        <div class="flex gap-1.5 items-center">
+                            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300" :class="statusLight === 'red' ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-slate-600'"></div>
+                            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300" :class="statusLight === 'yellow' ? 'bg-amber-500 shadow-[0_0_8px_#f59e0b]' : 'bg-slate-600'"></div>
+                            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300" :class="statusLight === 'green' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-600'"></div>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-medium leading-relaxed" x-text="statusMessage"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Footer & User Controls -->
+        <div class="p-4 border-t border-slate-800/80 bg-slate-900/50">
+            <button @click="terminatePortalSession()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all cursor-pointer">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span>LOGOUT PORTAL</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area Container -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        
+        <!-- Dashboard Top Header Bar -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-50 p-2 rounded-lg text-indigo-600 border border-indigo-100 hidden sm:block">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-tight">Synchronized Marks Management Engine</h1>
+                    <p class="text-xs text-slate-500 font-medium">Dual-Engine Workspace & Historical Archiver</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <a href="f_dashboard.html" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 transition flex items-center gap-1.5">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Back to</span> Dashboard
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Workspace View -->
+        <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-8 sm:space-y-12 flex-1">
+            
+            <!-- UPPER HALF: MARK ENTRY WORKSPACE -->
+            <section class="space-y-6">
+                <div class="border-b border-slate-200 pb-3 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-700 font-bold text-xs px-2.5 py-1 rounded-md">ENGINE 01</span>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Active Marksheet Entry Workspace</h2>
+                </div>
+
+                <!-- Configuration Form -->
+                <div class="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 items-end">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Exam Name *</label>
+                            <input type="text" x-model="filters.exam" @input="cacheLocalWorkspaceState()" placeholder="e.g., Mid-Term 2026" 
+                                   class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Class *</label>
+                            <select x-model="filters.class" @change="cacheLocalWorkspaceState()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
+                                <option value="">-- Choose Class --</option>
+                                <template x-for="item in existingClasses" :key="item">
+                                    <option :value="item" x-text="item"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Section *</label>
+                            <select x-model="filters.section" @change="cacheLocalWorkspaceState()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
+                                <option value="">-- Choose Section --</option>
+                                <template x-for="item in existingSections" :key="item">
+                                    <option :value="item" x-text="item"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <button @click="loadDataSessionPipeline()" :disabled="!filters.exam || !filters.class || !filters.section || isFetching"
+                                class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-semibold py-2 px-4 rounded-lg text-sm shadow-xs transition flex justify-center items-center gap-2 cursor-pointer border border-transparent h-[38px] sm:col-span-2 md:col-span-1">
+                            <i data-lucide="database-zap" class="w-4 h-4" :class="{'animate-bounce': isFetching}"></i> 
+                            <span x-text="isFetching ? 'Fetching Data...' : 'Fetch & Sync Data'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grading Table Section -->
+                <div x-show="students.length > 0" x-cloak class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div class="relative w-full lg:max-w-md">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </span>
+                            <input type="text" x-model="searchQuery" placeholder="Search filtered workspace roster..." 
+                                   class="w-full bg-white border border-slate-300 pl-9 pr-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                            <button @click="executeCloudSync('draft')" :disabled="isSaving" class="flex-1 lg:flex-initial justify-center bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="save-all" class="w-4 h-4 text-slate-500"></i> Save Draft
+                            </button>
+                            <button @click="executeCloudSync('published')" :disabled="isSaving" class="flex-1 lg:flex-initial justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="check" class="w-4 h-4"></i> Publish Marks
+                            </button>
+                            <button x-show="currentStatus === 'published'" @click="exportToPDF()" class="w-full lg:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="download" class="w-4 h-4"></i> Download Marksheet
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table Container Workspace -->
+                    <div class="overflow-x-auto w-full touch-pan-x" id="workspace-table-container">
+                        <div class="min-w-[800px]">
+                            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-xs">
+                                    <tr>
+                                        <th scope="col" class="px-4 sm:px-6 py-4 w-20">ID</th>
+                                        <th scope="col" class="px-4 sm:px-6 py-4">Student Name</th>
+                                        <template x-for="subject in subjects" :key="subject">
+                                            <th scope="col" class="px-4 sm:px-6 py-4 relative group min-w-[140px]">
+                                                <span x-text="subject"></span>
+                                                <button @click="removeSubjectColumn(subject)" class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700 cursor-pointer transition p-1 no-pdf-element">
+                                                    <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                </button>
+                                            </th>
+                                        </template>
+                                        <th scope="col" class="px-4 py-4 w-12 text-center bg-indigo-50/50 no-pdf-element">
+                                            <button @click="addSubjectColumnPrompt()" class="p-1.5 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-xs transition">
+                                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                            </button>
+                                        </th>
+                                        <th scope="col" class="px-4 sm:px-6 py-4 w-28 font-extrabold text-indigo-950 bg-indigo-50/50">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    <template x-for="student in filteredStudents" :key="student.id">
+                                        <tr class="hover:bg-slate-50/70 transition-colors">
+                                            <td class="px-4 sm:px-6 py-3 font-medium text-slate-400" x-text="student.id"></td>
+                                            <td class="px-4 sm:px-6 py-3 font-semibold text-slate-900" x-text="student.full_name"></td>
+                                            <template x-for="subject in subjects" :key="subject">
+                                                <td class="px-4 sm:px-6 py-2">
+                                                    <input type="number" min="0" max="100" placeholder="0"
+                                                           x-model.number="student.scores[subject]"
+                                                           @input="triggerUnsavedWarningState()"
+                                                           class="w-20 bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-center font-semibold focus:bg-white focus:outline-indigo-600 text-sm">
+                                                </td>
+                                            </template>
+                                            <td class="px-4 py-2 bg-slate-50/20 no-pdf-element"></td> 
+                                            <td class="px-4 sm:px-6 py-3 font-bold text-base text-indigo-600 bg-indigo-50/30" x-text="calculateStudentSum(student.scores)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="p-2 bg-slate-100/60 border-t border-slate-200 text-center text-[11px] text-slate-400 font-medium block lg:hidden select-none">
+                        ← Swipe horizontally to see complete workspace dimensions →
+                    </div>
+                </div>
+
+                <!-- Workspace Idle Cover State -->
+                <div x-show="students.length === 0" class="bg-white border border-dashed border-slate-300 rounded-xl p-8 sm:p-12 text-center shadow-xs">
+                    <div class="text-slate-400 max-w-md mx-auto space-y-3">
+                        <i data-lucide="folder-open" class="w-12 h-12 mx-auto stroke-1 text-indigo-500"></i>
+                        <h3 class="text-sm sm:text-base font-bold text-slate-800">Workspace Empty</h3>
+                        <p class="text-xs text-slate-500">Configure target metrics above and load workspace records to begin synchronization pipelines.</p>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="border-slate-200">
+
+            <!-- LOWER HALF: EXISTING SAVED RECORDS & DRAFTS MODULE -->
+            <section class="space-y-6">
+                <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-teal-100 text-teal-800 font-bold text-xs px-2.5 py-1 rounded-md">ENGINE 02</span>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900">Database Sessions Archive</h2>
+                    </div>
+                    <button @click="loadSavedSessions()" class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold transition cursor-pointer self-start sm:self-auto">
+                        <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Refresh Archive Logs
+                    </button>
+                </div>
+
+                <!-- History Controls/Filters -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <div class="relative w-full sm:max-w-md">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                             <i data-lucide="search" class="w-4 h-4"></i>
                         </span>
-                        <input type="text" x-model="searchQuery" placeholder="Search filtered workspace roster..." 
-                               class="w-full bg-white border border-slate-300 pl-9 pr-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                        <input type="text" x-model="historySearchQuery" placeholder="Search archive by Exam or Class..." 
+                               class="w-full bg-slate-50 border border-slate-300 pl-9 pr-4 py-2 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                     </div>
-                    
-                    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                        <button @click="executeCloudSync('draft')" :disabled="isSaving" class="flex-1 lg:flex-initial justify-center bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
-                            <i data-lucide="save-all" class="w-4 h-4 text-slate-500"></i> Save Draft
-                        </button>
-                        <button @click="executeCloudSync('published')" :disabled="isSaving" class="flex-1 lg:flex-initial justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
-                            <i data-lucide="check" class="w-4 h-4"></i> Publish Marks
-                        </button>
-                        <button x-show="currentStatus === 'published'" @click="exportToPDF()" class="w-full lg:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
-                            <i data-lucide="download" class="w-4 h-4"></i> Download Marksheet
-                        </button>
+
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                        <span class="text-xs font-bold text-slate-500 uppercase whitespace-nowrap">Filter Status:</span>
+                        <select x-model="historyStatusFilter" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                            <option value="all">Show All Rows</option>
+                            <option value="draft">Draft Sheets</option>
+                            <option value="published">Published Sheets</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Table Container Workspace -->
-                <div class="overflow-x-auto w-full touch-pan-x" id="workspace-table-container">
-                    <div class="min-w-[800px]">
-                        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-                            <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-xs">
-                                <tr>
-                                    <th scope="col" class="px-4 sm:px-6 py-4 w-20">ID</th>
-                                    <th scope="col" class="px-4 sm:px-6 py-4">Student Name</th>
-                                    <template x-for="subject in subjects" :key="subject">
-                                        <th scope="col" class="px-4 sm:px-6 py-4 relative group min-w-[140px]">
-                                            <span x-text="subject"></span>
-                                            <button @click="removeSubjectColumn(subject)" class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700 cursor-pointer transition p-1 no-pdf-element">
-                                                <i data-lucide="minus-circle" class="w-4 h-4"></i>
-                                            </button>
-                                        </th>
-                                    </template>
-                                    <th scope="col" class="px-4 py-4 w-12 text-center bg-indigo-50/50 no-pdf-element">
-                                        <button @click="addSubjectColumnPrompt()" class="p-1.5 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-xs transition">
-                                            <i data-lucide="plus" class="w-4 h-4"></i>
-                                        </button>
-                                    </th>
-                                    <th scope="col" class="px-4 sm:px-6 py-4 w-28 font-extrabold text-indigo-950 bg-indigo-50/50">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200 bg-white">
-                                <template x-for="student in filteredStudents" :key="student.id">
-                                    <tr class="hover:bg-slate-50/70 transition-colors">
-                                        <td class="px-4 sm:px-6 py-3 font-medium text-slate-400" x-text="student.id"></td>
-                                        <td class="px-4 sm:px-6 py-3 font-semibold text-slate-900" x-text="student.full_name"></td>
-                                        <template x-for="subject in subjects" :key="subject">
-                                            <td class="px-4 sm:px-6 py-2">
-                                                <input type="number" min="0" max="100" placeholder="0"
-                                                       x-model.number="student.scores[subject]"
-                                                       @input="triggerUnsavedWarningState()"
-                                                       class="w-20 bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-center font-semibold focus:bg-white focus:outline-indigo-600 text-sm">
+                <!-- Historical Aggregated Session List -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="overflow-x-auto w-full touch-pan-x">
+                        <div class="min-w-[900px]">
+                            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-xs">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-4">Saved Exam Reference</th>
+                                        <th scope="col" class="px-6 py-4">Class</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Section</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Roster Size</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Status</th>
+                                        <th scope="col" class="px-6 py-4 text-right">Actions Dashboard</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    <template x-for="session in filteredSavedSessions" :key="session.key">
+                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                            <td class="px-6 py-4 font-semibold text-slate-900" x-text="session.exam_name"></td>
+                                            <td class="px-6 py-4 text-slate-600" x-text="session.student_class"></td>
+                                            <td class="px-6 py-4 text-center font-bold text-indigo-600" x-text="session.section"></td>
+                                            <td class="px-6 py-4 text-center font-medium text-slate-500" x-text="`${session.count} Students`"></td>
+                                            <td class="px-6 py-4 text-center">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                                                      :class="session.status === 'published' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200'">
+                                                    <span class="w-1.5 h-1.5 rounded-full" :class="session.status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                                                    <span x-text="session.status"></span>
+                                                </span>
                                             </td>
-                                        </template>
-                                        <td class="px-4 py-2 bg-slate-50/20 no-pdf-element"></td> 
-                                        <td class="px-4 sm:px-6 py-3 font-bold text-base text-indigo-600 bg-indigo-50/30" x-text="calculateStudentSum(student.scores)"></td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="p-2 bg-slate-100/60 border-t border-slate-200 text-center text-[11px] text-slate-400 font-medium block lg:hidden select-none">
-                    ← Swipe horizontally to see complete workspace dimensions →
-                </div>
-            </div>
-
-            <!-- Workspace Idle Cover State -->
-            <div x-show="students.length === 0" class="bg-white border border-dashed border-slate-300 rounded-xl p-8 sm:p-12 text-center shadow-xs">
-                <div class="text-slate-400 max-w-md mx-auto space-y-3">
-                    <i data-lucide="folder-open" class="w-12 h-12 mx-auto stroke-1 text-indigo-500"></i>
-                    <h3 class="text-sm sm:text-base font-bold text-slate-800">Workspace Empty</h3>
-                    <p class="text-xs text-slate-500">Configure target metrics above and load workspace records to begin synchronization pipelines.</p>
-                </div>
-            </div>
-        </section>
-
-        <hr class="border-slate-200">
-
-        <!-- LOWER HALF: EXISTING SAVED RECORDS & DRAFTS MODULE -->
-        <section class="space-y-6">
-            <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <span class="bg-teal-100 text-teal-800 font-bold text-xs px-2.5 py-1 rounded-md">ENGINE 02</span>
-                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Database Sessions Archive</h2>
-                </div>
-                <button @click="loadSavedSessions()" class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold transition cursor-pointer self-start sm:self-auto">
-                    <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Refresh Archive Logs
-                </button>
-            </div>
-
-            <!-- History Controls/Filters -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div class="relative w-full sm:max-w-md">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <i data-lucide="search" class="w-4 h-4"></i>
-                    </span>
-                    <input type="text" x-model="historySearchQuery" placeholder="Search archive by Exam or Class..." 
-                           class="w-full bg-slate-50 border border-slate-300 pl-9 pr-4 py-2 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                </div>
-
-                <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                    <span class="text-xs font-bold text-slate-500 uppercase whitespace-nowrap">Filter Status:</span>
-                    <select x-model="historyStatusFilter" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
-                        <option value="all">Show All Rows</option>
-                        <option value="draft">Draft Sheets</option>
-                        <option value="published">Published Sheets</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Historical Aggregated Session List -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-                <div class="overflow-x-auto w-full touch-pan-x">
-                    <div class="min-w-[900px]">
-                        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-                            <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-xs">
-                                <tr>
-                                    <th scope="col" class="px-6 py-4">Saved Exam Reference</th>
-                                    <th scope="col" class="px-6 py-4">Class</th>
-                                    <th scope="col" class="px-6 py-4 text-center">Section</th>
-                                    <th scope="col" class="px-6 py-4 text-center">Roster Size</th>
-                                    <th scope="col" class="px-6 py-4 text-center">Status</th>
-                                    <th scope="col" class="px-6 py-4 text-right">Actions Dashboard</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200 bg-white">
-                                <template x-for="session in filteredSavedSessions" :key="session.key">
-                                    <tr class="hover:bg-slate-50/50 transition-colors">
-                                        <td class="px-6 py-4 font-semibold text-slate-900" x-text="session.exam_name"></td>
-                                        <td class="px-6 py-4 text-slate-600" x-text="session.student_class"></td>
-                                        <td class="px-6 py-4 text-center font-bold text-indigo-600" x-text="session.section"></td>
-                                        <td class="px-6 py-4 text-center font-medium text-slate-500" x-text="`${session.count} Students`"></td>
-                                        <td class="px-6 py-4 text-center">
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                                                  :class="session.status === 'published' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200'">
-                                                <span class="w-1.5 h-1.5 rounded-full" :class="session.status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
-                                                <span x-text="session.status"></span>
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-right space-x-1">
-                                            <button @click="loadSessionToWorkspace(session)" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
-                                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
-                                            </button>
-                                            <button @click="deleteSession(session)" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
-                                            </button>
-                                            <button @click="downloadArchiveToPDF(session)" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
-                                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
-                                            </button>
+                                            <td class="px-6 py-4 text-right space-x-1">
+                                                <button @click="loadSessionToWorkspace(session)" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
+                                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
+                                                </button>
+                                                <button @click="deleteSession(session)" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                                                </button>
+                                                <button @click="downloadArchiveToPDF(session)" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
+                                                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="filteredSavedSessions.length === 0">
+                                        <td colspan="6" class="px-6 py-12 text-center text-slate-400 font-medium">
+                                            No records matching search constraints or filters found in the archive table.
                                         </td>
                                     </tr>
-                                </template>
-                                <tr x-show="filteredSavedSessions.length === 0">
-                                    <td colspan="6" class="px-6 py-12 text-center text-slate-400 font-medium">
-                                        No records matching search constraints or filters found in the archive table.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="p-2 bg-slate-100/60 border-t border-slate-200 text-center text-[11px] text-slate-400 font-medium block touch-none select-none">
+                        ← Swipe horizontally to see complete dashboard archives →
                     </div>
                 </div>
-                <div class="p-2 bg-slate-100/60 border-t border-slate-200 text-center text-[11px] text-slate-400 font-medium block touch-none select-none">
-                    ← Swipe horizontally to see complete dashboard archives →
-                </div>
-            </div>
-        </section>
-    </main>
+            </section>
+        </main>
+    </div>
 
     <script>
         const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
@@ -302,6 +366,7 @@
 
         function markEntryApp() {
             return {
+                sidebarOpen: false,
                 filters: { exam: '', class: '', section: '' },
                 searchQuery: '',
                 students: [],
@@ -353,7 +418,7 @@
                     } catch (err) {
                         this.statusLight = 'red';
                         this.statusMessage = 'Sync Error: ' + err.message;
-                    } finally {
+                    } font-medium; {
                         this.$nextTick(() => { lucide.createIcons(); });
                     }
                 },

@@ -7,6 +7,7 @@
     <link class="icon" type="image/x-icon" href="kk.png">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Core PDF Matrix Generation Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -16,130 +17,212 @@
             to { transform: translateX(0) translateY(0); opacity: 1; }
         }
         .toast-animate { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .sidebar-transition { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col lg:flex-row">
 
     <div id="toast-container" class="fixed top-6 right-6 z-50 space-y-3 w-85 pointer-events-none"></div>
 
-    <div id="portal-workspace" class="max-w-7xl mx-auto p-4 md:p-6 space-y-6 opacity-0 transition-opacity duration-300">
-        
-        <header class="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-l-4 border-l-purple-600">
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center text-xl font-black border border-purple-200" id="faculty-avatar">
-                    ??
-                </div>
-                <div>
-                    <h1 class="text-lg font-black text-slate-900 tracking-tight uppercase" id="faculty-name-lbl">Loading Workspace Profile...</h1>
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
-                        <span class="font-semibold text-purple-600" id="faculty-id-lbl">ID: —</span>
-                        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-                        <span id="faculty-dept-lbl">Dept: —</span>
-                        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-                        <span class="bg-purple-50 text-purple-700 px-2.5 py-0.5 rounded font-bold border border-purple-200" id="assigned-matrix-lbl">Assigned Room: —</span>
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-enterprise-md" aria-label="Sidebar Navigation">
+        <div>
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Faculty Hub</span>
                     </div>
                 </div>
-            </div>
-            <div class="flex items-center gap-2.5 w-full lg:w-auto justify-end">
-                <a href="f_dashboard.html" class="px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 transition flex items-center gap-1">
-                    <span>‹</span> Back to Dashboard
-                </a>
-                <button onclick="terminatePortalSession()" class="px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition cursor-pointer">
-                    LOGOUT
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive" aria-label="Close Sidebar">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-1 text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Main Menu</div>
+                
+                <a href="f_dashboard.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DASHBOARD</span>
+                </a>
+                
+                <a href="f_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 bg-indigo-50/80 text-indigo-600 rounded-xl font-bold transition shadow-xs border border-indigo-100/50">
+                    <i data-lucide="user-check" class="w-4 h-4 text-indigo-600"></i>
+                    <span>STUDENT ATTENDANCE</span>
+                </a>
+                
+                <a href="f_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QB</span>
+                </a>
+
+                <a href="f_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="f_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="calendar-off" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE APPLY</span>
+                </a>
+
+                <a href="f_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET ENTRY</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer Action -->
+        <div class="p-4 border-t border-slate-100">
+            <button onclick="terminatePortalSession()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span>LOGOUT</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Sidebar Backdrop for Mobile -->
+    <div id="sidebar-backdrop" onclick="toggleSidebarMenu()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-xs z-40 hidden lg:hidden"></div>
+
+    <!-- Main Content Wrapper -->
+    <div class="flex-1 lg:pl-72 flex flex-col min-h-screen">
+        
+        <!-- Top Navbar for Mobile Toggle -->
+        <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between lg:hidden">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebarMenu()" class="p-2 text-slate-600 hover:bg-slate-100 rounded-xl" aria-label="Open Sidebar">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <span class="font-bold text-sm text-slate-900">KKDGMS Portal</span>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-                <h2 class="text-xs font-black text-purple-700 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center gap-2">
-                    <span>📅</span> DATE
-                </h2>
-                <div>
-                    <label class="block text-[10px] uppercase font-black text-slate-400 mb-1.5">Select Target Date</label>
-                    <input type="date" id="attendance-calendar-input" onchange="synchronizeAttendanceRegistry()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20 transition">
+        <div id="portal-workspace" class="max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 opacity-0 transition-opacity duration-300">
+            
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-l-4 border-l-purple-600">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center text-xl font-black border border-purple-200" id="faculty-avatar">
+                        ??
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-black text-slate-900 tracking-tight uppercase" id="faculty-name-lbl">Loading Workspace Profile...</h1>
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
+                            <span class="font-semibold text-purple-600" id="faculty-id-lbl">ID: —</span>
+                            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                            <span id="faculty-dept-lbl">Dept: —</span>
+                            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                            <span class="bg-purple-50 text-purple-700 px-2.5 py-0.5 rounded font-bold border border-purple-200" id="assigned-matrix-lbl">Assigned Room: —</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 leading-relaxed space-y-1">
-                    <p class="text-slate-700 font-bold">💡 Workspace Rules:</p>
-                    <p>Changing dates pulls historical records. Saving overwrites the structural tracking log array matching this active day signature container.</p>
+                <div class="flex items-center gap-2.5 w-full lg:w-auto justify-end">
+                    <a href="f_dashboard.html" class="px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 transition flex items-center gap-1">
+                        <span>‹</span> Back to Dashboard
+                    </a>
+                    <button onclick="terminatePortalSession()" class="px-3.5 py-2 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition cursor-pointer">
+                        LOGOUT
+                    </button>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
-                    <h2 class="text-xs font-black text-purple-700 uppercase tracking-wider flex items-center gap-2">
-                        <span>📊</span> Live Analytics
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                    <h2 class="text-xs font-black text-purple-700 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center gap-2">
+                        <span>📅</span> DATE
                     </h2>
-                    <div class="flex items-center gap-2">
-                        <span id="save-status-badge" class="text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border">Initializing...</span>
-                        <span id="active-date-pill" class="text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200 px-3 py-0.5 rounded-full font-mono">Date: —</span>
+                    <div>
+                        <label class="block text-[10px] uppercase font-black text-slate-400 mb-1.5">Select Target Date</label>
+                        <input type="date" id="attendance-calendar-input" onchange="synchronizeAttendanceRegistry()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20 transition">
+                    </div>
+                    <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 leading-relaxed space-y-1">
+                        <p class="text-slate-700 font-bold">💡 Workspace Rules:</p>
+                        <p>Changing dates pulls historical records. Saving overwrites the structural tracking log array matching this active day signature container.</p>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                        <h2 class="text-xs font-black text-purple-700 uppercase tracking-wider flex items-center gap-2">
+                            <span>📊</span> Live Analytics
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <span id="save-status-badge" class="text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border">Initializing...</span>
+                            <span id="active-date-pill" class="text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200 px-3 py-0.5 rounded-full font-mono">Date: —</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4 my-auto">
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                            <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total </div>
+                            <div id="metric-total" class="text-2xl font-black text-slate-800 mt-1">0</div>
+                        </div>
+                        <div class="p-4 bg-[#06402B]/5 border border-[#06402B]/20 rounded-xl text-center">
+                            <div class="text-[10px] uppercase font-bold text-[#06402B] tracking-wider">Present</div>
+                            <div id="metric-present" class="text-2xl font-black text-[#06402B] mt-1">0</div>
+                        </div>
+                        <div class="p-4 bg-[#CD1C18]/5 border border-[#CD1C18]/20 rounded-xl text-center">
+                            <div class="text-[10px] uppercase font-bold text-[#CD1C18] tracking-wider">Absent</div>
+                            <div id="metric-absent" class="text-2xl font-black text-[#CD1C18] mt-1">0</div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                        <button onclick="setGlobalRosterStatus('Present')" class="px-3 py-1.5 bg-[#06402B]/10 text-[#06402B] hover:bg-[#06402B]/20 font-bold border border-[#06402B]/30 rounded-lg text-xs transition cursor-pointer">
+                            ✓ Set All Present
+                        </button>
+                        <button onclick="setGlobalRosterStatus('Absent')" class="px-3 py-1.5 bg-[#CD1C18]/10 text-[#CD1C18] hover:bg-[#CD1C18]/20 font-bold border border-[#CD1C18]/30 rounded-lg text-xs transition cursor-pointer">
+                            ✗ Set All Absent
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <h3 class="text-xs font-black uppercase tracking-wider text-slate-700">Roll Call Registry</h3>
+                            <span id="classroom-display-badge" class="bg-purple-600 text-white font-black text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-md shadow-sm border border-purple-500">
+                                Class: Loading...
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500">Review structural allocations and perform manual status toggle corrections.</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <button onclick="downloadMonthlyAttendancePDF()" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-2">
+                            📥 Download Monthly PDF
+                        </button>
+                        <button onclick="commitAttendanceToDatabase()" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-black py-2.5 px-5 rounded-xl text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-2 border border-purple-500">
+                            💾 Save & Sync All Records
+                        </button>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-4 my-auto">
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total </div>
-                        <div id="metric-total" class="text-2xl font-black text-slate-800 mt-1">0</div>
-                    </div>
-                    <div class="p-4 bg-[#06402B]/5 border border-[#06402B]/20 rounded-xl text-center">
-                        <div class="text-[10px] uppercase font-bold text-[#06402B] tracking-wider">Present</div>
-                        <div id="metric-present" class="text-2xl font-black text-[#06402B] mt-1">0</div>
-                    </div>
-                    <div class="p-4 bg-[#CD1C18]/5 border border-[#CD1C18]/20 rounded-xl text-center">
-                        <div class="text-[10px] uppercase font-bold text-[#CD1C18] tracking-wider">Absent</div>
-                        <div id="metric-absent" class="text-2xl font-black text-[#CD1C18] mt-1">0</div>
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest border-b border-slate-200">
+                                <th class="py-3.5 px-6">System ID </th>
+                                <th class="py-3.5 px-6">Student Name</th>
+                                <th class="py-3.5 px-6">Class & Section</th>
+                                <th class="py-3.5 px-6">Health / Safety Alerts</th>
+                                <th class="py-3.5 px-6 text-center">Attendance </th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body" class="divide-y divide-slate-100 text-xs">
+                            <tr>
+                                <td colspan="5" class="text-center py-16 text-slate-400 font-semibold animate-pulse">Initializing directory profile engine matrix...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                    <button onclick="setGlobalRosterStatus('Present')" class="px-3 py-1.5 bg-[#06402B]/10 text-[#06402B] hover:bg-[#06402B]/20 font-bold border border-[#06402B]/30 rounded-lg text-xs transition cursor-pointer">
-                        ✓ Set All Present
-                    </button>
-                    <button onclick="setGlobalRosterStatus('Absent')" class="px-3 py-1.5 bg-[#CD1C18]/10 text-[#CD1C18] hover:bg-[#CD1C18]/20 font-bold border border-[#CD1C18]/30 rounded-lg text-xs transition cursor-pointer">
-                        ✗ Set All Absent
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div class="space-y-1">
-                    <div class="flex flex-wrap items-center gap-2.5">
-                        <h3 class="text-xs font-black uppercase tracking-wider text-slate-700">Roll Call Registry</h3>
-                        <span id="classroom-display-badge" class="bg-purple-600 text-white font-black text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-md shadow-sm border border-purple-500">
-                            Class: Loading...
-                        </span>
-                    </div>
-                    <p class="text-[11px] text-slate-500">Review structural allocations and perform manual status toggle corrections.</p>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <button onclick="downloadMonthlyAttendancePDF()" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-2">
-                        📥 Download Monthly PDF
-                    </button>
-                    <button onclick="commitAttendanceToDatabase()" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-black py-2.5 px-5 rounded-xl text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-2 border border-purple-500">
-                        💾 Save & Sync All Records
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse whitespace-nowrap">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-widest border-b border-slate-200">
-                            <th class="py-3.5 px-6">System ID </th>
-                            <th class="py-3.5 px-6">Student Name</th>
-                            <th class="py-3.5 px-6">Class & Section</th>
-                            <th class="py-3.5 px-6">Health / Safety Alerts</th>
-                            <th class="py-3.5 px-6 text-center">Attendance </th>
-                        </tr>
-                    </thead>
-                    <tbody id="attendance-table-body" class="divide-y divide-slate-100 text-xs">
-                        <tr>
-                            <td colspan="5" class="text-center py-16 text-slate-400 font-semibold animate-pulse">Initializing directory profile engine matrix...</td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -161,6 +244,13 @@
         const toastContainer = document.getElementById('toast-container');
         const classroomDisplayBadge = document.getElementById('classroom-display-badge');
         const saveStatusBadge = document.getElementById('save-status-badge');
+
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
 
         function setWorkspaceSaveState(isDirty) {
             IS_DATA_DIRTY = isDirty;
@@ -435,7 +525,6 @@
             }
         }
 
-        // MONTHLY PDF TRANSFORMATION PARSER: Left Column = Student Name, Top Headers = Dates[cite: 1]
         async function downloadMonthlyAttendancePDF() {
             const baseDateValue = calendarInput.value;
             if (!baseDateValue || !ASSIGNED_CLASS_ROOM) {
@@ -449,7 +538,6 @@
 
             triggerNotification(`Compiling student matrix ledger for PDF (${year}-${month})...`, "info");
 
-            // Extract all log sheets belonging to the target month[cite: 1]
             const { data: monthlyLogs, error } = await _supabase
                 .from('student_attendance')
                 .select('date, attendance_data')
@@ -469,7 +557,6 @@
                 return;
             }
 
-            // Extract comprehensive unique student mapping arrays safely
             const uniqueStudentsMap = new Map();
             monthlyLogs.forEach(row => {
                 if (Array.isArray(row.attendance_data)) {
@@ -487,13 +574,9 @@
                 return;
             }
 
-            // Construct unique date strings running along the horizontal headers
             const sortedDates = monthlyLogs.map(log => log.date);
-
-            // Left side dynamic header followed by standard calendar increments (Removed Student ID Column)
             const tableHeaders = ["Student Name", ...sortedDates.map(d => d.substring(8, 10))]; 
 
-            // Construct structural grid: left field is student name, right arrays map individual status changes
             const tableRows = targetStudentIds.map(studentId => {
                 const rowCells = [
                     uniqueStudentsMap.get(studentId) || 'Unknown Profile'
@@ -508,7 +591,6 @@
                         if (!individualMatch) {
                             rowCells.push("—");
                         } else {
-                            // Map target notations dynamically ('x' / 'a')
                             rowCells.push(individualMatch.status === "Present" ? "x" : "a");
                         }
                     }
@@ -517,23 +599,19 @@
                 return rowCells;
             });
 
-            // Initialize jsPDF engine layout settings 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-            // Branding Text Injection Header Matrices
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(14);
             doc.text("KKDGMS CORE IDENTITY & REGISTRY SYSTEM", 14, 15);
             
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(9);
-            
             doc.text(`Month: ${year}-${month} | Class: ${ASSIGNED_CLASS_ROOM.class} - ${ASSIGNED_CLASS_ROOM.section}`, 14, 26);
 
             const activeFacultyName = CURRENT_FACULTY_USER ? CURRENT_FACULTY_USER.full_name : "Authorized Faculty";
 
-            // Compile the grid output table safely
             doc.autoTable({
                 startY: 32,
                 head: [tableHeaders],
@@ -547,26 +625,23 @@
                 didParseCell: function(data) {
                     if (data.section === 'body' && data.column.index >= 1) {
                         if (data.cell.text[0] === 'x') {
-                            data.cell.styles.textColor = [6, 64, 43]; // Emerald text
+                            data.cell.styles.textColor = [6, 64, 43];
                             data.cell.styles.fontStyle = 'bold';
                         } else if (data.cell.text[0] === 'a') {
-                            data.cell.styles.textColor = [205, 28, 24]; // Crimson alert text
+                            data.cell.styles.textColor = [205, 28, 24];
                             data.cell.styles.fontStyle = 'bold';
                         }
                     }
                 }
             });
 
-            // Verification Space Block Calculation at page end
             let endingY = doc.lastAutoTable.finalY + 20;
             
-            // Avoid overflow constraints breaking signatures out of boundaries
             if (endingY > 185) {
                 doc.addPage();
                 endingY = 30;
             }
 
-            // Draw line divider and metadata signature blocks cleanly
             doc.setDrawColor(200, 200, 200);
             doc.line(14, endingY, 283, endingY);
 
@@ -578,7 +653,6 @@
             doc.setFontSize(8);
             doc.text("I hereby certify that this monthly attendance ledger represents an accurate and true record of student participation indices.", 14, endingY + 13);
             
-            // Signature lines
             const lineStartOffset = 210;
             doc.line(lineStartOffset, endingY + 25, lineStartOffset + 65, endingY + 25);
             
@@ -587,7 +661,6 @@
             doc.setFont("Helvetica", "normal");
             doc.text("Signature Block Stamp & Date", lineStartOffset, endingY + 33);
 
-            // Execute file download execution pipeline thread
             doc.save(`Attendance_${ASSIGNED_CLASS_ROOM.class}_${ASSIGNED_CLASS_ROOM.section}_${year}_${month}.pdf`);
             triggerNotification("Monthly attendance registry sheet generated.", "success");
         }
@@ -598,6 +671,7 @@
         }
 
         window.onload = () => {
+            lucide.createIcons();
             inspectSystemSessionState();
         };
     </script>

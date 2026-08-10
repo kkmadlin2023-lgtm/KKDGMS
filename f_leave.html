@@ -10,22 +10,22 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- ========================================================= -->
-<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
-<!-- ========================================================= -->
-<script>
-    (function() {
-        const currentUrl = new URL(window.location.href);
-        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+    <!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+    <!-- ========================================================= -->
+    <script>
+        (function() {
+            const currentUrl = new URL(window.location.href);
+            const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
 
-        // Prevent infinite loops if we are already on redirect.html
-        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
-            // Encode target URL so query params (like ?leave_id=123) are preserved
-            const targetUrl = encodeURIComponent(window.location.href);
-            window.location.replace(`redirect.html?target=${targetUrl}`);
-        }
-    })();
-</script>
-<!-- ========================================================= -->
+            // Prevent infinite loops if we are already on redirect.html
+            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+                // Encode target URL so query params (like ?leave_id=123) are preserved
+                const targetUrl = encodeURIComponent(window.location.href);
+                window.location.replace(`redirect.html?target=${targetUrl}`);
+            }
+        })();
+    </script>
+    <!-- ========================================================= -->
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
