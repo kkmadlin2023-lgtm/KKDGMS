@@ -21,8 +21,6 @@
 
             // Check if already on redirect.html or if loaded flag/session parameter exists
             if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
-                const targetUrl = encodeURIComponent(window.location.href);
-                // Append 'loaded=true' to target URL to prevent redirect loop after returning from loader
                 const separator = window.location.href.includes('?') ? '&' : '?';
                 const safeTarget = encodeURIComponent(window.location.href + separator + 'loaded=true');
                 window.location.replace(`redirect.html?target=${safeTarget}`);
@@ -165,18 +163,9 @@
             flex-shrink: 0;
         }
 
-        /* Toast Icon Accent Colors */
-        .toast-green .toast-icon {
-            color: #10b981;
-        }
-
-        .toast-yellow .toast-icon {
-            color: #f59e0b;
-        }
-
-        .toast-red .toast-icon {
-            color: #ef4444;
-        }
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
 
         @keyframes toastSlideIn {
             from {
@@ -516,7 +505,7 @@
         </main>
     </div>
 
-    <!-- Functional Scripts Preserved -->
+    <!-- Functional Scripts Preserved & Anomaly Resilient -->
     <script>
         const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA9NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
@@ -531,14 +520,12 @@
 
             const toast = document.createElement("div");
             
-            // Determine icon accent color class
             let colorClass = "toast-green";
             if (type === "warning") colorClass = "toast-yellow";
             if (type === "error" || type === "danger") colorClass = "toast-red";
 
             toast.className = `toast-pill ${colorClass}`;
 
-            // Shield badge SVG structure
             const iconSvg = `
                 <span class="toast-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -551,7 +538,6 @@
             toast.innerHTML = `${iconSvg}<span>${message}</span>`;
             container.appendChild(toast);
 
-            // Auto-dismiss after 4 seconds with fade-out animation
             setTimeout(() => {
                 toast.classList.add("fade-out");
                 setTimeout(() => {
@@ -584,44 +570,72 @@
         async function verifyAdminSessionWorkspace() {
             const { data: { session }, error } = await _supabase.auth.getSession();
             if (error || !session) {
+                console.error("Auth session check failed:", error);
                 window.location.href = "login.html";
                 return;
             }
-            fetchAdminSchemaProfile(session.user.id);
+            fetchAdminSchemaProfile(session.user);
         }
 
-        async function fetchAdminSchemaProfile(authUid) {
+        async function fetchAdminSchemaProfile(authUser) {
             try {
-                const { data: profile, error } = await _supabase
-                    .from('admins')
-                    .select('*')
-                    .eq('auth_uid', authUid)
-                    .maybeSingle();
+                const authUid = authUser.id;
+                let profile = null;
+                let queryError = null;
 
-                if (error || !profile) {
-                    alert("Profile resolution anomaly. Rerouting to authorization checkpoint.");
+                // Attempt 1: Query by 'auth_uid'
+                let res = await _supabase.from('admins').select('*').eq('auth_uid', authUid).maybeSingle();
+                profile = res.data;
+                queryError = res.error;
+
+                // Attempt 2: Fallback query by 'user_id' if 'auth_uid' yields no data
+                if (!profile) {
+                    res = await _supabase.from('admins').select('*').eq('user_id', authUid).maybeSingle();
+                    if (res.data) profile = res.data;
+                }
+
+                // Attempt 3: Fallback query by 'email'
+                if (!profile && authUser.email) {
+                    res = await _supabase.from('admins').select('*').eq('email', authUser.email).maybeSingle();
+                    if (res.data) profile = res.data;
+                }
+
+                // Attempt 4: Fallback query by primary key 'id'
+                if (!profile) {
+                    res = await _supabase.from('admins').select('*').eq('id', authUid).maybeSingle();
+                    if (res.data) profile = res.data;
+                }
+
+                if (!profile) {
+                    console.error("Profile Resolution Anomaly details:", {
+                        authUid,
+                        email: authUser.email,
+                        error: queryError
+                    });
+                    alert("Profile resolution anomaly. Rerouting to authorization checkpoint.\nCheck Console (F12) for details.");
                     window.location.href = "login.html";
                     return;
                 }
 
-                document.getElementById('admin-fullname-lbl').innerText = profile.full_name;
+                // Populate UI Profile Card Details
+                document.getElementById('admin-fullname-lbl').innerText = profile.full_name || profile.name || 'Admin User';
                 document.getElementById('admin-title-lbl').innerText = `${profile.department || 'General Administration'} Department Leader`;
-                document.getElementById('admin-uid-lbl').innerText = profile.user_id || '—';
+                document.getElementById('admin-uid-lbl').innerText = profile.user_id || profile.admin_id || profile.id || '—';
                 document.getElementById('admin-role-lbl').innerText = profile.role || 'admin';
-                document.getElementById('admin-email-lbl').innerText = profile.email;
-                document.getElementById('admin-phone-lbl').innerText = profile.mobile || '—';
+                document.getElementById('admin-email-lbl').innerText = profile.email || authUser.email || '—';
+                document.getElementById('admin-phone-lbl').innerText = profile.mobile || profile.phone || '—';
                 document.getElementById('admin-qual-lbl').innerText = profile.qualification || '—';
 
                 if (profile.photo_url) {
                     document.getElementById('admin-avatar-img').src = profile.photo_url;
                 }
 
-                document.getElementById('admin-dob-age').innerText = `${profile.dob} (${profile.age || '—'} Yrs)`;
+                document.getElementById('admin-dob-age').innerText = `${profile.dob || '—'} (${profile.age || '—'} Yrs)`;
                 document.getElementById('admin-gender').innerText = profile.gender || '—';
                 document.getElementById('admin-blood').innerText = profile.blood_group || '—';
                 
                 const rawAadhaar = profile.aadhaar || '';
-                document.getElementById('admin-aadhaar').innerText = rawAadhaar ? `XXXX-XXXX-${rawAadhaar.slice(-4)}` : '—';
+                document.getElementById('admin-aadhaar').innerText = rawAadhaar ? `XXXX-XXXX-${String(rawAadhaar).slice(-4)}` : '—';
 
                 document.getElementById('admin-hostel').innerText = profile.hostel_name || 'N/A';
                 document.getElementById('admin-idmark1').innerText = profile.id_mark_1 || 'None Recorded';
@@ -634,6 +648,7 @@
                 document.getElementById('admin-pincode').innerText = profile.pincode || '—';
 
             } catch (err) {
+                console.error("Critical Exception during profile fetch:", err);
                 window.location.href = "login.html";
             }
         }
@@ -645,7 +660,6 @@
 
         window.onload = () => {
             verifyAdminSessionWorkspace();
-            // Render vector Lucide icons dynamically
             if (window.lucide) {
                 lucide.createIcons();
             }
