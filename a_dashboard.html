@@ -10,26 +10,44 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Loader Redirector -->
-    <script>
-        (function() {
-            const currentUrl = new URL(window.location.href);
-            const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
 
-            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
-                const separator = window.location.href.includes('?') ? '&' : '?';
-                const safeTarget = encodeURIComponent(window.location.href + separator + 'loaded=true');
-                window.location.replace(`redirect.html?target=${safeTarget}`);
-            }
-        })();
-    </script>
-
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
     <!-- Modern Lucide Icons & Tailwind CSS -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
 
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
     <style>
         :root {
             --brand-primary: #4F46E5;
@@ -50,6 +68,7 @@
             letter-spacing: -0.01em;
         }
 
+        /* Sidebar & Menu Dynamic Collapsible Micro-animations */
         .sidebar-transition { 
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
         }
@@ -67,6 +86,7 @@
             transition: max-height 0.3s ease-in-out, opacity 0.25s ease-in; 
         }
 
+        /* Enterprise Card Hover Effects */
         .card-hover-effect {
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
         }
@@ -85,16 +105,23 @@
             transform: scale(0.98);
         }
 
+        /* Glassmorphism Navigation Bar Header */
         .glass-header {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
         }
 
+        /* Custom Soft Elevation Shadows */
         .shadow-enterprise-sm {
             box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
         }
+        
+        .shadow-enterprise-md {
+            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.03), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+        }
 
+        /* Custom Scrollbar Styles */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -109,64 +136,15 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #CBD5E1;
         }
-
-        #toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 99999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-
-        .toast-pill {
-            pointer-events: auto;
-            background-color: #0b1120;
-            color: #ffffff;
-            font-weight: 600;
-            font-size: 14px;
-            border-radius: 16px;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-            animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .toast-pill.fade-out {
-            opacity: 0;
-            transform: translateX(100%);
-        }
-
-        .toast-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .toast-green .toast-icon { color: #10b981; }
-        .toast-yellow .toast-icon { color: #f59e0b; }
-        .toast-red .toast-icon { color: #ef4444; }
-
-        @keyframes toastSlideIn {
-            from { opacity: 0; transform: translateX(100%); }
-            to { opacity: 1; transform: translateX(0); }
-        }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col lg:flex-row selection:bg-indigo-500 selection:text-white">
-
-    <div id="toast-container" class="print:hidden"></div>
 
     <!-- Enterprise Sidebar Navigation -->
     <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-enterprise-md" aria-label="Sidebar Navigation">
         <div class="flex flex-col h-full overflow-hidden">
             
+            <!-- Workspace Brand Header -->
             <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
@@ -182,9 +160,11 @@
                 </button>
             </div>
 
+            <!-- Navigation Scroll Area -->
             <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
                 <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
                 
+                <!-- Admissions Submenu Parent Accordion -->
                 <div>
                     <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium cursor-pointer group">
                         <span class="flex items-center gap-3">
@@ -213,6 +193,7 @@
                     </div>
                 </div>
 
+                <!-- Navigation Module Links -->
                 <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
                     <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
                     <span>FACULTY ASSIGNING PAGE</span>
@@ -232,10 +213,10 @@
                     <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
                     <span>BONAFIDE FORM</span>
                 </a>
-                <a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
-                    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
-                    <span>VISITOR DETAILS</span>
-                </a>
+<a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
+    <span>VISITOR DETAILS</span>
+</a>
                 <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
                     <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
                     <span>ANNOUNCEMENT EDIT</span>
@@ -290,10 +271,11 @@
                     <span>PASSWORD UPDATES</span>
                 </a>
                 <a href="a_ldetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
-                    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> LOGIN DETAILS
-                </a>
+    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> LOGIN DETAILS
+</a>
             </nav>
 
+            <!-- Sidebar Footer Action -->
             <div class="p-4 border-t border-slate-100 flex-shrink-0">
                 <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -306,6 +288,7 @@
     <!-- Main Content Workspace Navigation -->
     <div class="flex-1 lg:pl-72 min-h-screen flex flex-col transition-all duration-300">
         
+        <!-- Mobile Top Header Bar -->
         <header class="lg:hidden sticky top-0 z-30 glass-header border-b border-slate-200/80 p-4 flex items-center justify-between shadow-xs">
             <div class="flex items-center gap-3">
                 <button onclick="toggleSidebarMenu()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 btn-interactive cursor-pointer" aria-label="Open Navigation Drawer">
@@ -318,12 +301,14 @@
             </div>
         </header>
 
+        <!-- Main Dashboard Workspace -->
         <main class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
 
             <!-- Profile Header Elevation Card -->
             <header class="bg-white border border-slate-200/80 rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-enterprise-sm card-hover-effect flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
                 <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
 
+                <!-- Verified Avatar Frame Container -->
                 <div class="relative flex-shrink-0 mt-2 md:mt-0">
                     <img id="admin-avatar-img" src="teacher1.jpg" alt="Admin Profile Avatar" class="w-24 h-24 md:w-28 md:h-28 rounded-2xl object-cover border-2 border-slate-100 shadow-md bg-slate-50">
                     <span class="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs ring-4 ring-white font-bold shadow-xs" title="Verified Account Badge">
@@ -343,6 +328,7 @@
                             </div>
                         </div>
                         
+                        <!-- System Identity Badge Block -->
                         <div class="bg-slate-50 border border-slate-200/60 p-3.5 rounded-2xl text-xs font-mono text-center md:text-right min-w-[200px] shadow-xs">
                             <div class="text-slate-500 flex justify-between md:justify-end gap-2">
                                 <span class="text-slate-400">System Staff ID:</span>
@@ -372,9 +358,10 @@
                 </div>
             </header>
 
+            <!-- Dashboard Grid Panels -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
-                <!-- Card 1: Core Demographics -->
+                <!-- Card 1: Core Demographics & Identity -->
                 <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4">
                     <div>
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -406,7 +393,7 @@
                     </div>
                 </div>
 
-                <!-- Card 2: Health Matrix -->
+                <!-- Card 2: Health & Residential Matrix -->
                 <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4">
                     <div>
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -474,129 +461,74 @@
         </main>
     </div>
 
-    <!-- Script Execution -->
+    <!-- Functional Scripts Preserved -->
     <script>
         const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA9NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
-        
-        let _supabase = null;
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function showToast(message, type = 'success') {
-            const container = document.getElementById("toast-container");
-            if (!container) return;
-
-            const toast = document.createElement("div");
-            let colorClass = "toast-green";
-            if (type === "warning") colorClass = "toast-yellow";
-            if (type === "error" || type === "danger") colorClass = "toast-red";
-
-            toast.className = `toast-pill ${colorClass}`;
-            toast.innerHTML = `
-                <span class="toast-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                        <path d="M9 12l2 2 4-4"></path>
-                    </svg>
-                </span>
-                <span>${message}</span>
-            `;
-            container.appendChild(toast);
-
-            setTimeout(() => {
-                toast.classList.add("fade-out");
-                setTimeout(() => toast.remove(), 400);
-            }, 4000);
-        }
+        const sidebarNav = document.getElementById('sidebar-nav');
+        const admissionsSubmenu = document.getElementById('admissions-submenu');
+        const arrowIndicator = document.getElementById('submenu-arrow-indicator');
 
         function toggleSidebarMenu() {
-            const sidebar = document.getElementById('sidebar-nav');
-            if (sidebar) sidebar.classList.toggle('-translate-x-full');
+            sidebarNav.classList.toggle('-translate-x-full');
         }
 
         function toggleAdmissionsSubmenu() {
-            const submenu = document.getElementById('admissions-submenu');
-            const arrow = document.getElementById('submenu-arrow-indicator');
-            if (!submenu) return;
-
-            const isHidden = submenu.classList.contains('submenu-hidden');
+            const isHidden = admissionsSubmenu.classList.contains('submenu-hidden');
             if (isHidden) {
-                submenu.classList.remove('submenu-hidden');
-                submenu.classList.add('submenu-visible');
-                if (arrow) arrow.style.transform = 'rotate(180deg)';
+                admissionsSubmenu.classList.remove('submenu-hidden');
+                admissionsSubmenu.classList.add('submenu-visible');
+                if(arrowIndicator) arrowIndicator.style.transform = 'rotate(180deg)';
             } else {
-                submenu.classList.remove('submenu-visible');
-                submenu.classList.add('submenu-hidden');
-                if (arrow) arrow.style.transform = 'rotate(0deg)';
+                admissionsSubmenu.classList.remove('submenu-visible');
+                admissionsSubmenu.classList.add('submenu-hidden');
+                if(arrowIndicator) arrowIndicator.style.transform = 'rotate(0deg)';
             }
         }
 
         async function verifyAdminSessionWorkspace() {
-            if (!_supabase) return;
+            const { data: { session }, error } = await _supabase.auth.getSession();
+            if (error || !session) {
+                window.location.href = "login.html";
+                return;
+            }
+            fetchAdminSchemaProfile(session.user.id);
+        }
+
+        async function fetchAdminSchemaProfile(authUid) {
             try {
-                const { data: { session }, error } = await _supabase.auth.getSession();
-                if (error || !session) {
+                const { data: profile, error } = await _supabase
+                    .from('admins')
+                    .select('*')
+                    .eq('auth_uid', authUid)
+                    .maybeSingle();
+
+                if (error || !profile) {
+                    alert("Profile resolution anomaly. Rerouting to authorization checkpoint.");
                     window.location.href = "login.html";
                     return;
                 }
-                await fetchAdminSchemaProfile(session.user);
-            } catch (err) {
-                console.error("Auth Exception:", err);
-                window.location.href = "login.html";
-            }
-        }
 
-        async function fetchAdminSchemaProfile(authUser) {
-            try {
-                const authUid = authUser.id;
-                let profile = null;
-
-                // 1. Primary lookup on auth_uid
-                let res = await _supabase.from('admins').select('*').eq('auth_uid', authUid).maybeSingle();
-                profile = res.data;
-
-                // 2. Fallback on user_id
-                if (!profile) {
-                    res = await _supabase.from('admins').select('*').eq('user_id', authUid).maybeSingle();
-                    if (res.data) profile = res.data;
-                }
-
-                // 3. Fallback on email
-                if (!profile && authUser.email) {
-                    res = await _supabase.from('admins').select('*').eq('email', authUser.email).maybeSingle();
-                    if (res.data) profile = res.data;
-                }
-
-                // 4. Fallback on primary key ID (if numeric or matching string)
-                if (!profile && !isNaN(Number(authUid))) {
-                    res = await _supabase.from('admins').select('*').eq('id', authUid).maybeSingle();
-                    if (res.data) profile = res.data;
-                }
-
-                if (!profile) {
-                    showToast("Profile not found. Redirecting to login...", "error");
-                    setTimeout(() => { window.location.href = "login.html"; }, 1500);
-                    return;
-                }
-
-                // Populate UI Fields safely
-                document.getElementById('admin-fullname-lbl').innerText = profile.full_name || profile.name || 'Admin User';
+                document.getElementById('admin-fullname-lbl').innerText = profile.full_name;
                 document.getElementById('admin-title-lbl').innerText = `${profile.department || 'General Administration'} Department Leader`;
-                document.getElementById('admin-uid-lbl').innerText = profile.user_id || profile.admin_id || profile.id || '—';
+                document.getElementById('admin-uid-lbl').innerText = profile.user_id || '—';
                 document.getElementById('admin-role-lbl').innerText = profile.role || 'admin';
-                document.getElementById('admin-email-lbl').innerText = profile.email || authUser.email || '—';
-                document.getElementById('admin-phone-lbl').innerText = profile.mobile || profile.phone || '—';
+                document.getElementById('admin-email-lbl').innerText = profile.email;
+                document.getElementById('admin-phone-lbl').innerText = profile.mobile || '—';
                 document.getElementById('admin-qual-lbl').innerText = profile.qualification || '—';
 
                 if (profile.photo_url) {
                     document.getElementById('admin-avatar-img').src = profile.photo_url;
                 }
 
-                document.getElementById('admin-dob-age').innerText = `${profile.dob || '—'} (${profile.age || '—'} Yrs)`;
+                document.getElementById('admin-dob-age').innerText = `${profile.dob} (${profile.age || '—'} Yrs)`;
                 document.getElementById('admin-gender').innerText = profile.gender || '—';
                 document.getElementById('admin-blood').innerText = profile.blood_group || '—';
                 
                 const rawAadhaar = profile.aadhaar || '';
-                document.getElementById('admin-aadhaar').innerText = rawAadhaar ? `XXXX-XXXX-${String(rawAadhaar).slice(-4)}` : '—';
+                document.getElementById('admin-aadhaar').innerText = rawAadhaar ? `XXXX-XXXX-${rawAadhaar.slice(-4)}` : '—';
 
                 document.getElementById('admin-hostel').innerText = profile.hostel_name || 'N/A';
                 document.getElementById('admin-idmark1').innerText = profile.id_mark_1 || 'None Recorded';
@@ -609,32 +541,22 @@
                 document.getElementById('admin-pincode').innerText = profile.pincode || '—';
 
             } catch (err) {
-                console.error("Profile Fetch Error:", err);
                 window.location.href = "login.html";
             }
         }
 
         async function triggerSystemLogout() {
-            if (_supabase) {
-                await _supabase.auth.signOut();
-            }
+            await _supabase.auth.signOut();
             window.location.href = "login.html";
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            // Safe initialization of Supabase client
-            if (window.supabase) {
-                _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                verifyAdminSessionWorkspace();
-            } else {
-                console.error("Supabase SDK failed to load.");
-            }
-
-            // Safe initialization of Lucide icons
+        window.onload = () => {
+            verifyAdminSessionWorkspace();
+            // Render vector Lucide icons dynamically
             if (window.lucide) {
                 lucide.createIcons();
             }
-        });
+        };
     </script>
 </body>
 </html>
