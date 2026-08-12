@@ -27,11 +27,66 @@
         .submenu-open {
             display: block;
         }
+
+        /* DARK PILL TOAST NOTIFICATION STYLES */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 22px;
+            border-radius: 16px;
+            background-color: #0b1120 !important;
+            color: #ffffff !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            min-width: 280px;
+            font-size: 14px;
+            font-weight: 600;
+            pointer-events: auto;
+        }
+
+        .toast-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        /* Accent Icon Colors */
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.fade-out {
+            animation: slideOut 0.5s ease-in forwards;
+        }
+
+        @keyframes slideOut {
+            to { transform: translateX(120%); opacity: 0; }
+        }
     </style>
 </head>
 <body class="text-slate-700 font-sans antialiased relative min-h-screen flex bg-slate-50">
 
-    <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-3 w-80 pointer-events-none"></div>
+    <div id="toast-container"></div>
 
     <!-- Mobile Sidebar Backdrop -->
     <div id="sidebar-backdrop" onclick="toggleSidebarMenu()" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs hidden lg:hidden transition-opacity"></div>
@@ -109,10 +164,10 @@
                     <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
                     <span>BONAFIDE FORM</span>
                 </a>
-<a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
-    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
-    <span>VISITOR DETAILS</span>
-</a>
+                <a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
+                    <span>VISITOR DETAILS</span>
+                </a>
                 <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
                     <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
                     <span>ANNOUNCEMENT EDIT</span>
@@ -368,7 +423,6 @@
         const cancelBtn = document.getElementById('cancel-btn');
         const formTitle = document.getElementById('form-title');
         const countBadge = document.getElementById('allocation-badge');
-        const toastContainer = document.getElementById('toast-container');
 
         const fields = ['class', 'section', 'academic_year', 'faculty_id'];
 
@@ -461,31 +515,36 @@
             window.location.href = "login.html";
         }
 
-        function triggerToast(message, variant = 'success') {
+        // Updated Dark Pill Shield Toast Function
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = "p-4 rounded-xl shadow-xl text-white font-medium text-xs transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-start gap-3 border";
             
-            if (variant === 'success') {
-                toast.className += " bg-emerald-600 border-emerald-500"; 
-                toast.innerHTML = `<span>✅</span> <div class="flex-1">${message}</div>`;
-            } else if (variant === 'warning') {
-                toast.className += " bg-amber-500 border-amber-400 text-amber-950"; 
-                toast.innerHTML = `<span>⚠️</span> <div class="flex-1 font-semibold">${message}</div>`;
-            } else if (variant === 'error') {
-                toast.className += " bg-rose-600 border-rose-500"; 
-                toast.innerHTML = `<span>❌</span> <div class="flex-1">${message}</div>`;
-            }
+            let colorClass = 'toast-green';
+            if (type === 'warning') colorClass = 'toast-yellow';
+            if (type === 'error') colorClass = 'toast-red';
+            
+            const shieldSvg = `
+                <span class="toast-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </span>`;
 
-            toastContainer.appendChild(toast);
-
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'scale-95');
-                setTimeout(() => toast.remove(), 300);
+            toast.className = `toast ${colorClass}`;
+            toast.innerHTML = `${shieldSvg} <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => { 
+                toast.classList.add('fade-out'); 
+                setTimeout(() => toast.remove(), 500); 
             }, 4000);
+        }
+
+        // Compatibility alias mapping
+        function triggerToast(message, variant = 'success') {
+            showToast(message, variant);
         }
 
         async function preloadFormContext() {
@@ -496,14 +555,14 @@
                 .select('user_id, full_name, department');
 
             if (error) {
-                triggerToast(`Dropdown Sync Aborted: ${error.message}`, 'error');
+                showToast(`Dropdown Sync Aborted: ${error.message}`, 'error');
                 facultySelect.innerHTML = `<option value="">Error initializing links</option>`;
                 return;
             }
 
             if (data.length === 0) {
                 facultySelect.innerHTML = `<option value="">No relational faculty found</option>`;
-                triggerToast("Parent table faculty_details has no active rows.", "warning");
+                showToast("Parent table faculty_details has no active rows.", "warning");
                 return;
             }
 
@@ -514,7 +573,7 @@
                 opt.innerText = `${escapeHtml(faculty.full_name)} (${escapeHtml(faculty.department)}) [${escapeHtml(faculty.user_id)}]`;
                 facultySelect.appendChild(opt);
             });
-            triggerToast("Dynamic dropdown models loaded.", "warning");
+            showToast("Dynamic dropdown models loaded.", "warning");
         }
 
         async function fetchAssignments() {
@@ -534,7 +593,7 @@
                 .order('id', { ascending: false });
 
             if (error) {
-                triggerToast(`Database Read Failed: ${error.message}`, 'error');
+                showToast(`Database Read Failed: ${error.message}`, 'error');
                 tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500 font-bold">Failed synchronization query loop.</td></tr>`;
                 return;
             }
@@ -581,7 +640,7 @@
                 tableBody.appendChild(tr);
             });
             lucide.createIcons();
-            triggerToast("Allocation workspace updated.", "success");
+            showToast("Allocation workspace updated.", "success");
         }
 
         form.addEventListener('submit', async (e) => {
@@ -601,9 +660,9 @@
                     .eq('id', recordId);
 
                 if (error) {
-                    triggerToast(`Operational fault patching row: ${error.message}`, 'error');
+                    showToast(`Operational fault patching row: ${error.message}`, 'error');
                 } else {
-                    triggerToast(`Successfully altered assignment allocation record index reference #${recordId}`, 'success');
+                    showToast(`Successfully altered assignment allocation record index reference #${recordId}`, 'success');
                     resetFormState();
                     fetchAssignments();
                 }
@@ -613,9 +672,9 @@
                     .insert([payload]);
 
                 if (error) {
-                    triggerToast(`Operational fault inserting row: ${error.message}`, 'error');
+                    showToast(`Operational fault inserting row: ${error.message}`, 'error');
                 } else {
-                    triggerToast("New faculty academic distribution instance committed successfully.", "success");
+                    showToast("New faculty academic distribution instance committed successfully.", "success");
                     resetFormState();
                     fetchAssignments();
                 }
@@ -630,9 +689,9 @@
                     .eq('id', id);
 
                 if (error) {
-                    triggerToast(`Erase command denied: ${error.message}`, 'error');
+                    showToast(`Erase command denied: ${error.message}`, 'error');
                 } else {
-                    triggerToast(`Flushed assignment record element row listing #${id}`, 'success');
+                    showToast(`Flushed assignment record element row listing #${id}`, 'success');
                     fetchAssignments();
                 }
             }
@@ -650,7 +709,7 @@
             submitBtn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm shadow-indigo-100 cursor-pointer flex items-center justify-center gap-1.5";
             cancelBtn.classList.remove('hidden');
             lucide.createIcons();
-            triggerToast(`Loaded element parameters for transaction assignment row index #${rowData.id}`, 'warning');
+            showToast(`Loaded element parameters for transaction assignment row index #${rowData.id}`, 'warning');
         }
 
         function resetFormState() {

@@ -48,11 +48,64 @@
         .submenu-open {
             display: block;
         }
+
+        /* Floating Pill Toast Notification Styles */
+        .toast-pill {
+            background: #0b1120;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 16px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: auto;
+        }
+
+        .toast-pill.fade-out {
+            animation: fadeOut 0.4s ease forwards;
+        }
+
+        .toast-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen flex bg-[#0f172a]">
 
-    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 w-80 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 w-auto max-w-md pointer-events-none"></div>
 
     <!-- Mobile Sidebar Backdrop -->
     <div id="sidebar-backdrop" onclick="toggleSidebarMenu()" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs hidden lg:hidden transition-opacity"></div>
@@ -130,10 +183,10 @@
                     <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
                     <span>BONAFIDE FORM</span>
                 </a>
-<a href="a_visitor_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
-    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
-    <span>VISITOR DETAILS</span>
-</a>
+                <a href="a_visitor_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
+                    <span>VISITOR DETAILS</span>
+                </a>
                 <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl transition font-medium">
                     <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
                     <span>ANNOUNCEMENT EDIT</span>
@@ -331,18 +384,56 @@
             window.location.href = "login.html";
         }
 
-        function notify(message, type = 'yellow') {
+        function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
-            const colors = {
-                green: 'bg-emerald-500/20 border-emerald-500 text-emerald-400',
-                red: 'bg-rose-500/20 border-rose-500 text-rose-400',
-                yellow: 'bg-amber-500/20 border-amber-500 text-amber-400'
+            if (!container) return;
+
+            const typeClassMap = {
+                'success': 'toast-green',
+                'green': 'toast-green',
+                'warning': 'toast-yellow',
+                'yellow': 'toast-yellow',
+                'error': 'toast-red',
+                'red': 'toast-red'
             };
+
+            const selectedClass = typeClassMap[type] || 'toast-green';
+
             const toast = document.createElement('div');
-            toast.className = `glass-panel px-5 py-3.5 rounded-2xl border-l-4 ${colors[type]} flex items-center gap-3 shadow-2xl text-xs font-bold`;
-            toast.innerText = message;
+            toast.className = `toast-pill ${selectedClass}`;
+
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'toast-icon';
+            iconSpan.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9 12l2 2 4-4"></path>
+                </svg>
+            `;
+
+            const textSpan = document.createElement('span');
+            textSpan.innerText = message;
+
+            toast.appendChild(iconSpan);
+            toast.appendChild(textSpan);
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                toast.addEventListener('animationend', () => {
+                    toast.remove();
+                });
+            }, 4000);
+        }
+
+        // Maintain notify alias for backward compatibility across script actions
+        function notify(message, type = 'yellow') {
+            const typeMap = {
+                'green': 'success',
+                'yellow': 'warning',
+                'red': 'error'
+            };
+            showToast(message, typeMap[type] || type);
         }
 
         async function fetchAuditLogs() {

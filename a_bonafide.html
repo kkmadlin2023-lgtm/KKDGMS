@@ -84,6 +84,70 @@
             animation: travelToDestination 1.8s cubic-bezier(0.25, 1, 0.2, 1) forwards;
         }
 
+        /* Top-Right Floating Dark Pill Notification Container & Styles */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast-pill {
+            pointer-events: auto;
+            background-color: #0b1120;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 16px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast-pill.fade-out {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Toast Icon Accent Colors */
+        .toast-green .toast-icon {
+            color: #10b981;
+        }
+
+        .toast-yellow .toast-icon {
+            color: #f59e0b;
+        }
+
+        .toast-red .toast-icon {
+            color: #ef4444;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         /* Document Print Layout Directives Override */
         @media print {
             @page {
@@ -133,6 +197,9 @@
     </style>
 </head>
 <body class="text-[#334155] font-sans antialiased relative min-h-screen flex flex-col">
+
+    <!-- Notification Toast Container Slot -->
+    <div id="toast-container" class="print:hidden"></div>
 
     <!-- Ambient Dimmer Background -->
     <div id="verify-dimmer" class="fixed inset-0 bg-slate-950/25 z-40 hidden transition-opacity duration-500 print:hidden"></div>
@@ -331,6 +398,44 @@
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         /* ==================================================
+           DYNAMIC FLOATING PILL TOAST NOTIFICATION ENGINE
+           ================================================== */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById("toast-container");
+            if (!container) return;
+
+            const toast = document.createElement("div");
+            
+            // Determine icon accent color class
+            let colorClass = "toast-green";
+            if (type === "warning") colorClass = "toast-yellow";
+            if (type === "error" || type === "danger") colorClass = "toast-red";
+
+            toast.className = `toast-pill ${colorClass}`;
+
+            // Shield badge SVG structure
+            const iconSvg = `
+                <span class="toast-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </span>
+            `;
+
+            toast.innerHTML = `${iconSvg}<span>${message}</span>`;
+            container.appendChild(toast);
+
+            // Auto-dismiss after 4 seconds with fade-out animation
+            setTimeout(() => {
+                toast.classList.add("fade-out");
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 4000);
+        }
+
+        /* ==================================================
            DOM CONSOLE NODE HOOK MAP REFERENCE
            ================================================== */
         const studentSelect = document.getElementById("studentSelect");
@@ -424,12 +529,13 @@
 
                 statusDot.className = "w-2 h-2 rounded-full bg-emerald-500";
                 statusText.innerText = `Online [${students.length} Records Loaded]`;
+                showToast("Student database logs synchronized successfully.", "success");
             }
             catch(err) {
                 console.error("Critical extraction mutation failure:", err);
                 statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
                 statusText.innerText = "Schema Connection Error";
-                alert("Database Stream Disruption: Unable to retrieve collection assets.");
+                showToast("Database Stream Disruption: Unable to retrieve collection assets.", "error");
             }
         }
 
@@ -506,7 +612,7 @@
            ================================================== */
         document.getElementById("pdfBtn").addEventListener("click", () => {
             if(studentSelect.value === "") {
-                alert("Action Refused: Please select a valid student target profile before downloading document sheets.");
+                showToast("Action Refused: Please select a valid student target profile.", "warning");
                 return;
             }
 
@@ -566,10 +672,11 @@
                 .save()
                 .then(() => {
                     container.remove();
+                    showToast("PDF asset generated successfully.", "success");
                 })
                 .catch((err) => {
                     console.error("PDF engine crash detail:", err);
-                    alert("Export Engine Exception: HTML parsing encountered an error.");
+                    showToast("Export Engine Exception: HTML parsing encountered an error.", "error");
                     container.remove();
                 });
         });

@@ -136,9 +136,76 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #CBD5E1;
         }
+
+        /* Top-Right Floating Dark Pill Notification Container & Styles */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast-pill {
+            pointer-events: auto;
+            background-color: #0b1120;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 16px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast-pill.fade-out {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Toast Icon Accent Colors */
+        .toast-green .toast-icon {
+            color: #10b981;
+        }
+
+        .toast-yellow .toast-icon {
+            color: #f59e0b;
+        }
+
+        .toast-red .toast-icon {
+            color: #ef4444;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col lg:flex-row selection:bg-indigo-500 selection:text-white">
+
+    <!-- Notification Toast Container Slot -->
+    <div id="toast-container" class="print:hidden"></div>
 
     <!-- Enterprise Sidebar Navigation -->
     <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-enterprise-md" aria-label="Sidebar Navigation">
@@ -213,10 +280,10 @@
                     <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
                     <span>BONAFIDE FORM</span>
                 </a>
-<a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
-    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
-    <span>VISITOR DETAILS</span>
-</a>
+                <a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
+                    <span>VISITOR DETAILS</span>
+                </a>
                 <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
                     <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
                     <span>ANNOUNCEMENT EDIT</span>
@@ -271,8 +338,8 @@
                     <span>PASSWORD UPDATES</span>
                 </a>
                 <a href="a_ldetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
-    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> LOGIN DETAILS
-</a>
+                    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> LOGIN DETAILS
+                </a>
             </nav>
 
             <!-- Sidebar Footer Action -->
@@ -464,8 +531,46 @@
     <!-- Functional Scripts Preserved -->
     <script>
         const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA9NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        /* ==================================================
+           DYNAMIC FLOATING PILL TOAST NOTIFICATION ENGINE
+           ================================================== */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById("toast-container");
+            if (!container) return;
+
+            const toast = document.createElement("div");
+            
+            // Determine icon accent color class
+            let colorClass = "toast-green";
+            if (type === "warning") colorClass = "toast-yellow";
+            if (type === "error" || type === "danger") colorClass = "toast-red";
+
+            toast.className = `toast-pill ${colorClass}`;
+
+            // Shield badge SVG structure
+            const iconSvg = `
+                <span class="toast-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </span>
+            `;
+
+            toast.innerHTML = `${iconSvg}<span>${message}</span>`;
+            container.appendChild(toast);
+
+            // Auto-dismiss after 4 seconds with fade-out animation
+            setTimeout(() => {
+                toast.classList.add("fade-out");
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 4000);
+        }
 
         const sidebarNav = document.getElementById('sidebar-nav');
         const admissionsSubmenu = document.getElementById('admissions-submenu');

@@ -57,9 +57,68 @@
         .submenu-open {
             display: block;
         }
+
+        /* Top-Right Floating Pill Toast Notifications Container */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast-pill {
+            pointer-events: auto;
+            background: #0b1120;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px 18px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .toast-pill.fade-out {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+
+        .toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased flex min-h-screen" x-data="adminPortalApp()" x-init="initializeAdmin()">
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
     <!-- Mobile Sidebar Backdrop -->
     <div id="sidebar-backdrop" onclick="toggleSidebarMenu()" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs hidden lg:hidden transition-opacity"></div>
@@ -506,6 +565,39 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
         const supabaseClientInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Dynamic Toast Notification Handler
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            
+            let colorClass = 'toast-green';
+            if (type === 'warning') colorClass = 'toast-yellow';
+            if (type === 'error' || type === 'danger') colorClass = 'toast-red';
+
+            toast.className = `toast-pill ${colorClass}`;
+
+            const shieldSvg = `
+                <span class="toast-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </span>
+            `;
+
+            toast.innerHTML = `${shieldSvg}<span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 4000);
+        }
+
         // Initialize Lucide Icons
         document.addEventListener("DOMContentLoaded", () => {
             lucide.createIcons();
@@ -589,6 +681,7 @@
                     } catch (err) {
                         this.statusLight = 'red';
                         this.statusMessage = 'Auth Error: ' + err.message;
+                        showToast('Auth Error: ' + err.message, 'error');
                     } finally {
                         this.$nextTick(() => { lucide.createIcons(); ariaRefresh(); });
                     }
@@ -635,6 +728,7 @@
 
                     } catch (err) {
                         console.error('Error fetching global database:', err);
+                        showToast('Error fetching database records', 'error');
                     } finally {
                         this.$nextTick(() => { lucide.createIcons(); ariaRefresh(); });
                     }
@@ -695,9 +789,11 @@
 
                         this.statusLight = 'green';
                         this.statusMessage = `Master Data Loaded (${this.students.length})`;
+                        showToast(`Loaded ${this.students.length} student records successfully`, 'success');
                     } catch (err) {
                         this.statusLight = 'red';
                         this.statusMessage = 'Query Failed: ' + err.message;
+                        showToast('Query Failed: ' + err.message, 'error');
                     } finally {
                         this.isFetching = false;
                         this.$nextTick(() => { lucide.createIcons(); ariaRefresh(); });
@@ -732,10 +828,12 @@
 
                             this.statusLight = 'green';
                             this.statusMessage = 'Target Purged Successfully';
+                            showToast('Target session purged successfully', 'warning');
                             await this.loadGlobalSessions();
                         } catch (err) {
                             this.statusLight = 'red';
                             this.statusMessage = 'Purge Failed: ' + err.message;
+                            showToast('Purge Failed: ' + err.message, 'error');
                         }
                     }
                 },
@@ -916,11 +1014,13 @@
 
                         this.statusLight = 'green';
                         this.statusMessage = 'Official Document Generated';
+                        showToast('PDF Document generated successfully', 'success');
 
                     } catch (err) {
                         console.error('PDF Generation Engine Fault:', err);
                         this.statusLight = 'red';
                         this.statusMessage = 'PDF Error: ' + err.message;
+                        showToast('PDF Error: ' + err.message, 'error');
                     } finally {
                         this.$nextTick(() => { ariaRefresh(); });
                     }
@@ -977,12 +1077,13 @@
 
                         this.statusLight = 'green';
                         this.statusMessage = `Master DB Override Successful!`;
+                        showToast(`Master DB Override Successful (${targetStatus})!`, 'success');
                         
                         await this.loadGlobalSessions();
                     } catch (err) {
                         this.statusLight = 'red';
                         this.statusMessage = 'DB Write Error: ' + err.message;
-                        alert("Database write error: " + err.message);
+                        showToast("Database write error: " + err.message, 'error');
                     } finally {
                         this.isSaving = false;
                         this.$nextTick(() => { ariaRefresh(); });

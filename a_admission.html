@@ -36,7 +36,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
-        /* TRAFFIC LIGHT TOAST NOTIFICATION STYLES */
+        /* DARK PILL TOAST NOTIFICATION STYLES MATCHING REFERENCE */
         #notification-container {
             position: fixed;
             top: 24px;
@@ -48,19 +48,43 @@
         }
 
         .toast {
-            padding: 16px 24px;
-            border-radius: 12px;
-            color: white;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 22px;
+            border-radius: 16px;
+            background-color: #0b1120 !important; /* Dark black/navy pill background */
+            color: #ffffff !important;           /* White text */
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
             animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            min-width: 320px;
+            min-width: 280px;
+            font-size: 14px;
             font-weight: 600;
-            border-left: 6px solid rgba(0, 0, 0, 0.2);
         }
 
-        .toast-green { background-color: #059669 !important; }   /* Success State */
-        .toast-yellow { background-color: #d97706 !important; }  /* Warning State */
-        .toast-red { background-color: #dc2626 !important; }     /* Error State */
+        .toast-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        /* Green Accent State */
+        .toast-green .toast-icon {
+            color: #10b981; /* Green Icon */
+        }
+
+        /* Yellow Accent State */
+        .toast-yellow .toast-icon {
+            color: #f59e0b; /* Yellow Icon */
+        }
+
+        /* Red Accent State */
+        .toast-red .toast-icon {
+            color: #ef4444; /* Red Icon */
+        }
 
         @keyframes slideIn {
             from { transform: translateX(120%); opacity: 0; }
@@ -241,7 +265,7 @@
                         <input type="file" id="photo" class="hidden" accept="image/*" required>
                         <label for="photo" class="cursor-pointer">
                             <div id="uploadIconFrame" class="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             </div>
                             <div id="previewContainer" class="hidden mb-4">
                                 <img id="photoPreview" src="" class="w-32 h-32 rounded-xl mx-auto object-cover border-2 border-black">
@@ -273,7 +297,7 @@
     const steps = document.querySelectorAll(".step");
     const sidebarSteps = document.querySelectorAll(".sidebar-step");
 
-    // Adaptive Multi-Color Notification Layer
+    // Reference-Matching Shield Badge Toast Function
     function showToast(message, type = 'success') {
         const container = document.getElementById('notification-container');
         const toast = document.createElement('div');
@@ -282,8 +306,17 @@
         if (type === 'warning') colorClass = 'toast-yellow';
         if (type === 'error') colorClass = 'toast-red';
         
+        // Shield SVG Matching Reference Image
+        const shieldSvg = `
+            <span class="toast-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9 12l2 2 4-4"></path>
+                </svg>
+            </span>`;
+
         toast.className = `toast ${colorClass}`;
-        toast.innerText = message;
+        toast.innerHTML = `${shieldSvg} <span>${message}</span>`;
         container.appendChild(toast);
         
         setTimeout(() => { 

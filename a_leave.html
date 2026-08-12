@@ -34,9 +34,65 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
         .submenu-hidden { display: none; }
+
+        /* Floating Pill Toast Notification Styles */
+        .toast-pill {
+            background: #0b1120;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 16px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: auto;
+        }
+
+        .toast-pill.fade-out {
+            animation: fadeOut 0.4s ease forwards;
+        }
+
+        .toast-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
     </style>
 </head>
 <body class="bg-[#f3f6fc] text-slate-700 font-sans antialiased min-h-screen flex">
+
+    <!-- FLOATING TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 w-auto max-w-md pointer-events-none"></div>
 
     <!-- SIDEBAR NAVIGATION -->
     <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-enterprise-md" aria-label="Sidebar Navigation">
@@ -403,12 +459,6 @@
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATION CONTAINER -->
-    <div id="toast-notification" class="fixed top-6 right-6 z-50 bg-slate-900 text-slate-100 font-medium text-xs px-4 py-3 shadow-2xl border border-slate-800 rounded-xl transform translate-x-full transition-all duration-300 flex items-center gap-2.5">
-        <span id="toast-icon" class="text-sm">🛡️</span>
-        <span id="toast-text" class="tracking-wide">Admin Pipeline Initializing...</span>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
@@ -416,9 +466,6 @@
 
         const leavesStreamContainer = document.getElementById('leaves-stream-container');
         const approvalDrawerOverlay = document.getElementById('approval-drawer-overlay');
-        const toastNotification = document.getElementById('toast-notification');
-        const toastText = document.getElementById('toast-text');
-        const toastIcon = document.getElementById('toast-icon');
         const profileBadge = document.getElementById('profile-sync-badge');
         const profileName = document.getElementById('admin-name');
         const massActionBar = document.getElementById('mass-action-bar');
@@ -453,22 +500,65 @@
             window.location.href = "login.html";
         }
 
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const typeClassMap = {
+                'success': 'toast-green',
+                'green': 'toast-green',
+                'warning': 'toast-yellow',
+                'yellow': 'toast-yellow',
+                'error': 'toast-red',
+                'red': 'toast-red'
+            };
+
+            const selectedClass = typeClassMap[type] || 'toast-green';
+
+            const toast = document.createElement('div');
+            toast.className = `toast-pill ${selectedClass}`;
+
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'toast-icon';
+            iconSpan.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9 12l2 2 4-4"></path>
+                </svg>
+            `;
+
+            const textSpan = document.createElement('span');
+            textSpan.innerText = message;
+
+            toast.appendChild(iconSpan);
+            toast.appendChild(textSpan);
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                toast.addEventListener('animationend', () => {
+                    toast.remove();
+                });
+            }, 4000);
+        }
+
+        // Maintain displayToastNotification alias for full compatibility across the page
         function displayToastNotification(msg, icon = "🛡️", duration = 3500) {
-            toastText.innerText = msg;
-            toastIcon.innerText = icon;
-            toastNotification.classList.remove('translate-x-full');
-            setTimeout(() => { toastNotification.classList.add('translate-x-full'); }, duration);
+            let toastType = 'success';
+            if (icon === '🔴' || icon === '❌') toastType = 'error';
+            else if (icon === '🟡' || icon === '⚠️' || icon === '⏳') toastType = 'warning';
+            showToast(msg, toastType);
         }
 
         // RED-YELLOW-GREEN LAMP CLICK ACTIONS FOR INTERACTION
         document.getElementById('lamp-red').addEventListener('click', () => {
-            displayToastNotification("High priority: Pending admin reviews require attention.", "🔴");
+            showToast("High priority: Pending admin reviews require attention.", "error");
         });
         document.getElementById('lamp-yellow').addEventListener('click', () => {
-            displayToastNotification("Database sync pipeline operating normally.", "🟡");
+            showToast("Database sync pipeline operating normally.", "warning");
         });
         document.getElementById('lamp-green').addEventListener('click', () => {
-            displayToastNotification("Central server connectivity healthy.", "🟢");
+            showToast("Central server connectivity healthy.", "success");
         });
 
         // PROFILE MODAL FUNCTIONS
@@ -518,7 +608,7 @@
                 initializeRealtimeSync();
             } catch (err) {
                 console.error(err);
-                displayToastNotification("Critical Session Exception Error", "❌");
+                showToast("Critical Session Exception Error", "error");
                 setTimeout(() => { window.location.href = "login.html"; }, 1500);
             }
         }
@@ -534,7 +624,7 @@
                         if (!drawerOverlay.classList.contains('hidden') && currentLeaveId) {
                             const stillExists = MASTER_LEAVES_REPOS.find(l => Number(l.id) === Number(currentLeaveId));
                             if (stillExists) { launchApprovalDrawer(currentLeaveId); } 
-                            else { closeApprovalDrawer(); displayToastNotification("Record was updated elsewhere.", "⚠️"); }
+                            else { closeApprovalDrawer(); showToast("Record was updated elsewhere.", "warning"); }
                         }
                     });
                 })
@@ -607,10 +697,10 @@
                 payload.approved_by_admin_name = cachedAdminName;
             }
 
-            displayToastNotification(`Executing state modifications...`, "⏳");
+            showToast("Executing state modifications...", "warning");
             const updatePromises = targets.map(id => _supabase.from('student_leaves').update(payload).eq('id', id));
             await Promise.all(updatePromises);
-            displayToastNotification(`Action resolved successfully!`, "🚀");
+            showToast("Action resolved successfully!", "success");
             clearSelectedRows();
             await fetchLeavesDatabase();
         }
@@ -853,7 +943,7 @@
             const { error } = await _supabase.from('student_leaves').update(payload).eq('id', id);
             if(error) return alert(error.message);
 
-            displayToastNotification(`Admin Node updated to ${state}`, "💾");
+            showToast(`Admin Node updated to ${state}`, "success");
             await fetchLeavesDatabase();
             launchApprovalDrawer(id); 
         }
@@ -862,7 +952,7 @@
             if(!confirm("Completely purge this log out of the database?")) return;
             const id = document.getElementById('drawer-leave-id').value;
             await _supabase.from('student_leaves').delete().eq('id', id);
-            displayToastNotification("Log record deleted.", "🗑");
+            showToast("Log record deleted.", "success");
             closeApprovalDrawer();
             await fetchLeavesDatabase();
         }

@@ -91,9 +91,65 @@
         .transition { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
         .gap-1 { gap: 0.25rem; }
         a { text-decoration: none; }
+
+        /* Floating Pill Notification Styles */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast-pill {
+            pointer-events: auto;
+            background: #0b1120;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .toast-pill.fade-out {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+
+        .toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 <body>
+
+    <div id="toast-container"></div>
 
     <div class="wrapper">
         <header>
@@ -161,6 +217,38 @@
 
         // Global memory cache storing existing entries to handle typing filters seamlessly
         let localNoticesInMemory = [];
+
+        // Dynamic Toast Notification Function
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            
+            let colorClass = 'toast-green';
+            if (type === 'warning') colorClass = 'toast-yellow';
+            if (type === 'error' || type === 'danger') colorClass = 'toast-red';
+
+            toast.className = `toast-pill ${colorClass}`;
+            
+            toast.innerHTML = `
+                <span class="toast-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </span>
+                <span class="toast-message">${escapeTxt(message)}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 4000);
+        }
 
         // Core XHR Request Protocol Engine for full local file bypass
         function makeLocalRequest(method, url, data, callback) {
@@ -300,12 +388,13 @@
                 submitBtn.textContent = 'Publish Announcement';
 
                 if (err) {
-                    alert("Write transaction rejected by database constraints: " + err);
+                    showToast("Write transaction rejected: " + err, 'error');
                 } else {
                     document.getElementById('title').value = '';
                     document.getElementById('passage').value = '';
                     document.getElementById('expiryDate').value = '';
                     searchBar.value = ''; // Clean search parameters when new elements post
+                    showToast("Announcement published successfully!", 'success');
                     startAppLifecycle();
                 }
             });
@@ -317,9 +406,11 @@
             const targetUrl = `${API_URL}?id=eq.${id}`;
             
             makeLocalRequest("DELETE", targetUrl, null, function(err) {
-                if (err) alert("Target deletion execution failure: " + err);
-                else {
+                if (err) {
+                    showToast("Target deletion execution failure: " + err, 'error');
+                } else {
                     searchBar.value = ''; // Reset input to cleanly render remaining state array
+                    showToast("Notice deleted successfully.", 'warning');
                     startAppLifecycle();
                 }
             });

@@ -27,11 +27,68 @@
         .submenu-open {
             display: block;
         }
+
+        /* Top-Right Floating Pill Toast Notifications */
+        .toast-pill {
+            background-color: #0b1120;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 16px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+            pointer-events: auto;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .toast-pill.fade-out {
+            animation: toastFadeOut 0.3s ease-forward;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .toast-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes toastFadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 <body class="text-slate-700 font-sans antialiased relative min-h-screen flex bg-slate-50">
 
-    <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-3 w-80 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-3 w-auto max-w-sm pointer-events-none"></div>
 
     <!-- Mobile Sidebar Backdrop -->
     <div id="sidebar-backdrop" onclick="toggleSidebarMenu()" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs hidden lg:hidden transition-opacity"></div>
@@ -109,10 +166,10 @@
                     <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
                     <span>BONAFIDE FORM</span>
                 </a>
-<a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
-    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
-    <span>VISITOR DETAILS</span>
-</a>
+                <a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
+                    <span>VISITOR DETAILS</span>
+                </a>
                 <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
                     <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
                     <span>ANNOUNCEMENT EDIT</span>
@@ -404,27 +461,38 @@
             window.location.href = "login.html";
         }
 
-        function triggerNotification(message, variant = 'success') {
+        function showToast(message, type = 'success') {
             const toast = document.createElement('div');
-            toast.className = "p-4 rounded-xl shadow-xl text-white font-medium text-xs transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-start gap-3 border";
             
-            if (variant === 'success') {
-                toast.className += " bg-emerald-600 border-emerald-500"; 
-                toast.innerHTML = `<span>✅</span> <div class="flex-1">${message}</div>`;
-            } else if (variant === 'error') {
-                toast.className += " bg-rose-600 border-rose-500"; 
-                toast.innerHTML = `<span>❌</span> <div class="flex-1">${message}</div>`;
-            } else {
-                toast.className += " bg-indigo-600 border-indigo-500"; 
-                toast.innerHTML = `<span>ℹ️</span> <div class="flex-1">${message}</div>`;
+            let colorClass = 'toast-green';
+            if (type === 'error' || type === 'red') {
+                colorClass = 'toast-red';
+            } else if (type === 'warning' || type === 'yellow') {
+                colorClass = 'toast-yellow';
             }
 
+            toast.className = `toast-pill ${colorClass}`;
+            
+            const shieldSvg = `
+                <span class="toast-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </span>
+            `;
+
+            toast.innerHTML = `${shieldSvg}<span>${message}</span>`;
             toastContainer.appendChild(toast);
-            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+
             setTimeout(() => {
-                toast.classList.add('opacity-0', 'scale-95');
+                toast.classList.add('fade-out');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
+        }
+
+        function triggerNotification(message, variant = 'success') {
+            showToast(message, variant);
         }
 
         async function verifyAdminAuthenticationSession() {
