@@ -157,7 +157,7 @@
             <option value="faculty">Faculty Only</option>
             <option value="admins">Admins Only</option>
             <option value="wardens">Wardens Only</option>
-            <option value="specific">Specific User (Selected from table)</option>
+            
           </select>
         </div>
 
@@ -197,8 +197,9 @@
   <script>
     // Config - Replace with your project credentials
     const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
-        
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+
+    // Initialize Supabase Client
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     document.addEventListener("DOMContentLoaded", () => {
