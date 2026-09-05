@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | KKDGMS</title>
     <link rel="icon" type="image/x-icon" href="kk.png">
+    
+    <!-- Professional Theme System -->
+    <link rel="stylesheet" href="assets/css/theme.css">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- KKDGMS Common Configuration -->
+    <script src="assets/js/supabase-config.js"></script>
     
     <!-- Preventive Back-Button Trap Script -->
     <script>
@@ -137,11 +144,8 @@
 
         const firebaseApp = initializeApp(firebaseConfig);
         const messaging = getMessaging(firebaseApp);
-
-        const SUPABASE_URL = 'https://kymsjrxjfmloibcbages.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA';
         
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const _supabase = supabase;
 
         let isRedirecting = false;
 
@@ -182,7 +186,7 @@
         // Record Login Audit Entry to Supabase Table (Login-time only)
         async function recordLoginAudit(user, roleName, providerName) {
             try {
-                await _supabase.from('login_audit_logs').insert([{
+                await _supabase.from(TABLES.LOGIN_AUDIT_LOGS).insert([{
                     user_id: user.id,
                     email: user.email,
                     role: roleName,
@@ -204,10 +208,10 @@
 
             try {
                 const [studentCheck, adminCheck, facultyCheck, wardenCheck] = await Promise.all([
-                    _supabase.from('students').select('email').eq('email', email).maybeSingle(),
-                    _supabase.from('admins').select('email').eq('email', email).maybeSingle(),
-                    _supabase.from('faculty_details').select('email').eq('email', email).maybeSingle(),
-                    _supabase.from('wardens').select('email').eq('email', email).maybeSingle()
+                    _supabase.from(TABLES.STUDENTS).select('email').eq('email', email).maybeSingle(),
+                    _supabase.from(TABLES.ADMINS).select('email').eq('email', email).maybeSingle(),
+                    _supabase.from(TABLES.FACULTY_DETAILS).select('email').eq('email', email).maybeSingle(),
+                    _supabase.from(TABLES.WARDENS).select('email').eq('email', email).maybeSingle()
                 ]);
 
                 let targetTable = null;
@@ -215,19 +219,19 @@
                 let roleName = 'Unknown';
 
                 if (studentCheck.data) {
-                    targetTable = 'students';
+                    targetTable = TABLES.STUDENTS;
                     redirectUrl = 's_dashboard.html';
                     roleName = 'Student';
                 } else if (adminCheck.data) {
-                    targetTable = 'admins';
+                    targetTable = TABLES.ADMINS;
                     redirectUrl = 'a_dashboard.html';
                     roleName = 'Admin';
                 } else if (facultyCheck.data) {
-                    targetTable = 'faculty_details';
+                    targetTable = TABLES.FACULTY_DETAILS;
                     redirectUrl = 'f_dashboard.html';
                     roleName = 'Faculty';
                 } else if (wardenCheck.data) {
-                    targetTable = 'wardens';
+                    targetTable = TABLES.WARDENS;
                     redirectUrl = 'w_dashboard.html';
                     roleName = 'Warden';
                 }

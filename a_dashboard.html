@@ -6,48 +6,33 @@
     <title>HM Dashboard | KKDGMS</title>
     <link rel="icon" type="image/x-icon" href="kk.png">
     
+    <!-- Professional Theme System -->
+    <link rel="stylesheet" href="assets/css/theme.css">
+    
     <!-- Enterprise Typography (Plus Jakarta Sans) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- ========================================================= -->
-<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
-<!-- ========================================================= -->
-<script>
-    (function() {
-        const currentUrl = new URL(window.location.href);
-        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
-
-        // Prevent infinite loops if we are already on redirect.html
-        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
-            // Encode target URL so query params (like ?leave_id=123) are preserved
-            const targetUrl = encodeURIComponent(window.location.href);
-            window.location.replace(`redirect.html?target=${targetUrl}`);
-        }
-    })();
-</script>
-<!-- ========================================================= -->
+    
+    <!-- KKDGMS LOADER REDIRECTOR -->
+    <script>
+        (function() {
+            const currentUrl = new URL(window.location.href);
+            const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+                const targetUrl = encodeURIComponent(window.location.href);
+                window.location.replace(`redirect.html?target=${targetUrl}`);
+            }
+        })();
+    </script>
+    
     <!-- Modern Lucide Icons & Tailwind CSS -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- ========================================================= -->
-<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
-<!-- ========================================================= -->
-<script>
-    (function() {
-        const currentUrl = new URL(window.location.href);
-        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
-
-        // Prevent infinite loops if we are already on redirect.html
-        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
-            // Encode target URL so query params (like ?leave_id=123) are preserved
-            const targetUrl = encodeURIComponent(window.location.href);
-            window.location.replace(`redirect.html?target=${targetUrl}`);
-        }
-    })();
-</script>
-<!-- ========================================================= -->
+    
+    <!-- KKDGMS Common Configuration -->
+    <script src="assets/js/supabase-config.js"></script>
     <style>
         :root {
             --brand-primary: #4F46E5;
@@ -463,9 +448,7 @@
 
     <!-- Functional Scripts Preserved -->
     <script>
-        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const _supabase = supabase;
 
         const sidebarNav = document.getElementById('sidebar-nav');
         const admissionsSubmenu = document.getElementById('admissions-submenu');
@@ -500,7 +483,7 @@
         async function fetchAdminSchemaProfile(authUid) {
             try {
                 const { data: profile, error } = await _supabase
-                    .from('admins')
+                    .from(TABLES.ADMINS)
                     .select('*')
                     .eq('auth_uid', authUid)
                     .maybeSingle();
@@ -546,8 +529,7 @@
         }
 
         async function triggerSystemLogout() {
-            await _supabase.auth.signOut();
-            window.location.href = "login.html";
+            await AuthManager.logout();
         }
 
         window.onload = () => {

@@ -6,10 +6,16 @@
     <title>KKDGMS</title>
     <link class="hidden" rel="icon" type="image/x-icon" href="kk.png">
     
+    <!-- Professional Theme System -->
+    <link rel="stylesheet" href="assets/css/theme.css">
+    
     <!-- UI Frameworks & Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.0/dist/umd/supabase.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- KKDGMS Common Configuration -->
+    <script src="assets/js/supabase-config.js"></script>
 
     <!-- ========================================================= -->
     <!-- 1. KKDGMS LOADER REDIRECTOR (OAuth Safe)                  -->
@@ -40,22 +46,17 @@
                                  window.location.search.includes('loaded=true');
 
             if (isAuthReturn) {
-                const SUPABASE_URL = 'https://kymsjrxjfmloibcbages.supabase.co';
-                const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA';
-                
-                const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
                 // Listen for active auth session
-                _supabase.auth.onAuthStateChange(async (event, session) => {
+                supabase.auth.onAuthStateChange(async (event, session) => {
                     if (session && session.user) {
                         const email = session.user.email.trim().toLowerCase();
 
-                        // Query all 4 role tables concurrently
+                        // Query all 4 role tables concurrently using common configuration
                         const [studentCheck, adminCheck, facultyCheck, wardenCheck] = await Promise.all([
-                            _supabase.from('students').select('email').eq('email', email).maybeSingle(),
-                            _supabase.from('admins').select('email').eq('email', email).maybeSingle(),
-                            _supabase.from('faculty_details').select('email').eq('email', email).maybeSingle(),
-                            _supabase.from('wardens').select('email').eq('email', email).maybeSingle()
+                            supabase.from(TABLES.STUDENTS).select('email').eq('email', email).maybeSingle(),
+                            supabase.from(TABLES.ADMINS).select('email').eq('email', email).maybeSingle(),
+                            supabase.from(TABLES.FACULTY_DETAILS).select('email').eq('email', email).maybeSingle(),
+                            supabase.from(TABLES.WARDENS).select('email').eq('email', email).maybeSingle()
                         ]);
 
                         if (studentCheck.data) window.location.replace('s_dashboard.html');
@@ -283,9 +284,6 @@
     </footer>
 
     <script>
-        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
-        
         // Fluid radial glow update function tied to client tracking coordinates
         const heroSection = document.getElementById('hero-interactive-container');
         window.addEventListener('mousemove', (e) => {
@@ -300,12 +298,12 @@
         // XHR Engine used to load news securely
         function fetchLocalNewsTicker(callback) {
             const now = new Date().toISOString();
-            const url = `${SUPABASE_URL}/rest/v1/news?expiry_date=gt.${now}&order=created_at.desc`;
+            const url = `${SUPABASE_CONFIG.url}/rest/v1/news?expiry_date=gt.${now}&order=created_at.desc`;
             
             const xhr = new XMLHttpRequest();
             xhr.open("GET", url, true);
-            xhr.setRequestHeader("apikey", SUPABASE_KEY);
-            xhr.setRequestHeader("Authorization", "Bearer " + SUPABASE_KEY);
+            xhr.setRequestHeader("apikey", SUPABASE_CONFIG.anonKey);
+            xhr.setRequestHeader("Authorization", "Bearer " + SUPABASE_CONFIG.anonKey);
             xhr.setRequestHeader("Content-Type", "application/json");
             
             xhr.onreadystatechange = function () {
