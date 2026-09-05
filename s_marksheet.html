@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Marksheet | KKDGMS</title>
+    <link class="no-print" rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-image: url('kanyakumari.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px) saturate(160%);
+            -webkit-backdrop-filter: blur(30px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .glass-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            opacity: 0;
+            transform: translateY(8px);
+            animation: clearReveal 0.35s ease-out forwards;
+        }
+
+        @keyframes clearReveal {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(110%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-entry { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes printCentralDeskfulToSmall {
+            0% {
+                transform: scale(4.5) rotateX(-55deg) rotateY(40deg) translateZ(250px);
+                opacity: 0;
+                filter: brightness(2.5) contrast(0.7) blur(8px);
+            }
+            55% {
+                transform: scale(0.8) rotateX(15deg) rotateY(-10deg) translateZ(-20px);
+                opacity: 0.95;
+                filter: brightness(1.2) contrast(1.2) blur(0px);
+            }
+            75% {
+                transform: scale(1.15) rotateX(-8deg) rotateY(6deg) translateZ(15px);
+            }
+            100% {
+                transform: scale(1) rotateX(0deg) rotateY(0deg) translateZ(0px);
+                opacity: 1;
+                filter: brightness(1) contrast(1) blur(0px);
+            }
+        }
+
+        @keyframes print3DCardCompression {
+            0% { transform: scale(1.5) rotateX(-25deg) translateZ(40px); opacity: 0; }
+            100% { transform: scale(1) rotateX(0deg) translateZ(0px); opacity: 1; }
+        }
+
+        .animate-central-3d {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            animation: printCentralDeskfulToSmall 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+
+        .animate-card-3d {
+            perspective: 600px;
+            transform-style: preserve-3d;
+            animation: print3DCardCompression 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* ==========================================================================
+           PROFESSIONAL HIGH-DENSITY PRINT & PDF TRANSCRIPT STYLESHEET
+           ========================================================================== */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 12mm 12mm 15mm 12mm;
+            }
+            
+            body { 
+                background: none !important; 
+                background-color: #ffffff !important;
+                color: #0f172a !important; 
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 11px;
+            }
+            
+            .no-print { display: none !important; }
+
+            .glass-panel { 
+                background: transparent !important; 
+                border: none !important;
+                backdrop-filter: none !important; 
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            #app-content {
+                display: block !important;
+            }
+
+            /* Condensed Profile Section */
+            #profile-section {
+                border: 1.5px solid #0f172a !important;
+                padding: 12px !important;
+                border-radius: 6px !important;
+                margin-bottom: 16px !important;
+                background-color: #f8fafc !important;
+                display: block !important;
+            }
+
+            #profile-section h2 {
+                color: #0f172a !important;
+                font-size: 12px !important;
+                border-bottom: 1.5px solid #0f172a !important;
+                padding-bottom: 4px !important;
+                margin-bottom: 8px !important;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .profile-grid-container {
+                display: grid !important;
+                grid-template-columns: 75px 1fr !important; /* Forces compact layout next to picture */
+                gap: 12px !important;
+            }
+
+            .grid-cols-1 {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+            }
+
+            .glass-card { 
+                background: transparent !important; 
+                border: none !important;
+                box-shadow: none !important; 
+                opacity: 1 !important; 
+                transform: none !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
+                animation: none !important;
+            }
+
+            .glass-card p:first-child {
+                color: #475569 !important;
+                font-size: 8px !important;
+                font-weight: 700 !important;
+            }
+
+            .glass-card p:last-child {
+                color: #0f172a !important;
+                font-size: 11px !important;
+                font-weight: 600 !important;
+            }
+
+            /* Fixed High-Density Photo Frame on Print */
+            #student-photo-wrapper {
+                width: 75px !important;
+                height: 90px !important;
+                border: 1.5px solid #0f172a !important;
+                border-radius: 4px !important;
+                background-color: #f1f5f9 !important;
+            }
+
+            body.print-single-mode #app-content > section:not(.print-isolated-target),
+            body.print-single-mode #marks-container > div:not(.print-isolated-target) {
+                display: none !important;
+            }
+
+            #results-wrapper-section h2 { display: none !important; }
+            #marks-container { display: block !important; width: 100% !important; }
+
+            /* Space-Efficient Dense Table Layout */
+            .print-mark-block {
+                display: block !important;
+                page-break-inside: avoid !important;
+                margin-top: 5px !important;
+                margin-bottom: 15px !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+
+            .transcript-table {
+                display: table !important;
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 6px !important;
+            }
+
+            .table-header-group { display: table-header-group !important; }
+            .table-row-group { display: table-row-group !important; }
+            .table-footer-group { display: table-footer-group !important; }
+            .table-row { display: table-row !important; }
+            
+            .table-cell-th {
+                display: table-cell !important;
+                background-color: #0f172a !important;
+                color: #ffffff !important;
+                padding: 5px 8px !important;
+                font-size: 10px !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                border: 1px solid #0f172a !important;
+                text-align: left;
+            }
+            .table-cell-th.text-right { text-align: right !important; }
+
+            .table-cell-td {
+                display: table-cell !important;
+                padding: 5px 8px !important;
+                font-size: 10px !important;
+                border: 1px solid #cbd5e1 !important;
+                color: #334155 !important;
+                text-align: left;
+            }
+            .table-cell-td.text-right { text-align: right !important; font-weight: 700 !important; color: #0f172a !important; }
+            .table-row:nth-child(even) { background-color: #f8fafc !important; }
+
+            .table-cell-footer {
+                display: table-cell !important;
+                padding: 6px 8px !important;
+                font-size: 11px !important;
+                font-weight: 800 !important;
+                background-color: #e2e8f0 !important;
+                border: 1.5px solid #0f172a !important;
+                color: #0f172a !important;
+            }
+
+            .print-verified-badge {
+                display: block !important;
+                width: 45px !important;
+                height: 45px !important;
+                filter: grayscale(1) contrast(1.5) !important;
+                mix-blend-mode: multiply !important;
+            }
+
+            .institutional-footer {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: flex-end;
+                margin-top: 35px !important;
+                width: 100% !important;
+                page-break-inside: avoid !important;
+            }
+            
+            .signature-block {
+                text-align: center !important;
+                width: 180px !important;
+                border-top: 1px solid #0f172a !important;
+                padding-top: 4px !important;
+                font-size: 10px !important;
+                font-weight: 700 !important;
+                color: #0f172a !important;
+                text-transform: uppercase;
+            }
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 text-white text-sm">
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 w-72 md:w-80 pointer-events-none"></div>
+
+    <!-- Navbar -->
+    <nav class="glass-panel rounded-xl p-3 mb-6 flex justify-between items-center max-w-6xl mx-auto shadow-xl">
+        <div>
+            <h1 class="text-xl font-extrabold tracking-tight italic">KKDGMS<span class="text-indigo-400"> PORTAL</span></h1>
+            <p class="text-indigo-200/50 text-[9px] uppercase font-bold tracking-widest mt-0.5">Academic Transcript Desk</p>
+        </div>
+        <div class="flex gap-2 no-print">
+            <button onclick="printAllExams()" class="px-3 py-1.5 bg-indigo-500/20 border border-indigo-500/40 rounded-lg text-xs font-bold hover:bg-indigo-500/40 transition-all cursor-pointer tracking-wider uppercase">
+                Print / Save PDF
+            </button>
+            <button onclick="logout()" class="px-3 py-1.5 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-lg text-xs font-bold hover:bg-rose-500/40 transition-all cursor-pointer tracking-wider uppercase">
+                Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Frame Canvas -->
+    <main id="app-content" class="max-w-6xl mx-auto space-y-4 hidden">
+        
+        <!-- Profile Layout Section -->
+        <section id="profile-section" class="glass-panel p-4 rounded-2xl shadow-xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 blur-[80px] rounded-full z-0"></div>
+            <h2 class="text-base font-bold mb-3 text-indigo-100 z-10 relative flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-400 no-print" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                Student Profile Record Card
+            </h2>
+            
+            <!-- Flexible High-Density Grid wrapping the Photo Container alongside information elements -->
+            <div class="profile-grid-container flex flex-col sm:flex-row gap-4 relative z-10">
+                
+                <!-- Dynamic Space Efficient Photo Component Panel -->
+                <div id="student-photo-wrapper" class="w-24 h-28 sm:w-28 sm:h-32 bg-slate-900/60 border border-white/10 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center self-center sm:self-start">
+                    <img id="st-photo" src="" alt="Student Profile Identification Picture" class="w-full h-full object-cover hidden">
+                    <div id="st-photo-placeholder" class="text-slate-500 flex flex-col items-center justify-center text-center">
+                        <svg class="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="text-[8px] uppercase tracking-wider font-bold mt-1 opacity-40">NO PHOTO</span>
+                    </div>
+                </div>
+
+                <!-- Bio Columns Content Matrix -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 flex-grow w-full">
+                    <div class="glass-card p-2" style="animation-delay: 40ms;">
+                        <p class="text-[8px] text-indigo-300 uppercase tracking-widest font-bold mb-0.5">Full Name</p>
+                        <p class="text-sm font-semibold tracking-tight" id="st-name">-</p>
+                    </div>
+                    <div class="glass-card p-2" style="animation-delay: 80ms;">
+                        <p class="text-[8px] text-indigo-300 uppercase tracking-widest font-bold mb-0.5">Class & Section</p>
+                        <p class="text-sm font-semibold tracking-tight" id="st-class">-</p>
+                    </div>
+                    <div class="glass-card p-2" style="animation-delay: 120ms;">
+                        <p class="text-[8px] text-indigo-300 uppercase tracking-widest font-bold mb-0.5">Roll / User ID</p>
+                        <p class="text-sm font-semibold tracking-tight font-mono" id="st-roll">-</p>
+                    </div>
+                    <div class="glass-card p-2" style="animation-delay: 160ms;">
+                        <p class="text-[8px] text-indigo-300 uppercase tracking-widest font-bold mb-0.5">Date of Birth</p>
+                        <p class="text-sm font-semibold tracking-tight" id="st-dob">-</p>
+                    </div>
+                    <div class="glass-card p-2" style="animation-delay: 200ms;">
+                        <p class="text-[8px] text-indigo-300 uppercase tracking-widest font-bold mb-0.5">System Status</p>
+                        <p class="text-sm font-semibold text-emerald-400 tracking-tight">Verified Digital Signature</p>
+                    </div>
+                    <div class="glass-card p-2" style="animation-delay: 240ms;">
+                        <p class="text-[8px] text-indigo-300 uppercase tracking-widest font-bold mb-0.5">Father's Name</p>
+                        <p class="text-sm font-semibold tracking-tight" id="st-father">-</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Marks Display Layout Section -->
+        <section id="results-wrapper-section" class="glass-panel p-4 rounded-2xl shadow-xl relative overflow-hidden">
+            <h2 class="text-base font-bold mb-3 text-indigo-100 relative z-10 flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-400 no-print" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 00.906 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                Published Examination Logs
+            </h2>
+            
+            <div id="marks-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+                <!-- Programmatically generated tables -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Initial Loading Verification State Screen -->
+    <div id="loading-state" class="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-50">
+        <div class="glass-panel p-8 rounded-[2rem] text-center flex flex-col items-center justify-center max-w-sm w-full mx-4 shadow-2xl">
+            <div id="loading-icon-container" class="mb-4 min-h-[80px] flex items-center justify-center">
+                <div class="w-10 h-10 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            </div>
+            <p id="loading-text" class="text-indigo-200 font-bold tracking-widest uppercase text-[10px] animate-pulse">Authenticating Profile Database...</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://kymsjrxjfmloibcbages.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        function triggerToast(message, type = 'green') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast-entry p-3 rounded-lg shadow-xl border text-[11px] font-bold pointer-events-auto flex items-center justify-between gap-2 backdrop-blur-md bg-slate-900/90`;
+            
+            const colorThemes = {
+                green: 'border-emerald-500/40 text-emerald-400',
+                yellow: 'border-amber-500/40 text-amber-400',
+                red: 'border-rose-500/40 text-rose-400'
+            };
+            
+            toast.className += ` ${colorThemes[type] || colorThemes.green}`;
+            toast.innerHTML = `<div class="flex-grow">${message}</div><button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white cursor-pointer ml-1">✕</button>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                if(toast.parentElement) {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'all 0.25s ease';
+                    setTimeout(() => toast.remove(), 250);
+                }
+            }, 4000);
+        }
+
+        async function initDashboard() {
+            try {
+                const { data: { session }, error: authError } = await _supabase.auth.getSession();
+                
+                if (authError || !session) {
+                    triggerToast("No authorization footprint detected. Re-routing to login...", "red");
+                    setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+                    return;
+                }
+
+                const userEmail = session.user.email;
+
+                const { data: student, error: studentError } = await _supabase
+                    .from('students')
+                    .select('*')
+                    .eq('email', userEmail)
+                    .maybeSingle();
+
+                if (studentError || !student) {
+                    triggerToast("Student database record mapping failed.", "red");
+                    document.getElementById('loading-state').innerHTML = `<div class="glass-panel p-5 text-rose-300 font-bold text-xs">Profile missing. Contact system desk.</div>`;
+                    return;
+                }
+
+                // Inject text data points mapped from SQL schema
+                document.getElementById('st-name').textContent = student.full_name || 'N/A';
+                document.getElementById('st-class').textContent = `${student.student_class || ''} - ${student.section || ''}`;
+                document.getElementById('st-roll').textContent = student.user_id || 'N/A';
+                document.getElementById('st-dob').textContent = student.dob || 'N/A';
+                document.getElementById('st-father').textContent = student.father_name || 'N/A';
+
+                // Handle the photo_url field mapping explicitly
+                const photoImg = document.getElementById('st-photo');
+                const photoPlaceholder = document.getElementById('st-photo-placeholder');
+                
+                if (student.photo_url && student.photo_url.trim() !== '') {
+                    photoImg.src = student.photo_url;
+                    photoImg.classList.remove('hidden');
+                    photoPlaceholder.classList.add('hidden');
+                } else {
+                    photoImg.classList.add('hidden');
+                    photoPlaceholder.classList.remove('hidden');
+                }
+
+                const iconContainer = document.getElementById('loading-icon-container');
+                const loadingText = document.getElementById('loading-text');
+                
+                iconContainer.innerHTML = `
+                    <div class="animate-central-3d filter drop-shadow-[0_20px_30px_rgba(99,102,241,0.6)]">
+                        <img src="verified.png" alt="Verified Status" class="w-20 h-20 object-contain">
+                    </div>
+                `;
+                loadingText.className = "text-indigo-400 font-extrabold tracking-widest uppercase text-[10px] mt-2";
+                loadingText.textContent = "Verified Authorization Complete";
+
+                const { data: marks, error: marksError } = await _supabase
+                    .from('marks_entries')
+                    .select('*')
+                    .eq('student_id', student.id)
+                    .in('status', ['publish', 'published'])
+                    .order('created_at', { ascending: false });
+
+                if (marksError) throw marksError;
+
+                renderMarks(marks);
+
+                setTimeout(() => {
+                    document.getElementById('loading-state').style.display = 'none';
+                    document.getElementById('app-content').classList.remove('hidden');
+                    triggerToast(`Welcome back, data pipeline synchronized!`, "green");
+                }, 1300);
+
+            } catch (err) {
+                console.error("Dashboard Pipeline Broken:", err);
+                triggerToast(`Data sync exception: ${err.message}`, "red");
+            }
+        }
+
+        function renderMarks(marksArray) {
+            const container = document.getElementById('marks-container');
+            container.innerHTML = '';
+
+            if (!marksArray || marksArray.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full glass-card p-8 text-center text-indigo-200/40 font-bold uppercase tracking-widest text-[10px]">
+                        No verified exam terms released by evaluation faculty yet.
+                    </div>`;
+                return;
+            }
+
+            marksArray.forEach((entry, idx) => {
+                let rowsHtml = '';
+                let aggregateObtained = 0;
+                
+                let marksObject = {};
+                if (entry.marks) {
+                    if (typeof entry.marks === 'object') {
+                        marksObject = entry.marks;
+                    } else if (typeof entry.marks === 'string') {
+                        try {
+                            marksObject = JSON.parse(entry.marks);
+                        } catch (e) {
+                            console.error("Failed parsing stringified marks payload", e);
+                        }
+                    }
+                }
+                
+                const entries = Object.entries(marksObject);
+                entries.forEach(([subject, score]) => {
+                    let printableScore = 0;
+                    if (score !== undefined && score !== null) {
+                        const parsedValue = parseFloat(score);
+                        if (!isNaN(parsedValue)) {
+                            printableScore = parsedValue;
+                            aggregateObtained += parsedValue;
+                        }
+                    }
+                    
+                    const cleanSubjectName = String(subject).replace(/_/g, ' ');
+
+                    rowsHtml += `
+                        <div class="table-row border-b border-white/5 md:hover:bg-white/5 transition-colors">
+                            <div class="table-cell-td py-1.5 px-3 text-xs font-medium text-indigo-100 uppercase tracking-wider">${cleanSubjectName}</div>
+                            <div class="table-cell-td py-1.5 px-3 text-xs text-right text-white font-bold font-mono">${printableScore}</div>
+                        </div>
+                    `;
+                });
+
+                const cardId = `exam-card-${entry.id || idx}`;
+                const card = document.createElement('div');
+                card.id = cardId;
+                card.className = 'glass-card print-mark-block p-3 flex flex-col justify-between shadow-lg relative group animate-card-3d';
+                card.style.animationDelay = `${(idx + 1) * 60}ms`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-indigo-500/30 pb-1.5 mb-1">
+                        <div>
+                            <h3 class="font-extrabold text-xs text-white tracking-wide uppercase">${entry.exam_name || 'Evaluation Term'}</h3>
+                            <p class="text-[7px] text-indigo-300/60 uppercase tracking-widest font-semibold print:hidden">Official Report Ledger</p>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <div class="no-print">
+                                <button onclick="printSingleExam('${cardId}')" class="px-2 py-0.5 text-[8px] uppercase tracking-wider font-extrabold bg-indigo-500/20 border border-indigo-500/40 rounded-md hover:bg-indigo-500/40 transition-all cursor-pointer text-indigo-300">
+                                    Print / PDF
+                                </button>
+                            </div>
+                            <div class="filter drop-shadow-[0_2px_4px_rgba(16,185,129,0.3)]">
+                                <img src="verified.png" alt="Verified" class="print-verified-badge w-6 h-6 object-contain select-none">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="transcript-table w-full my-0.5">
+                        <div class="table-header-group bg-indigo-950/40">
+                            <div class="table-row">
+                                <div class="table-cell-th py-1 px-3 text-[9px] font-bold uppercase tracking-widest text-indigo-200">Course / Subject Module</div>
+                                <div class="table-cell-th py-1 px-3 text-[9px] font-bold uppercase tracking-widest text-indigo-200 text-right">Marks Obtained</div>
+                            </div>
+                        </div>
+                        <div class="table-row-group">
+                            ${rowsHtml || '<div class="table-row"><div class="table-cell-td col-span-2 text-center py-2 text-xs italic text-slate-400">No subject marks registered.</div></div>'}
+                        </div>
+                        <div class="table-footer-group">
+                            <div class="table-row">
+                                <div class="table-cell-footer py-1.5 px-3 text-[9px] uppercase tracking-wider text-indigo-300">Total Aggregate Marks</div>
+                                <div class="table-cell-footer py-1.5 px-3 text-xs text-right font-black text-white font-mono bg-indigo-500/20">${aggregateObtained}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="institutional-footer hidden print:flex justify-between items-end mt-4 w-full">
+                        <div class="text-left">
+                            <p class="text-[7px] font-bold uppercase text-slate-400">Verification Token</p>
+                            <p class="text-[7px] font-mono text-slate-600">KK-SEC-${Math.random().toString(16).substr(2, 6).toUpperCase()}</p>
+                        </div>
+                        <div class="signature-block border-t border-slate-900 pt-0.5 text-center w-36 text-[8px]">
+                            Controller of Examinations
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function printSingleExam(cardElementId) {
+            document.body.classList.add('print-single-mode');
+            
+            const TargetCard = document.getElementById(cardElementId);
+            const ProfileSec = document.getElementById('profile-section');
+            const ResultsWrap = document.getElementById('results-wrapper-section');
+            
+            TargetCard.classList.add('print-isolated-target');
+            ProfileSec.classList.add('print-isolated-target');
+            ResultsWrap.classList.add('print-isolated-target');
+            
+            window.print();
+            
+            document.body.classList.remove('print-single-mode');
+            TargetCard.classList.remove('print-isolated-target');
+            ProfileSec.classList.remove('print-isolated-target');
+            ResultsWrap.classList.remove('print-isolated-target');
+        }
+
+        function printAllExams() {
+            document.body.classList.remove('print-single-mode');
+            window.print();
+        }
+
+        async function logout() {
+            await _supabase.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        window.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>

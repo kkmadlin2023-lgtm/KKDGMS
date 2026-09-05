@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <title>Faculty Mark Entry | KKDGMS</title>
+    <!-- Tailwind CSS & AlpineJS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Supabase, html2pdf, and Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        
+        [x-cloak] { display: none !important; }
+
+        /* PDF and Print Specific Cleanups */
+        .pdf-print-window table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+        .pdf-print-window th, .pdf-print-window td {
+            border: 1px solid #cbd5e1 !important;
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+            text-align: left !important;
+        }
+        .pdf-print-window th {
+            background-color: #f1f5f9 !important;
+            color: #1e293b !important;
+            font-weight: 700 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col md:flex-row" x-data="markEntryApp()" x-init="initializePortal()">
+
+    <!-- Mobile Topbar Header -->
+    <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 p-1.5 rounded-lg text-white">
+                <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+            </div>
+            <span class="font-bold tracking-wider text-sm uppercase">KKDGMS Portal</span>
+        </div>
+        <button @click="sidebarOpen = !sidebarOpen" class="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
+            <i data-lucide="menu" class="w-6 h-6" x-show="!sidebarOpen"></i>
+            <i data-lucide="x" class="w-6 h-6" x-show="sidebarOpen" x-cloak></i>
+        </button>
+    </header>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" x-cloak
+         class="fixed inset-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-xs transition-opacity"></div>
+
+    <!-- Navigation Aside Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+           class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col justify-between transition-transform duration-300 ease-in-out shrink-0 border-r border-slate-800">
+        
+        <div class="p-5 space-y-6">
+            <!-- Brand Logo Header -->
+            <div class="flex items-center gap-3 px-2">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-600/30">
+                    <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white tracking-wider text-base leading-none">KKDGMS</h1>
+                    <p class="text-[10px] text-indigo-400 font-semibold tracking-widest uppercase mt-1">Faculty Portal</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="space-y-1.5 pt-4">
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">Navigation</div>
+                <a href="f_dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all group">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 transition-all">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Marks Entry</span>
+                </a>
+            </nav>
+
+            <!-- System Metrics & Engine Status -->
+            <div class="pt-4 border-t border-slate-800/80 space-y-3">
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3">Sync Diagnostics</div>
+                
+                <div class="bg-slate-800/50 rounded-xl p-3 border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between text-xs font-semibold">
+                        <span class="text-slate-400">Engine State:</span>
+                        <div class="flex gap-1.5 items-center">
+                            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300" :class="statusLight === 'red' ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-slate-600'"></div>
+                            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300" :class="statusLight === 'yellow' ? 'bg-amber-500 shadow-[0_0_8px_#f59e0b]' : 'bg-slate-600'"></div>
+                            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300" :class="statusLight === 'green' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-600'"></div>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-medium leading-relaxed" x-text="statusMessage"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Footer & User Controls -->
+        <div class="p-4 border-t border-slate-800/80 bg-slate-900/50">
+            <button @click="terminatePortalSession()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all cursor-pointer">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span>LOGOUT PORTAL</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area Container -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        
+        <!-- Dashboard Top Header Bar -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-50 p-2 rounded-lg text-indigo-600 border border-indigo-100 hidden sm:block">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-tight">Synchronized Marks Management Engine</h1>
+                    <p class="text-xs text-slate-500 font-medium">Dual-Engine Workspace & Historical Archiver</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <a href="f_dashboard.html" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 transition flex items-center gap-1.5">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Back to</span> Dashboard
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Workspace View -->
+        <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-8 sm:space-y-12 flex-1">
+            
+            <!-- UPPER HALF: MARK ENTRY WORKSPACE -->
+            <section class="space-y-6">
+                <div class="border-b border-slate-200 pb-3 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-700 font-bold text-xs px-2.5 py-1 rounded-md">ENGINE 01</span>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">Active Marksheet Entry Workspace</h2>
+                </div>
+
+                <!-- Configuration Form -->
+                <div class="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 items-end">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Exam Name *</label>
+                            <input type="text" x-model="filters.exam" @input="cacheLocalWorkspaceState()" placeholder="e.g., Mid-Term 2026" 
+                                   class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Class *</label>
+                            <select x-model="filters.class" @change="cacheLocalWorkspaceState()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
+                                <option value="">-- Choose Class --</option>
+                                <template x-for="item in existingClasses" :key="item">
+                                    <option :value="item" x-text="item"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Section *</label>
+                            <select x-model="filters.section" @change="cacheLocalWorkspaceState()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all">
+                                <option value="">-- Choose Section --</option>
+                                <template x-for="item in existingSections" :key="item">
+                                    <option :value="item" x-text="item"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <button @click="loadDataSessionPipeline()" :disabled="!filters.exam || !filters.class || !filters.section || isFetching"
+                                class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-semibold py-2 px-4 rounded-lg text-sm shadow-xs transition flex justify-center items-center gap-2 cursor-pointer border border-transparent h-[38px] sm:col-span-2 md:col-span-1">
+                            <i data-lucide="database-zap" class="w-4 h-4" :class="{'animate-bounce': isFetching}"></i> 
+                            <span x-text="isFetching ? 'Fetching Data...' : 'Fetch & Sync Data'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grading Table Section -->
+                <div x-show="students.length > 0" x-cloak class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div class="relative w-full lg:max-w-md">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </span>
+                            <input type="text" x-model="searchQuery" placeholder="Search filtered workspace roster..." 
+                                   class="w-full bg-white border border-slate-300 pl-9 pr-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                            <button @click="executeCloudSync('draft')" :disabled="isSaving" class="flex-1 lg:flex-initial justify-center bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="save-all" class="w-4 h-4 text-slate-500"></i> Save Draft
+                            </button>
+                            <button @click="executeCloudSync('published')" :disabled="isSaving" class="flex-1 lg:flex-initial justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="check" class="w-4 h-4"></i> Publish Marks
+                            </button>
+                            <button x-show="currentStatus === 'published'" @click="exportToPDF()" class="w-full lg:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="download" class="w-4 h-4"></i> Download Marksheet
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table Container Workspace -->
+                    <div class="overflow-x-auto w-full touch-pan-x" id="workspace-table-container">
+                        <div class="min-w-[800px]">
+                            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-xs">
+                                    <tr>
+                                        <th scope="col" class="px-4 sm:px-6 py-4 w-20">ID</th>
+                                        <th scope="col" class="px-4 sm:px-6 py-4">Student Name</th>
+                                        <template x-for="subject in subjects" :key="subject">
+                                            <th scope="col" class="px-4 sm:px-6 py-4 relative group min-w-[140px]">
+                                                <span x-text="subject"></span>
+                                                <button @click="removeSubjectColumn(subject)" class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700 cursor-pointer transition p-1 no-pdf-element">
+                                                    <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                </button>
+                                            </th>
+                                        </template>
+                                        <th scope="col" class="px-4 py-4 w-12 text-center bg-indigo-50/50 no-pdf-element">
+                                            <button @click="addSubjectColumnPrompt()" class="p-1.5 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-xs transition">
+                                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                            </button>
+                                        </th>
+                                        <th scope="col" class="px-4 sm:px-6 py-4 w-28 font-extrabold text-indigo-950 bg-indigo-50/50">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    <template x-for="student in filteredStudents" :key="student.id">
+                                        <tr class="hover:bg-slate-50/70 transition-colors">
+                                            <td class="px-4 sm:px-6 py-3 font-medium text-slate-400" x-text="student.id"></td>
+                                            <td class="px-4 sm:px-6 py-3 font-semibold text-slate-900" x-text="student.full_name"></td>
+                                            <template x-for="subject in subjects" :key="subject">
+                                                <td class="px-4 sm:px-6 py-2">
+                                                    <input type="number" min="0" max="100" placeholder="0"
+                                                           x-model.number="student.scores[subject]"
+                                                           @input="triggerUnsavedWarningState()"
+                                                           class="w-20 bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-center font-semibold focus:bg-white focus:outline-indigo-600 text-sm">
+                                                </td>
+                                            </template>
+                                            <td class="px-4 py-2 bg-slate-50/20 no-pdf-element"></td> 
+                                            <td class="px-4 sm:px-6 py-3 font-bold text-base text-indigo-600 bg-indigo-50/30" x-text="calculateStudentSum(student.scores)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="p-2 bg-slate-100/60 border-t border-slate-200 text-center text-[11px] text-slate-400 font-medium block lg:hidden select-none">
+                        ← Swipe horizontally to see complete workspace dimensions →
+                    </div>
+                </div>
+
+                <!-- Workspace Idle Cover State -->
+                <div x-show="students.length === 0" class="bg-white border border-dashed border-slate-300 rounded-xl p-8 sm:p-12 text-center shadow-xs">
+                    <div class="text-slate-400 max-w-md mx-auto space-y-3">
+                        <i data-lucide="folder-open" class="w-12 h-12 mx-auto stroke-1 text-indigo-500"></i>
+                        <h3 class="text-sm sm:text-base font-bold text-slate-800">Workspace Empty</h3>
+                        <p class="text-xs text-slate-500">Configure target metrics above and load workspace records to begin synchronization pipelines.</p>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="border-slate-200">
+
+            <!-- LOWER HALF: EXISTING SAVED RECORDS & DRAFTS MODULE -->
+            <section class="space-y-6">
+                <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-teal-100 text-teal-800 font-bold text-xs px-2.5 py-1 rounded-md">ENGINE 02</span>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900">Database Sessions Archive</h2>
+                    </div>
+                    <button @click="loadSavedSessions()" class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold transition cursor-pointer self-start sm:self-auto">
+                        <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Refresh Archive Logs
+                    </button>
+                </div>
+
+                <!-- History Controls/Filters -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <div class="relative w-full sm:max-w-md">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" x-model="historySearchQuery" placeholder="Search archive by Exam or Class..." 
+                               class="w-full bg-slate-50 border border-slate-300 pl-9 pr-4 py-2 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                    </div>
+
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                        <span class="text-xs font-bold text-slate-500 uppercase whitespace-nowrap">Filter Status:</span>
+                        <select x-model="historyStatusFilter" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                            <option value="all">Show All Rows</option>
+                            <option value="draft">Draft Sheets</option>
+                            <option value="published">Published Sheets</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Historical Aggregated Session List -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="overflow-x-auto w-full touch-pan-x">
+                        <div class="min-w-[900px]">
+                            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-xs">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-4">Saved Exam Reference</th>
+                                        <th scope="col" class="px-6 py-4">Class</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Section</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Roster Size</th>
+                                        <th scope="col" class="px-6 py-4 text-center">Status</th>
+                                        <th scope="col" class="px-6 py-4 text-right">Actions Dashboard</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    <template x-for="session in filteredSavedSessions" :key="session.key">
+                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                            <td class="px-6 py-4 font-semibold text-slate-900" x-text="session.exam_name"></td>
+                                            <td class="px-6 py-4 text-slate-600" x-text="session.student_class"></td>
+                                            <td class="px-6 py-4 text-center font-bold text-indigo-600" x-text="session.section"></td>
+                                            <td class="px-6 py-4 text-center font-medium text-slate-500" x-text="`${session.count} Students`"></td>
+                                            <td class="px-6 py-4 text-center">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                                                      :class="session.status === 'published' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200'">
+                                                    <span class="w-1.5 h-1.5 rounded-full" :class="session.status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                                                    <span x-text="session.status"></span>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right space-x-1">
+                                                <button @click="loadSessionToWorkspace(session)" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
+                                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
+                                                </button>
+                                                <button @click="deleteSession(session)" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                                                </button>
+                                                <button @click="downloadArchiveToPDF(session)" class="bg-slate-100 text-slate-700 hover:bg-slate-800 hover:text-white px-2.5 py-1.5 rounded-md text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer">
+                                                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="filteredSavedSessions.length === 0">
+                                        <td colspan="6" class="px-6 py-12 text-center text-slate-400 font-medium">
+                                            No records matching search constraints or filters found in the archive table.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="p-2 bg-slate-100/60 border-t border-slate-200 text-center text-[11px] text-slate-400 font-medium block touch-none select-none">
+                        ← Swipe horizontally to see complete dashboard archives →
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const supabaseClientInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function markEntryApp() {
+            return {
+                sidebarOpen: false,
+                filters: { exam: '', class: '', section: '' },
+                searchQuery: '',
+                students: [],
+                subjects: ['English', 'Mathematics', 'Science'],
+                existingClasses: [],
+                existingSections: [],
+                currentStatus: 'draft',
+                
+                // History Engine Parameters
+                savedSessions: [],
+                historySearchQuery: '',
+                historyStatusFilter: 'all',
+
+                // Transaction status metrics
+                statusLight: 'yellow',
+                statusMessage: 'Connecting...',
+                isSaving: false,
+                isFetching: false,
+
+                async initializePortal() {
+                    await this.syncWithSupabaseBackend();
+                    await this.loadSavedSessions();
+                },
+
+                async syncWithSupabaseBackend() {
+                    const savedSessionFilters = localStorage.getItem('active_faculty_filters');
+                    if (savedSessionFilters) this.filters = JSON.parse(savedSessionFilters);
+
+                    try {
+                        const { data, error } = await supabaseClientInstance
+                            .from('students')
+                            .select('student_class, section');
+
+                        if (error) throw error;
+
+                        const uniqueClassesSet = new Set();
+                        const uniqueSectionsSet = new Set();
+
+                        data.forEach(item => {
+                            if (item.student_class?.trim()) uniqueClassesSet.add(item.student_class.trim());
+                            if (item.section?.trim()) uniqueSectionsSet.add(item.section.trim());
+                        });
+
+                        this.existingClasses = Array.from(uniqueClassesSet).sort();
+                        this.existingSections = Array.from(uniqueSectionsSet).sort();
+
+                        this.statusLight = 'green';
+                        this.statusMessage = 'Cloud Synced Successfully';
+                    } catch (err) {
+                        this.statusLight = 'red';
+                        this.statusMessage = 'Sync Error: ' + err.message;
+                    } font-medium; {
+                        this.$nextTick(() => { lucide.createIcons(); });
+                    }
+                },
+
+                async loadSavedSessions() {
+                    try {
+                        const { data, error } = await supabaseClientInstance
+                            .from('marks_entries')
+                            .select('exam_name, student_class, section, status, created_at');
+
+                        if (error) throw error;
+
+                        const sessionGroups = {};
+                        data.forEach(entry => {
+                            const key = `${entry.exam_name.trim()}|${entry.student_class.trim()}|${entry.section.trim()}`;
+                            if (!sessionGroups[key]) {
+                                sessionGroups[key] = {
+                                    key: key,
+                                    exam_name: entry.exam_name,
+                                    student_class: entry.student_class,
+                                    section: entry.section,
+                                    status: entry.status,
+                                    created_at: entry.created_at,
+                                    count: 0
+                                };
+                            }
+                            sessionGroups[key].count++;
+                        });
+
+                        this.savedSessions = Object.values(sessionGroups).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    } catch (err) {
+                        console.error('Error fetching database sessions:', err);
+                    } finally {
+                        this.$nextTick(() => { lucide.createIcons(); });
+                    }
+                },
+
+                cacheLocalWorkspaceState() {
+                    localStorage.setItem('active_faculty_filters', JSON.stringify(this.filters));
+                },
+
+                get filteredStudents() {
+                    if (!this.searchQuery.trim()) return this.students;
+                    return this.students.filter(s => s.full_name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                },
+
+                get filteredSavedSessions() {
+                    return this.savedSessions.filter(session => {
+                        const matchesQuery = session.exam_name.toLowerCase().includes(this.historySearchQuery.toLowerCase()) || 
+                                             session.student_class.toLowerCase().includes(this.historySearchQuery.toLowerCase());
+                        const matchesStatus = this.historyStatusFilter === 'all' || session.status === this.historyStatusFilter;
+                        return matchesQuery && matchesStatus;
+                    });
+                },
+
+                triggerUnsavedWarningState() {
+                    this.statusLight = 'yellow';
+                    this.statusMessage = 'Unsaved local modifications active';
+                },
+
+                async loadDataSessionPipeline() {
+                    this.isFetching = true;
+                    this.statusLight = 'yellow';
+                    this.statusMessage = 'Querying structural datasets...';
+                    try {
+                        const { data: roster, error: rosterErr } = await supabaseClientInstance
+                            .from('students')
+                            .select('id, full_name, student_class, section')
+                            .eq('student_class', this.filters.class)
+                            .eq('section', this.filters.section);
+
+                        if (rosterErr) throw rosterErr;
+
+                        const { data: marksRecordLogs, error: marksErr } = await supabaseClientInstance
+                            .from('marks_entries')
+                            .select('student_id, marks, status')
+                            .eq('exam_name', this.filters.exam.trim())
+                            .eq('student_class', this.filters.class)
+                            .eq('section', this.filters.section);
+
+                        if (marksErr) throw marksErr;
+
+                        if (marksRecordLogs && marksRecordLogs.length > 0) {
+                            this.currentStatus = marksRecordLogs[0].status;
+                            let extractedSubjects = new Set(this.subjects);
+                            marksRecordLogs.forEach(entry => {
+                                if (entry.marks) Object.keys(entry.marks).forEach(sub => extractedSubjects.add(sub));
+                            });
+                            this.subjects = Array.from(extractedSubjects);
+                        } else {
+                            this.currentStatus = 'draft';
+                        }
+
+                        this.students = roster.map(student => {
+                            const specificMarkMatch = marksRecordLogs?.find(m => m.student_id === student.id);
+                            let scoreMapArray = {};
+                            this.subjects.forEach(sub => {
+                                scoreMapArray[sub] = specificMarkMatch?.marks?.[sub] !== undefined ? specificMarkMatch.marks[sub] : '';
+                            });
+                            return { id: student.id, full_name: student.full_name, scores: scoreMapArray };
+                        });
+
+                        this.statusLight = 'green';
+                        this.statusMessage = `Successfully Loaded ${this.students.length} Student Rows`;
+                    } catch (err) {
+                        this.statusLight = 'red';
+                        this.statusMessage = 'Data Sync Error: ' + err.message;
+                    } finally {
+                        this.isFetching = false;
+                        this.$nextTick(() => { lucide.createIcons(); });
+                    }
+                },
+
+                async loadSessionToWorkspace(session) {
+                    this.filters.exam = session.exam_name;
+                    this.filters.class = session.student_class;
+                    this.filters.section = session.section;
+                    this.cacheLocalWorkspaceState();
+                    await this.loadDataSessionPipeline();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                async deleteSession(session) {
+                    if (confirm(`Are you sure you want to permanently delete all marks entries for:\nExam: ${session.exam_name}\nClass: ${session.student_class} (Section ${session.section})?`)) {
+                        this.statusLight = 'yellow';
+                        this.statusMessage = 'Executing DB Purge...';
+                        try {
+                            const { error } = await supabaseClientInstance
+                                .from('marks_entries')
+                                .delete()
+                                .eq('exam_name', session.exam_name)
+                                .eq('student_class', session.student_class)
+                                .eq('section', session.section);
+
+                            if (error) throw error;
+
+                            if (this.filters.exam === session.exam_name && this.filters.class === session.student_class && this.filters.section === session.section) {
+                                this.students = [];
+                            }
+
+                            this.statusLight = 'green';
+                            this.statusMessage = 'Session Permanently Deleted';
+                            await this.loadSavedSessions();
+                        } catch (err) {
+                            this.statusLight = 'red';
+                            this.statusMessage = 'Error on deleting: ' + err.message;
+                        }
+                    }
+                },
+
+                addSubjectColumnPrompt() {
+                    const title = prompt("Enter New Subject Title Name:");
+                    if (title?.trim()) {
+                        const cleanTitle = title.trim();
+                        if (!this.subjects.includes(cleanTitle)) {
+                            this.subjects.push(cleanTitle);
+                            this.students.forEach(s => { if (s.scores[cleanTitle] === undefined) s.scores[cleanTitle] = ''; });
+                            this.triggerUnsavedWarningState();
+                            this.$nextTick(() => { lucide.createIcons(); });
+                        }
+                    }
+                },
+
+                removeSubjectColumn(subject) {
+                    if (confirm(`Remove custom column "${subject}" and all its records?`)) {
+                        this.subjects = this.subjects.filter(s => s !== subject);
+                        this.students.forEach(s => delete s.scores[subject]);
+                        this.triggerUnsavedWarningState();
+                    }
+                },
+
+                calculateStudentSum(scores) {
+                    return Object.values(scores).reduce((a, b) => a + (parseInt(b, 10) || 0), 0);
+                },
+
+                async executeCloudSync(targetStatus) {
+                    this.isSaving = true;
+                    this.statusLight = 'yellow';
+                    this.statusMessage = `Syncing batch records as (${targetStatus})...`;
+                    try {
+                        const transactionPayload = this.students.map(s => {
+                            const standardizedScores = {};
+                            this.subjects.forEach(sub => { standardizedScores[sub] = parseInt(s.scores[sub], 10) || 0; });
+                            return {
+                                exam_name: this.filters.exam.trim(),
+                                student_class: this.filters.class,
+                                section: this.filters.section,
+                                student_id: s.id,
+                                marks: standardizedScores,
+                                status: targetStatus
+                            };
+                        });
+
+                        const { error } = await supabaseClientInstance
+                            .from('marks_entries')
+                            .upsert(transactionPayload, { onConflict: 'exam_name,student_class,section,student_id' });
+
+                        if (error) throw error;
+
+                        this.currentStatus = targetStatus;
+                        this.statusLight = 'green';
+                        this.statusMessage = targetStatus === 'published' ? 'Published Database Sync Complete!' : 'Draft States Saved!';
+                        await this.loadSavedSessions();
+                    } catch (err) {
+                        this.statusLight = 'red';
+                        this.statusMessage = 'Sync Write Aborted: ' + err.message;
+                        alert("Database write error: " + err.message);
+                    } finally {
+                        this.isSaving = false;
+                    }
+                },
+
+                exportToPDF() {
+                    this.statusLight = 'yellow';
+                    this.statusMessage = 'Formatting report sheet...';
+
+                    // Create structured table container dynamically to avoid form rendering anomalies
+                    const printWrapper = document.createElement('div');
+                    printWrapper.className = 'p-8 text-sm font-sans pdf-print-window';
+                    
+                    printWrapper.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 24px; font-family: sans-serif;">
+                            <h1 style="font-size: 24px; font-weight: bold; margin: 0; color: #1e293b;">${this.filters.exam}</h1>
+                            <p style="font-size: 14px; color: #64748b; font-weight: 600; margin: 6px 0 0 0;">Class: ${this.filters.class} | Section: ${this.filters.section}</p>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Student Name</th>
+                                    ${this.subjects.map(sub => `<th style="text-align: center;">${sub}</th>`).join('')}
+                                    <th style="text-align: center; background-color: #e0e7ff !important;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${this.filteredStudents.map(student => `
+                                    <tr>
+                                        <td style="color: #64748b; font-weight: 500;">${student.id}</td>
+                                        <td style="font-weight: 600; color: #0f172a;">${student.full_name}</td>
+                                        ${this.subjects.map(sub => `<td style="text-align: center; font-weight: 600;">${student.scores[sub] !== '' ? student.scores[sub] : '-'}</td>`).join('')}
+                                        <td style="text-align: center; font-weight: 700; color: #4f46e5; background-color: #f8fafc;">${this.calculateStudentSum(student.scores)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+
+                    const options = {
+                        margin: 0.5,
+                        filename: `Gradesheet_${this.filters.exam.replace(/\s+/g, '_')}_Class_${this.filters.class}.pdf`,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true },
+                        jsPDF: { orientation: 'landscape', unit: 'in', format: 'letter' }
+                    };
+
+                    html2pdf().set(options).from(printWrapper).save().then(() => {
+                        this.statusLight = 'green';
+                        this.statusMessage = 'PDF generated successfully';
+                    });
+                },
+
+                async downloadArchiveToPDF(session) {
+                    this.statusLight = 'yellow';
+                    this.statusMessage = 'Building archive file document...';
+                    try {
+                        const { data: roster, error: rosterErr } = await supabaseClientInstance
+                            .from('students')
+                            .select('id, full_name')
+                            .eq('student_class', session.student_class)
+                            .eq('section', session.section);
+
+                        if (rosterErr) throw rosterErr;
+
+                        const { data: marks, error: marksErr } = await supabaseClientInstance
+                            .from('marks_entries')
+                            .select('student_id, marks')
+                            .eq('exam_name', session.exam_name)
+                            .eq('student_class', session.student_class)
+                            .eq('section', session.section);
+
+                        if (marksErr) throw marksErr;
+
+                        let dynamicSubjects = new Set(['English', 'Mathematics', 'Science']);
+                        marks.forEach(m => {
+                            if (m.marks) Object.keys(m.marks).forEach(sub => dynamicSubjects.add(sub));
+                        });
+                        const subjectList = Array.from(dynamicSubjects);
+
+                        const printRoot = document.createElement('div');
+                        printRoot.className = 'p-8 text-sm font-sans pdf-print-window';
+                        printRoot.innerHTML = `
+                            <div style="text-align: center; margin-bottom: 24px; font-family: sans-serif;">
+                                <h1 style="font-size: 24px; font-weight: bold; margin: 0; color: #1e293b;">${session.exam_name}</h1>
+                                <p style="font-size: 14px; color: #64748b; font-weight: 600; margin: 6px 0 0 0;">Class: ${session.student_class} | Section: ${session.section} (Archived Record)</p>
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Student Name</th>
+                                        ${subjectList.map(sub => `<th style="text-align: center;">${sub}</th>`).join('')}
+                                        <th style="text-align: center; background-color: #e0e7ff !important;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${roster.map(student => {
+                                        const record = marks.find(m => m.student_id === student.id);
+                                        const scores = record?.marks || {};
+                                        const total = Object.values(scores).reduce((a, b) => a + (parseInt(b, 10) || 0), 0);
+                                        return `
+                                            <tr>
+                                                <td style="color: #64748b; font-weight: 500;">${student.id}</td>
+                                                <td style="font-weight: 600; color: #0f172a;">${student.full_name}</td>
+                                                ${subjectList.map(sub => `<td style="text-align: center; font-weight: 600;">${scores[sub] !== undefined ? scores[sub] : '-'}</td>`).join('')}
+                                                <td style="text-align: center; font-weight: 700; color: #4f46e5; background-color: #f8fafc;">${total}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        `;
+
+                        html2pdf().set({
+                            margin: 0.5,
+                            filename: `Archived_Gradesheet_${session.exam_name.replace(/\s+/g, '_')}_Class_${session.student_class}.pdf`,
+                            html2canvas: { scale: 2 },
+                            jsPDF: { orientation: 'landscape', unit: 'in', format: 'letter' }
+                        }).from(printRoot).save().then(() => {
+                            this.statusLight = 'green';
+                            this.statusMessage = 'PDF generated and downloaded';
+                        });
+                    } catch (err) {
+                        this.statusLight = 'red';
+                        this.statusMessage = 'PDF error: ' + err.message;
+                    }
+                },
+
+                terminatePortalSession() {
+                    if (confirm("Are you sure you want to log out of the Synchronized Marks Management System?")) {
+                        // Clear active workspace cache parameters
+                        localStorage.removeItem('active_faculty_filters');
+                        
+                        // Clean redirect to sign-in page
+                        window.location.replace("login.html");
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

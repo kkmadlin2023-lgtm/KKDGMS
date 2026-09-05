@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrators Control Engine | KKDGMS</title>
+    <link class="w-8 h-8 rounded-full" rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .sticky-col { position: sticky; left: 0; z-index: 20; }
+        body { background-color: #f8fafc; }
+        .toast-enter { transform: translateY(-1rem) scale(0.95); opacity: 0; }
+        .toast-active { transform: translateY(0) scale(1); opacity: 1; }
+        .sidebar-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="text-slate-700 font-sans antialiased min-h-screen relative lg:pl-72 bg-[#f8fafc]">
+
+    <!-- MOBILE OVERLAY BACKDROP -->
+    <div id="sidebar-overlay" onclick="toggleSidebarMenu()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
+
+    <!-- SIDEBAR NAVIGATION ASIDE -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-xl lg:shadow-none" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Head Master Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive cursor-pointer" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
+                
+                <!-- Admissions Submenu Parent Accordion -->
+                <div>
+                    <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium cursor-pointer group">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
+                            <span>ADMISSION FORMS</span>
+                        </span>
+                        <i id="submenu-arrow-indicator" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="admissions-submenu" class="submenu-hidden pl-7 pr-1 mt-1 space-y-1 bg-slate-50/80 rounded-xl border border-slate-100 py-1.5">
+                        <a href="a_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Admin Admission Form</span>
+                        </a>
+                        <a href="f_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Faculty Admission Form</span>
+                        </a>
+                        <a href="s_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Student Admission Form</span>
+                        </a>
+                        <a href="w_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Warden Admission Form</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Navigation Module Links -->
+                <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY ASSIGNING PAGE</span>
+                </a>
+                
+                <a href="a_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
+                    <span>ATTENDANCE VIEW</span>
+                </a>
+
+                <a href="a_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="a_bonafide.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
+                    <span>BONAFIDE FORM</span>
+                </a>
+
+                <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
+                    <span>ANNOUNCEMENT EDIT</span>
+                </a>
+
+                <a href="a_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QUESTION BANK</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">System Records</div>
+
+                <a href="f_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-indigo-600 bg-indigo-50/80 rounded-xl transition font-bold border border-indigo-100">
+                    <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
+                    <span>FACULTY DATABASE</span>
+                </a>
+
+                <a href="a_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>ADMIN DATABASE</span>
+                </a>
+
+                <a href="s_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT DATABASE</span>
+                </a>
+
+                <a href="w_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>WARDEN DATABASE</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governance</div>
+
+                <a href="a_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE CONFIRMING PAGE</span>
+                </a>
+
+                <a href="a_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="award" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET VIEW</span>
+                </a>
+
+                <a href="a_user.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                    <span>USER UPDATES</span>
+                </a>
+
+                <a href="a_password.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
+                    <span>PASSWORD UPDATES</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- WRAPPER FOR MAIN CONTAINER PADDING -->
+    <div class="p-4 md:p-8">
+
+        <!-- SYSTEM FLOATING NOTIFICATION CORE -->
+        <div class="fixed top-6 right-6 z-50 pointer-events-none">
+            <div id="toast-notification" class="toast-enter transition-all duration-300 ease-out pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-slate-900 text-white border-slate-800">
+                <span id="toast-icon" class="text-lg">⚙️</span>
+                <div class="flex-1">
+                    <p id="toast-title" class="text-[10px] uppercase font-black tracking-wider text-slate-400">System Core</p>
+                    <p id="toast-msg" class="text-xs font-bold text-slate-100 mt-0.5">Online and Listening...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- GLOBAL NAVIGATION HEADER -->
+        <nav class="max-w-[1600px] mx-auto mb-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-2 bg-white text-slate-600 rounded-xl transition border border-slate-200">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="w-6 h-6 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                    <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                </div>
+                <span class="text-base font-bold text-slate-900 tracking-tight">Administrators Control Engine</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200/60 rounded-full text-xs font-bold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Database Live
+                </span>
+                <a href="a_dashboard.html" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition flex items-center gap-1.5 border border-slate-200/60">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- CONTROL ENGINE SUBHEADER CARD -->
+        <header class="max-w-[1600px] mx-auto mb-6 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500"></div>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 class="text-xs font-black text-slate-800 tracking-wider uppercase">
+                        MASTER INLINE MUTATION CONSOLE
+                    </h1>
+                    <p class="text-xs text-slate-400 mt-1 font-medium">Inline record mutation system synchronized with storage asset buckets and real-time subscription channels.</p>
+                </div>
+                
+                <button onclick="fetchFacultyDatabase()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-sm cursor-pointer flex items-center gap-2">
+                    <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                    <span>Sync Base</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN TABLE CONTAINER -->
+        <main class="max-w-[1600px] mx-auto bg-white border border-slate-200/80 shadow-xs overflow-hidden flex flex-col rounded-2xl mb-12">
+            <div class="p-3 px-6 bg-slate-50/50 border-b border-slate-200/60 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-indigo-500"></i>
+                    <span class="text-slate-700 font-bold">Total Records:</span>
+                    <span id="record-counter-badge" class="bg-indigo-100 text-indigo-700 px-2 py-0.5 font-bold rounded-md text-[11px]">0</span>
+                </div>
+                <span class="text-[11px] text-slate-400 font-medium">Shift + Scroll horizontally for all fields</span>
+            </div>
+
+            <div class="overflow-x-auto w-full">
+                <table id="database-matrix-table" class="w-full text-left border-collapse min-w-[3800px] table-fixed">
+                    <thead>
+                        <tr class="bg-slate-50/70 text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200/60">
+                            <th class="p-3 w-[150px] text-center sticky-col bg-slate-50 border-r border-slate-200/60 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">ACTIONS</th>
+                            <th class="p-3 w-[120px]">ID</th>
+                            <th class="p-3 w-[100px]">PHOTO</th>
+                            <th class="p-3 w-[240px]">FULL NAME</th>
+                            <th class="p-3 w-[160px]">USER ID</th>
+                            <th class="p-3 w-[240px]">SYSTEM EMAIL</th>
+                            <th class="p-3 w-[180px]">DEPARTMENT</th>
+                            <th class="p-3 w-[160px]">HOSTEL</th>
+                            <th class="p-3 w-[120px]">ROLE</th>
+                            <th class="p-3 w-[150px]">MOBILE</th>
+                            <th class="p-3 w-[160px]">AADHAAR</th>
+                            <th class="p-3 w-[160px]">QUALIFICATION</th>
+                            <th class="p-3 w-[140px]">DOB</th>
+                            <th class="p-3 w-[90px]">AGE</th>
+                            <th class="p-3 w-[110px]">GENDER</th>
+                            <th class="p-3 w-[110px]">BLOOD GROUP</th>
+                            <th class="p-3 w-[160px]">ID MARK 1</th>
+                            <th class="p-3 w-[160px]">ID MARK 2</th>
+                            <th class="p-3 w-[130px]">DOOR NO</th>
+                            <th class="p-3 w-[200px]">STREET NAME</th>
+                            <th class="p-3 w-[160px]">PLACE</th>
+                            <th class="p-3 w-[160px]">DISTRICT</th>
+                            <th class="p-3 w-[160px]">STATE</th>
+                            <th class="p-3 w-[110px]">PINCODE</th>
+                            <th class="p-3 w-[240px]">MEDICAL ISSUES</th>
+                            <th class="p-3 w-[220px]">INCOME CERT.</th>
+                            <th class="p-3 w-[220px]">NATIVITY CERT.</th>
+                        </tr>
+                        
+                        <tr class="bg-white border-b border-slate-200/60">
+                            <td class="p-2 sticky-col bg-white border-r border-slate-200/60 shadow-[2px_0_5px_rgba(0,0,0,0.02)] text-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">FILTER</td>
+                            <td class="p-2"><input type="text" data-col="id" oninput="executeTableMatrixFiltering()" placeholder="" class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"></td>
+                            <td class="p-2"><input type="text" data-col="full_name" oninput="executeTableMatrixFiltering()" placeholder="Search..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="user_id" oninput="executeTableMatrixFiltering()" placeholder="UID..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="email" oninput="executeTableMatrixFiltering()" placeholder="Email..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="department" oninput="executeTableMatrixFiltering()" placeholder="Dept..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="hostel_name" oninput="executeTableMatrixFiltering()" placeholder="Hostel..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="role" oninput="executeTableMatrixFiltering()" placeholder="Role..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="mobile" oninput="executeTableMatrixFiltering()" placeholder="Phone..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="aadhaar" oninput="executeTableMatrixFiltering()" placeholder="Aadhaar..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="qualification" oninput="executeTableMatrixFiltering()" placeholder="Qual..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="dob" oninput="executeTableMatrixFiltering()" placeholder="DOB..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="age" oninput="executeTableMatrixFiltering()" placeholder="Age..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="gender" oninput="executeTableMatrixFiltering()" placeholder="Gender..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="blood_group" oninput="executeTableMatrixFiltering()" placeholder="Blood..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="id_mark_1" oninput="executeTableMatrixFiltering()" placeholder="Mark 1..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="id_mark_2" oninput="executeTableMatrixFiltering()" placeholder="Mark 2..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="door_no" oninput="executeTableMatrixFiltering()" placeholder="Door..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="street_name" oninput="executeTableMatrixFiltering()" placeholder="Street..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="place" oninput="executeTableMatrixFiltering()" placeholder="Place..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="district" oninput="executeTableMatrixFiltering()" placeholder="District..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="state" oninput="executeTableMatrixFiltering()" placeholder="State..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="pincode" oninput="executeTableMatrixFiltering()" placeholder="Pin..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="medical_issues" oninput="executeTableMatrixFiltering()" placeholder="Medical..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="income_certificate" oninput="executeTableMatrixFiltering()" placeholder="Income..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                            <td class="p-2"><input type="text" data-col="nativity_certificate" oninput="executeTableMatrixFiltering()" placeholder="Nativity..." class="w-full bg-slate-50 border border-slate-200/80 px-2.5 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500 rounded-lg"></td>
+                        </tr>
+                    </thead>
+                    <tbody id="database-matrix-body" class="text-xs divide-y divide-slate-100 font-bold text-slate-800">
+                        <tr>
+                            <td colspan="27" class="p-8 text-center text-slate-400 font-mono">Synchronizing dataset cluster logs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Sidebar Toggle Handler
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // System Logout Handler
+        async function triggerSystemLogout() {
+            try {
+                await _supabase.auth.signOut();
+                window.location.href = 'index.html';
+            } catch (err) {
+                console.error("Logout failed:", err);
+            }
+        }
+
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const databaseMatrixBody = document.getElementById('database-matrix-body');
+        const toastNotification = document.getElementById('toast-notification');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastTitle = document.getElementById('toast-title');
+        const toastMsg = document.getElementById('toast-msg');
+
+        let MASTER_FACULTY_DATASTORES = [];
+        let EDITING_ROW_ID = null;
+        let toastTimeout = null;
+
+        function flashSystemStatus(message, state = 'success') {
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastMsg.innerText = message;
+            
+            if (state === 'error') {
+                toastTitle.innerText = "Transaction Blocked";
+                toastIcon.innerText = "🛑";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-rose-50 border-rose-200 text-rose-800 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-rose-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-rose-500";
+            } else if (state === 'warning') {
+                toastTitle.innerText = "Engine Working";
+                toastIcon.innerText = "⏳";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-amber-50 border-amber-200 text-amber-800 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-amber-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-amber-500";
+            } else {
+                toastTitle.innerText = "Core Sync Completed";
+                toastIcon.innerText = "✅";
+                toastNotification.className = "toast-active fixed top-6 right-6 z-50 pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-emerald-50 border-emerald-200 text-emerald-700 transition-all duration-300 ease-out";
+                toastMsg.className = "text-xs font-black text-emerald-900 mt-0.5";
+                toastTitle.className = "text-[10px] uppercase font-black tracking-wider text-emerald-500";
+            }
+
+            toastTimeout = setTimeout(() => {
+                toastNotification.className = "toast-enter fixed top-6 right-6 z-50 pointer-events-none flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-slate-900 text-white border-slate-800 transition-all duration-300 ease-in";
+            }, 3500);
+        }
+
+        function initializeRealtimeListener() {
+            _supabase
+                .channel('schema-faculty-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'faculty_details' }, (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        MASTER_FACULTY_DATASTORES.push(payload.new);
+                    } else if (payload.eventType === 'UPDATE') {
+                        const idx = MASTER_FACULTY_DATASTORES.findIndex(f => f.id === payload.new.id);
+                        if (idx !== -1) MASTER_FACULTY_DATASTORES[idx] = payload.new;
+                    } else if (payload.eventType === 'DELETE') {
+                        MASTER_FACULTY_DATASTORES = MASTER_FACULTY_DATASTORES.filter(f => f.id !== payload.old.id);
+                    }
+                    if (EDITING_ROW_ID !== payload.new?.id) executeTableMatrixFiltering();
+                })
+                .subscribe();
+        }
+
+        async function fetchFacultyDatabase() {
+            try {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="27" class="p-8 text-center text-slate-400 font-bold font-mono animate-pulse">Running full infrastructure query scan...</td></tr>`;
+                const { data, error } = await _supabase.from('faculty_details').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                MASTER_FACULTY_DATASTORES = data || [];
+                renderTableMatrixPayload(MASTER_FACULTY_DATASTORES);
+            } catch (err) {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="27" class="p-8 text-center text-rose-600 font-bold font-mono">Connection issue: ${err.message}</td></tr>`;
+            }
+        }
+
+        function renderTableMatrixPayload(recordsList) {
+            document.getElementById('record-counter-badge').innerText = recordsList.length;
+            if (recordsList.length === 0) {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="27" class="p-8 text-center text-slate-400 font-mono">No matching database assets found.</td></tr>`;
+                return;
+            }
+
+            databaseMatrixBody.innerHTML = recordsList.map(faculty => {
+                const isEditing = EDITING_ROW_ID === faculty.id;
+                const avatarView = faculty.photo_url 
+                    ? `<img src="${faculty.photo_url}" class="w-7 h-7 rounded-full object-cover border border-slate-200 mx-auto transition">` 
+                    : `<div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-400 mx-auto font-bold">N/A</div>`;
+
+                if (isEditing) {
+                    return `
+                    <tr class="bg-indigo-50/30 border-b border-slate-100 align-middle">
+                        <td class="p-2 sticky-col bg-slate-50 shadow-[2px_0_5px_rgba(0,0,0,0.04)] text-center border-r border-slate-200/60 flex items-center justify-center gap-1.5 h-12">
+                            <button onclick="inlineSaveMutation('${faculty.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] rounded-md transition">Save</button>
+                            <button onclick="inlineCancelEdit()" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-md border border-slate-200 transition">Exit</button>
+                        </td>
+                        <td class="p-3 font-mono text-slate-400 text-xs">${faculty.id}</td>
+                        <td class="p-1 text-center">
+                            <label class="block cursor-pointer">
+                                <span class="text-[10px] bg-slate-900 text-white px-2 py-1 font-bold rounded-lg hover:bg-slate-800">Upload</span>
+                                <input type="file" id="inline-photo-file" accept="image/*" class="hidden">
+                            </label>
+                            <input type="hidden" id="inline-photo-url-hidden" value="${faculty.photo_url || ''}">
+                        </td>
+                        <td class="p-1.5"><input type="text" id="inline-full_name" value="${faculty.full_name || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-bold rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-user_id" value="${faculty.user_id || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="email" id="inline-email" value="${faculty.email || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-department" value="${faculty.department || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-hostel_name" value="${faculty.hostel_name || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-role" value="${faculty.role || 'ADMIN'}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-mobile" value="${faculty.mobile || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-aadhaar" value="${faculty.aadhaar || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-qualification" value="${faculty.qualification || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="date" id="inline-dob" value="${faculty.dob || ''}" class="w-full bg-white border border-slate-200 p-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="number" id="inline-age" value="${faculty.age !== null && faculty.age !== undefined ? faculty.age : ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-gender" value="${faculty.gender || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-blood_group" value="${faculty.blood_group || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-id_mark_1" value="${faculty.id_mark_1 || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-id_mark_2" value="${faculty.id_mark_2 || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-door_no" value="${faculty.door_no || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-street_name" value="${faculty.street_name || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-place" value="${faculty.place || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-district" value="${faculty.district || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-state" value="${faculty.state || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-pincode" value="${faculty.pincode || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-medical_issues" value="${faculty.medical_issues || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-income_certificate" value="${faculty.income_certificate || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                        <td class="p-1.5"><input type="text" id="inline-nativity_certificate" value="${faculty.nativity_certificate || ''}" class="w-full bg-white border border-slate-200 px-2 py-1 text-xs font-mono rounded-lg focus:outline-none"></td>
+                    </tr>`;
+                }
+
+                return `
+                <tr class="hover:bg-slate-50/80 transition border-b border-slate-100 text-slate-800 align-middle">
+                    <td class="p-2 sticky-col bg-white shadow-[2px_0_5px_rgba(0,0,0,0.02)] text-center border-r border-slate-200/60 flex items-center justify-center gap-1.5 h-12 z-10">
+                        <button onclick="inlineEnableEdit('${faculty.id}')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] rounded-md transition shadow-2xs">Edit</button>
+                        <button onclick="dispatchDeleteRecord('${faculty.id}')" class="px-2 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px] rounded-md transition border border-rose-100">Del</button>
+                    </td>
+                    <td class="p-3 text-slate-400 font-medium text-xs truncate">${faculty.id}</td>
+                    <td class="p-1 text-center">${avatarView}</td>
+                    <td class="p-3 font-extrabold text-slate-900 uppercase text-[11px] truncate">${faculty.full_name || '—'}</td>
+                    <td class="p-3 font-mono text-slate-500 text-[11px] truncate">${faculty.user_id || '—'}</td>
+                    <td class="p-3 text-slate-600 text-[11px] truncate">${faculty.email || '—'}</td>
+                    <td class="p-3 font-bold text-slate-700 uppercase text-[10px] truncate">${faculty.department || '—'}</td>
+                    <td class="p-3 text-slate-500 text-[11px] truncate">${faculty.hostel_name || 'N/A'}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold uppercase rounded-md text-[9px] tracking-wider inline-block">${faculty.role || 'ADMIN'}</span>
+                    </td>
+                    <td class="p-3 font-mono text-slate-600 text-[11px]">${faculty.mobile || '—'}</td>
+                    <td class="p-3 font-mono text-slate-400 text-[11px]">[Aadhaar Redacted]</td>
+                    <td class="p-3 text-slate-600 text-[11px] truncate">${faculty.qualification || '—'}</td>
+                    <td class="p-3 font-mono text-slate-500 text-[11px]">${faculty.dob || '—'}</td>
+                    <td class="p-3 font-mono text-[11px]">${faculty.age !== null && faculty.age !== undefined ? faculty.age : '—'}</td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 font-bold uppercase rounded-md text-[10px]">${faculty.gender || '—'}</span></td>
+                    <td class="p-3 font-mono text-center"><span class="px-2 py-0.5 font-bold text-[10px] text-rose-600 bg-rose-50 border border-rose-100 rounded-full">${faculty.blood_group || '—'}</span></td>
+                    <td class="p-3 text-slate-400 truncate text-[11px]">${faculty.id_mark_1 || '—'}</td>
+                    <td class="p-3 text-slate-400 truncate text-[11px]">${faculty.id_mark_2 || '—'}</td>
+                    <td class="p-3 font-mono text-slate-600 text-[11px]">${faculty.door_no || '—'}</td>
+                    <td class="p-3 truncate text-slate-600 text-[11px]">${faculty.street_name || '—'}</td>
+                    <td class="p-3 text-slate-600 text-[11px]">${faculty.place || '—'}</td>
+                    <td class="p-3 text-slate-600 text-[11px]">${faculty.district || '—'}</td>
+                    <td class="p-3 text-slate-600 text-[11px]">${faculty.state || '—'}</td>
+                    <td class="p-3 font-mono text-indigo-600 bg-indigo-50/50 py-0.5 px-2 rounded-full text-center inline-block text-[11px]">${faculty.pincode || '—'}</td>
+                    <td class="p-3 truncate text-slate-400 font-medium text-[11px]">${faculty.medical_issues || 'None'}</td>
+                    <td class="p-3 truncate text-slate-400 font-mono text-[11px]">${faculty.income_certificate || '—'}</td>
+                    <td class="p-3 truncate text-slate-400 font-mono text-[11px]">${faculty.nativity_certificate || '—'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function executeTableMatrixFiltering() {
+            const filters = Array.from(document.querySelectorAll('input[data-col]'));
+            const dynamicMatches = MASTER_FACULTY_DATASTORES.filter(row => {
+                return filters.every(input => {
+                    const value = (input.value || '').trim().toLowerCase();
+                    if (!value) return true; 
+                    return String(row[input.getAttribute('data-col')] || '').toLowerCase().includes(value);
+                });
+            });
+            renderTableMatrixPayload(dynamicMatches);
+        }
+
+        function inlineEnableEdit(id) { EDITING_ROW_ID = id; executeTableMatrixFiltering(); }
+        function inlineCancelEdit() { EDITING_ROW_ID = null; executeTableMatrixFiltering(); }
+
+        const parseSqlValue = (val) => (val && val.trim() !== '') ? val.trim() : null;
+
+        async function inlineSaveMutation(targetId) {
+            const fullName = document.getElementById('inline-full_name').value.trim();
+            const email = document.getElementById('inline-email').value.trim();
+            const aadhaar = document.getElementById('inline-aadhaar').value.trim();
+            const dob = document.getElementById('inline-dob').value;
+            const gender = document.getElementById('inline-gender').value.trim();
+            const idMark1 = document.getElementById('inline-id_mark_1').value.trim();
+
+            if (!fullName || !email || !aadhaar || !dob || !gender || !idMark1) {
+                alert("Name, Email, Aadhaar, DOB, Gender, and ID Mark 1 are required fields.");
+                return;
+            }
+
+            const fileInput = document.getElementById('inline-photo-file');
+            let uploadedPhotoUrl = document.getElementById('inline-photo-url-hidden').value;
+
+            if (fileInput && fileInput.files.length > 0) {
+                flashSystemStatus("Uploading file...", "warning");
+                const file = fileInput.files[0];
+                const fileExt = file.name.split('.').pop();
+                const filePath = `faculty-${targetId}-${Date.now()}.${fileExt}`;
+
+                try {
+                    const { error: uploadError } = await _supabase.storage.from('student-photos').upload(filePath, file, { upsert: true });
+                    if (uploadError) throw uploadError;
+
+                    const { data } = _supabase.storage.from('student-photos').getPublicUrl(filePath);
+                    if (data?.publicUrl) uploadedPhotoUrl = data.publicUrl;
+                } catch (err) {
+                    alert(`Upload failed: ${err.message}`);
+                    return;
+                }
+            }
+
+            const ageInput = document.getElementById('inline-age').value;
+            const updatePayload = {
+                full_name: fullName,
+                user_id: document.getElementById('inline-user_id').value.trim(),
+                hostel_name: parseSqlValue(document.getElementById('inline-hostel_name').value),
+                department: document.getElementById('inline-department').value.trim(),
+                qualification: document.getElementById('inline-qualification').value.trim(),
+                email: email,
+                mobile: document.getElementById('inline-mobile').value.trim(),
+                aadhaar: aadhaar,
+                dob: dob,
+                age: ageInput !== '' ? parseInt(ageInput) : null,
+                gender: gender,
+                blood_group: document.getElementById('inline-blood_group').value.trim(),
+                id_mark_1: idMark1,
+                id_mark_2: parseSqlValue(document.getElementById('inline-id_mark_2').value),
+                door_no: parseSqlValue(document.getElementById('inline-door_no').value),
+                street_name: document.getElementById('inline-street_name').value.trim(),
+                place: document.getElementById('inline-place').value.trim(),
+                district: document.getElementById('inline-district').value.trim(),
+                state: document.getElementById('inline-state').value.trim(),
+                pincode: document.getElementById('inline-pincode').value.trim(),
+                medical_issues: parseSqlValue(document.getElementById('inline-medical_issues').value),
+                income_certificate: parseSqlValue(document.getElementById('inline-income_certificate').value),
+                nativity_certificate: parseSqlValue(document.getElementById('inline-nativity_certificate').value),
+                photo_url: parseSqlValue(uploadedPhotoUrl)
+            };
+
+            try {
+                const { error } = await _supabase.from('faculty_details').update(updatePayload).eq('id', targetId);
+                if (error) throw error;
+                EDITING_ROW_ID = null;
+                flashSystemStatus("Changes securely committed", "success");
+                fetchFacultyDatabase();
+            } catch (err) {
+                alert(`DB Rollback triggered: ${err.message}`);
+            }
+        }
+
+        async function dispatchDeleteRecord(id) {
+            if (!confirm("Are you absolutely sure you want to delete this record? This action will permanently drop the database entry, clear out the profile photo from the storage bucket, and erase the authentication profile.")) return;
+            
+            const faculty = MASTER_FACULTY_DATASTORES.find(f => f.id === id);
+            if (!faculty) return;
+
+            const photoUrl = faculty.photo_url;
+
+            if (photoUrl && photoUrl.includes('/storage/v1/object/public/student-photos/')) {
+                try {
+                    const rawPath = photoUrl.split('/student-photos/').pop();
+                    const relativePath = decodeURIComponent(rawPath);
+                    
+                    if (relativePath) {
+                        flashSystemStatus("Clearing asset from storage bucket...", "warning");
+                        
+                        const { error: storageError } = await _supabase.storage
+                            .from('student-photos')
+                            .remove([relativePath]);
+                        
+                        if (storageError) {
+                            console.error("Storage bucket eviction failed. Verify Delete permission RLS constraints:", storageError.message);
+                            flashSystemStatus(`Storage error: ${storageError.message}`, "error");
+                        } else {
+                            console.log(`Successfully dropped bucket file asset: ${relativePath}`);
+                        }
+                    }
+                } catch (storageErr) {
+                    console.warn("Storage asset link structure mismatch, bypassing storage drop:", storageErr);
+                }
+            }
+
+            try {
+                flashSystemStatus("Dropping infrastructure table entry...", "warning");
+                
+                const { error: tableError } = await _supabase
+                    .from('faculty_details')
+                    .delete()
+                    .eq('id', id);
+                    
+                if (tableError) throw tableError;
+
+                flashSystemStatus("Purge cascade finished successfully", "success");
+                fetchFacultyDatabase();
+            } catch (err) {
+                console.error("Purge system failure:", err);
+                alert(`Drop error encountered: ${err.message}`);
+                flashSystemStatus("Drop Failure Blocked", "error");
+            }
+        }
+
+        window.onload = () => {
+            fetchFacultyDatabase();
+            initializeRealtimeListener();
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>

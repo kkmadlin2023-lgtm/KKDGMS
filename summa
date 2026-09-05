@@ -1,0 +1,62 @@
+Design a world-class, premium SaaS web application with a clean, modern, and enterprise-grade UI/UX. The design should feel elegant, minimal, highly polished, and suitable for large-scale professional applications. Prioritize usability, consistency, accessibility, and responsiveness over decorative elements. Every page should have excellent spacing, alignment, typography, and visual hierarchy, creating an experience comparable to modern platforms such as Notion, Linear, Stripe Dashboard, Google Workspace, Microsoft 365, Atlassian, and Figma.
+
+Use a modern design system with a soft light theme, white surfaces, subtle gray backgrounds, smooth shadows, rounded corners (16–24px), glassmorphism where appropriate, and a carefully balanced color palette. Use a single primary accent color that is consistently applied to buttons, links, active states, icons, progress indicators, and highlights. Avoid excessive gradients or bright colors. Maintain a professional appearance suitable for education, enterprise, finance, healthcare, or productivity software.
+
+Build the interface using a responsive grid layout that adapts perfectly across desktop, laptop, tablet, and mobile devices. Follow a mobile-first approach. Ensure no horizontal scrolling occurs on any screen size. Components should intelligently resize, stack, and rearrange depending on available space while maintaining visual balance.
+
+Use Plus Jakarta Sans or Inter as the primary font family with clear typography hierarchy. Headings should be bold and prominent, body text should be clean and readable, secondary text should use muted gray colors, and spacing should follow an 8px design system for complete consistency.
+
+Create reusable UI components including:
+• Sticky top navigation
+• Responsive sidebar navigation
+• Dashboard cards
+• Statistics widgets
+• Tables
+• Search bars
+• Filter panels
+• Forms
+• Tabs
+• Dropdowns
+• Breadcrumbs
+• Pagination
+• Tooltips
+• Toast notifications
+• Modals
+• Profile menus
+• Progress bars
+• Circular progress indicators
+• Timelines
+• Calendars
+• Charts
+• Empty states
+• Loading skeletons
+• Status badges
+• Avatar groups
+• File upload components
+• Floating action buttons
+
+Every card should feature:
+• White background
+• Soft shadow
+• Rounded corners (20–24px)
+• Comfortable internal padding
+• Thin neutral border
+• Smooth hover animation
+• Slight elevation on hover
+• Consistent spacing between elements
+
+Buttons should have multiple variants including Primary, Secondary, Outline, Ghost, and Danger. Use rounded corners, subtle shadows, smooth hover effects, ripple interactions, loading states, disabled states, and keyboard focus indicators.
+
+Forms should include floating labels or elegant placeholders, validation messages, helper text, password visibility toggles, input icons where appropriate, searchable dropdowns, multi-select components, date pickers, and responsive layouts.
+
+Design every page with strong visual hierarchy by emphasizing important information through typography, spacing, card grouping, icons, and subtle color usage rather than unnecessary decorations.
+
+Animations should be smooth, fast, and meaningful. Include fade transitions, slide animations, hover lifts, expandable panels, loading animations, page transitions, ripple effects, animated counters, progress animations, collapsible menus, and smooth scrolling. All animations should use approximately 250–350ms ease-in-out timing.
+
+Icons should use a consistent modern outline icon library such as Lucide Icons. Icons should remain simple, clean, and visually balanced with text.
+
+Use accessibility best practices throughout the interface including keyboard navigation, proper focus states, ARIA labels, sufficient color contrast, scalable typography, and semantic HTML structure.
+
+Maintain a modular component-based design so every section is reusable and visually consistent. Use consistent border radius, spacing, typography, shadows, colors, button styles, and interaction patterns throughout the application.
+
+The final result should feel like a premium enterprise dashboard with exceptional attention to detail, outstanding responsiveness, modern UI patterns, smooth user interactions, clean layouts, and a timeless professional design that can be used for school management systems, university portals, ERP software, CRM platforms, HR systems, hospital management systems, finance dashboards, or any modern web application.

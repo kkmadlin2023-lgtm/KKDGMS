@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Dashboard | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    
+    <!-- Enterprise Typography (Plus Jakarta Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Modern Lucide Icons & Tailwind CSS -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <style>
+        :root {
+            --brand-primary: #4F46E5;
+            --brand-primary-hover: #4338CA;
+            --brand-primary-light: #EEF2FF;
+            --surface-bg: #F8FAFC;
+            --surface-card: #FFFFFF;
+            --border-subtle: #E2E8F0;
+            --border-hover: #CBD5E1;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--surface-bg);
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
+
+        /* Sidebar Dynamic Micro-animations */
+        .sidebar-transition { 
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+
+        /* Enterprise Card Hover Effects */
+        .card-hover-effect {
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+        }
+
+        .card-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.06), 0 4px 6px -2px rgba(15, 23, 42, 0.02);
+            border-color: var(--border-hover);
+        }
+
+        .btn-interactive {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-interactive:active {
+            transform: scale(0.98);
+        }
+
+        /* Glassmorphism Navigation Bar Header */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Custom Soft Elevation Shadows */
+        .shadow-enterprise-sm {
+            box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+        }
+        
+        .shadow-enterprise-md {
+            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.03), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+        }
+
+        /* Custom Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E2E8F0;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #CBD5E1;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col lg:flex-row selection:bg-indigo-500 selection:text-white">
+
+    <!-- Enterprise Sidebar Navigation -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-enterprise-md" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="building-2" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Warden Control Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Control</div>
+                
+                <!-- Active Navigation State -->
+                <a href="w_dashboard.html" class="flex items-center gap-3 px-3.5 py-2.5 bg-indigo-50/80 text-indigo-600 rounded-xl transition font-semibold shadow-xs border border-indigo-100 pointer-events-none">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-600"></i>
+                    <span>WARDEN DASHBOARD</span>
+                </a>
+               
+                <a href="w_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE MANAGEMENT</span>
+                </a>
+                
+                <a href="w_visitor.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-check" class="w-4 h-4 text-slate-400"></i>
+                    <span>VISITORS ENTRY</span>
+                </a>
+
+                <a href="w_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Workspace Navigation -->
+    <div class="flex-1 lg:pl-72 min-h-screen flex flex-col transition-all duration-300">
+        
+        <!-- Mobile Top Header Bar -->
+        <header class="lg:hidden sticky top-0 z-30 glass-header border-b border-slate-200/80 p-4 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebarMenu()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 btn-interactive cursor-pointer" aria-label="Open Navigation Drawer">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-800">Warden Terminal</span>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
+                WD
+            </div>
+        </header>
+
+        <!-- Main Dashboard Workspace -->
+        <main class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+
+            <!-- Profile Header Elevation Card -->
+            <header class="bg-white border border-slate-200/80 rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-enterprise-sm card-hover-effect flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
+
+                <!-- Verified Avatar Frame Container -->
+                <div class="relative flex-shrink-0 mt-2 md:mt-0">
+                    <img id="warden-avatar-img" src="teacher1.jpg" alt="Warden Profile Avatar" class="w-24 h-24 md:w-28 md:h-28 rounded-2xl object-cover border-2 border-slate-100 shadow-md bg-slate-50">
+                    <span class="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs ring-4 ring-white font-bold shadow-xs" title="Verified Warden Badge">
+                        <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>
+                    </span>
+                </div>
+                
+                <div class="flex-1 text-center md:text-left space-y-4 w-full z-10">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <h1 id="warden-fullname-lbl" class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">Loading Operations Workspace...</h1>
+                                <span id="warden-hostel-lbl" class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full border border-indigo-100/80">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                                    Verifying parameters...
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- System Identity Badge Block -->
+                        <div class="bg-slate-50 border border-slate-200/60 p-3.5 rounded-2xl text-xs font-mono text-center md:text-right min-w-[200px] shadow-xs">
+                            <div class="text-slate-500 flex justify-between md:justify-end gap-2">
+                                <span class="text-slate-400">System ID:</span>
+                                <span id="warden-uid-lbl" class="text-slate-900 font-bold">—</span>
+                            </div>
+                            <div class="text-slate-500 flex justify-between md:justify-end gap-2 mt-1">
+                                <span class="text-slate-400">Role Matrix:</span>
+                                <span id="warden-role-lbl" class="text-emerald-600 font-bold uppercase tracking-wider">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-slate-100 flex flex-wrap justify-center md:justify-start gap-y-2.5 gap-x-6 text-xs text-slate-600 font-medium">
+                        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                            <i data-lucide="mail" class="w-4 h-4 text-indigo-500"></i>
+                            <span id="warden-email-lbl" class="text-slate-800 font-semibold">—</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                            <i data-lucide="phone" class="w-4 h-4 text-indigo-500"></i>
+                            <span id="warden-phone-lbl" class="text-slate-800 font-semibold">—</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                            <i data-lucide="graduation-cap" class="w-4 h-4 text-indigo-500"></i>
+                            <span id="warden-qual-lbl" class="text-slate-800 font-semibold">—</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Grid Panels -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Card 1: Core Demographics & Identity -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <i data-lucide="id-card" class="w-4 h-4"></i>
+                                </div>
+                                Core Demographics & Identity
+                            </h2>
+                        </div>
+                        <div class="space-y-3 text-xs font-medium">
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Date of Birth / Age</span>
+                                <span id="warden-dob-age" class="text-slate-900 font-semibold">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Gender Assigned</span>
+                                <span id="warden-gender" class="text-slate-900 font-semibold uppercase">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Blood Group Allocation</span>
+                                <span id="warden-blood" class="font-mono font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded-full text-[11px]">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5">
+                                <span class="text-slate-500">Aadhaar Key Profile</span>
+                                <span id="warden-aadhaar" class="font-mono font-bold text-slate-800 tracking-wider bg-slate-50 px-2 py-1 rounded border border-slate-100">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Departmental & Medical Records -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <i data-lucide="shield" class="w-4 h-4"></i>
+                                </div>
+                                Departmental & Medical Records
+                            </h2>
+                        </div>
+                        <div class="space-y-3 text-xs font-medium">
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Assigned Department</span>
+                                <span id="warden-dept" class="text-slate-900 font-semibold">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Identification Mark 1</span>
+                                <span id="warden-idmark1" class="text-slate-700 max-w-[160px] text-right truncate">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Identification Mark 2</span>
+                                <span id="warden-idmark2" class="text-slate-700 max-w-[160px] text-right truncate">—</span>
+                            </div>
+                            <div class="flex flex-col gap-1.5 py-1">
+                                <span class="text-slate-500">Medical / Emergency Flag Remarks</span>
+                                <p id="warden-medical" class="font-semibold text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200/60 text-[11px]">—</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Registered Address Footprint -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                                </div>
+                                Registered Address Footprint
+                            </h2>
+                        </div>
+                        <div class="space-y-3 text-xs font-medium">
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Door & Street Reference</span>
+                                <span id="warden-address-door" class="text-slate-900 font-semibold text-right truncate max-w-[180px]">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">Locality / Place</span>
+                                <span id="warden-address-place" class="text-slate-900 font-semibold text-right truncate max-w-[180px]">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                                <span class="text-slate-500">District & State Location</span>
+                                <span id="warden-address-region" class="text-slate-900 font-semibold text-right truncate max-w-[180px]">—</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1.5">
+                                <span class="text-slate-500">Postal Pincode Token</span>
+                                <span id="warden-pincode" class="font-mono font-bold bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full text-[10px] border border-indigo-100/60">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Verification Document Logs -->
+                <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-enterprise-sm card-hover-effect flex flex-col justify-between space-y-4 lg:col-span-3">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <i data-lucide="folder-check" class="w-4 h-4"></i>
+                                </div>
+                                Verification Document Logs
+                            </h2>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium">
+                            <div class="p-4 bg-slate-50 border border-slate-200/60 rounded-xl flex items-center justify-between">
+                                <div>
+                                    <p class="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Income Certification Payload</p>
+                                    <p id="status-income" class="font-bold text-slate-800 mt-1">Checking...</p>
+                                </div>
+                                <div class="p-2.5 bg-white rounded-lg border border-slate-100 text-slate-600">
+                                    <i data-lucide="briefcase" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-50 border border-slate-200/60 rounded-xl flex items-center justify-between">
+                                <div>
+                                    <p class="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Nativity Certificate Index</p>
+                                    <p id="status-nativity" class="font-bold text-slate-800 mt-1">Checking...</p>
+                                </div>
+                                <div class="p-2.5 bg-white rounded-lg border border-slate-100 text-slate-600">
+                                    <i data-lucide="home" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Functional Scripts Preserved -->
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const sidebarNav = document.getElementById('sidebar-nav');
+
+        function toggleSidebarMenu() {
+            sidebarNav.classList.toggle('-translate-x-full');
+        }
+
+        async function verifyWardenSessionWorkspace() {
+            const { data: { session }, error } = await _supabase.auth.getSession();
+            if (error || !session) {
+                window.location.href = "login.html";
+                return;
+            }
+            fetchWardenSchemaProfile(session.user.id);
+        }
+
+        async function fetchWardenSchemaProfile(authUid) {
+            try {
+                const { data: profile, error } = await _supabase
+                    .from('wardens')
+                    .select('*')
+                    .eq('auth_uid', authUid)
+                    .maybeSingle();
+
+                if (error || !profile) {
+                    alert("Profile metadata linkage failing. Returning to login desk.");
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                // Render Top Header Fields
+                document.getElementById('warden-fullname-lbl').innerText = profile.full_name;
+                document.getElementById('warden-hostel-lbl').innerText = `Primary Supervisor: ${profile.hostel_name || 'N/A'}`;
+                document.getElementById('warden-uid-lbl').innerText = profile.user_id || '—';
+                document.getElementById('warden-role-lbl').innerText = profile.role || 'warden';
+                document.getElementById('warden-email-lbl').innerText = profile.email;
+                document.getElementById('warden-phone-lbl').innerText = profile.mobile || '—';
+                document.getElementById('warden-qual-lbl').innerText = profile.qualification || '—';
+
+                if (profile.photo_url) {
+                    document.getElementById('warden-avatar-img').src = profile.photo_url;
+                }
+
+                // Core Identifiers Card Rows
+                document.getElementById('warden-dob-age').innerText = `${profile.dob} (${profile.age || '—'} Yrs)`;
+                document.getElementById('warden-gender').innerText = profile.gender;
+                document.getElementById('warden-blood').innerText = profile.blood_group || '—';
+                
+                // Redacting highly sensitive Aadhaar ID to safely match system constraints
+                const rawAadhaar = profile.aadhaar || '';
+                document.getElementById('warden-aadhaar').innerText = rawAadhaar ? `XXXX-XXXX-${rawAadhaar.slice(-4)}` : '—';
+
+                // Core Assignment Card Rows
+                document.getElementById('warden-dept').innerText = profile.department || 'Hostel Operations';
+                document.getElementById('warden-idmark1').innerText = profile.id_mark_1 || 'None Logged';
+                document.getElementById('warden-idmark2').innerText = profile.id_mark_2 || 'None Logged';
+                document.getElementById('warden-medical').innerText = profile.medical_issues ? profile.medical_issues.trim() : 'No critical ailments or operational vulnerabilities logged.';
+
+                // Geographical Footprint Rows
+                document.getElementById('warden-address-door').innerText = `${profile.door_no || ''} ${profile.street_name || ''}`.trim() || '—';
+                document.getElementById('warden-address-place').innerText = profile.place || '—';
+                document.getElementById('warden-address-region').innerText = `${profile.district || ''}, ${profile.state || ''}`.trim().replace(/^,\s*/, '') || '—';
+                document.getElementById('warden-pincode').innerText = profile.pincode || '—';
+
+                // Verification Files Check
+                document.getElementById('status-income').innerText = profile.income_certificate ? "✅ Verified Document Payload Available" : "❌ File Verification Record Missing";
+                document.getElementById('status-nativity').innerText = profile.nativity_certificate ? "✅ Verified Document Payload Available" : "❌ File Verification Record Missing";
+
+            } catch (err) {
+                window.location.href = "login.html";
+            }
+        }
+
+        async function triggerSystemLogout() {
+            await _supabase.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        window.onload = () => {
+            verifyWardenSessionWorkspace();
+            // Render vector Lucide icons dynamically
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Seating & Classroom Portal | KKDGMS</title>
+    <link class="w-8 h-8 rounded-full" rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        body { background-color: #f4f7fc; }
+        .toast-enter { transform: translateY(-1rem) scale(0.95); opacity: 0; }
+        .toast-active { transform: translateY(0) scale(1); opacity: 1; }
+        @media print {
+            body { background: white !important; padding: 0 !important; }
+            .no-print { display: none !important; }
+            .print-area { width: 100% !important; border: none !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-700 font-sans antialiased min-h-screen p-4 md:p-8 relative">
+
+    <!-- SYSTEM FLOATING NOTIFICATION -->
+    <div class="fixed top-6 right-6 z-50 pointer-events-none">
+        <div id="toast-notification" class="toast-enter transition-all duration-300 ease-out pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border min-w-[320px] max-w-[400px] bg-slate-900 text-white border-slate-800">
+            <span id="toast-icon" class="text-lg">⚙️</span>
+            <div class="flex-1">
+                <p id="toast-title" class="text-[10px] uppercase font-black tracking-wider text-slate-400">System Core</p>
+                <p id="toast-msg" class="text-xs font-bold text-slate-100 mt-0.5">Ready</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVIGATION HEADER -->
+    <nav class="max-w-[1600px] mx-auto mb-6 bg-white border border-slate-100/40 px-6 py-3.5 shadow-xs rounded-[24px] flex items-center justify-between no-print">
+        <div class="flex items-center gap-3.5">
+            <span class="text-base font-black text-[#2d3748] tracking-widest uppercase">KKDGMS</span>
+            <div class="h-4 w-px bg-slate-200"></div>
+            <span class="text-xs text-[#828f9f] font-bold">Classroom & Exam Allocation Engine</span>
+        </div>
+        <a href="a_dashboard.html" class="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-[#828f9f] hover:text-[#2d3748] font-bold text-xs rounded-xl transition border border-slate-100">
+            ⬅ Back to Dashboard
+        </a>
+    </nav>
+
+    <div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT PANEL: CONFIGURATION -->
+        <div class="lg:col-span-4 flex flex-col gap-6 no-print">
+            
+            <!-- LOAD EXISTING EXAMS -->
+            <section class="bg-indigo-900 text-white p-6 rounded-[28px] shadow-sm">
+                <h2 class="text-base font-black mb-1 flex items-center gap-2">
+                    <span>📂</span> Load Saved Exam
+                </h2>
+                <p class="text-xs text-indigo-200 font-bold mb-4">Select a previously committed layout from Supabase.</p>
+                
+                <div class="space-y-3">
+                    <select id="saved_exams_select" onchange="loadSavedAllocation()" class="w-full bg-indigo-950/80 border border-indigo-700/50 text-white px-3 py-2.5 text-xs font-bold rounded-xl focus:outline-none focus:border-indigo-400">
+                        <option value="">-- Load Saved Allocation --</option>
+                    </select>
+                    <div class="flex gap-2">
+                        <button onclick="fetchSavedAllocationsList()" class="flex-1 py-2 bg-indigo-800 hover:bg-indigo-700 text-indigo-100 font-bold text-xs rounded-xl transition cursor-pointer">
+                            🔄 Refresh List
+                        </button>
+                        <button onclick="deleteCurrentAllocation()" class="px-3 py-2 bg-rose-600/30 hover:bg-rose-600/50 text-rose-200 font-bold text-xs rounded-xl transition cursor-pointer">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CLASSROOM MANAGER -->
+            <section class="bg-white border border-slate-100/40 p-6 rounded-[28px] shadow-xs">
+                <h2 class="text-base font-black text-[#2d3748] mb-1 flex items-center gap-2">
+                    <span class="text-[#4f46e5]">🏫</span> Classroom Setup
+                </h2>
+                <p class="text-xs text-[#828f9f] font-bold mb-4">Define dimensions and capacity for new exam halls.</p>
+
+                <form id="classroom-form" onsubmit="handleCreateClassroom(event)" class="space-y-3.5">
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-[#828f9f] mb-1">Room Name / No.</label>
+                        <input type="text" id="room_name" required placeholder="e.g. Hall A-101" class="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-bold rounded-xl focus:outline-none focus:border-[#4f46e5]">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-[#828f9f] mb-1">No. Rows</label>
+                            <input type="number" id="no_of_rows" min="1" required placeholder="5" class="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-bold rounded-xl focus:outline-none focus:border-[#4f46e5]">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-[#828f9f] mb-1">Benches/Row</label>
+                            <input type="number" id="benches_per_row" min="1" required placeholder="4" class="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-bold rounded-xl focus:outline-none focus:border-[#4f46e5]">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-[#828f9f] mb-1">Seats/Bench</label>
+                            <input type="number" id="students_per_bench" min="1" max="6" required placeholder="2" class="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-bold rounded-xl focus:outline-none focus:border-[#4f46e5]">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl transition cursor-pointer">
+                        + Save Classroom
+                    </button>
+                </form>
+            </section>
+
+            <!-- ALLOCATION ENGINE -->
+            <section class="bg-white border border-slate-100/40 p-6 rounded-[28px] shadow-xs">
+                <h2 class="text-base font-black text-[#2d3748] mb-1 flex items-center gap-2">
+                    <span class="text-[#4f46e5]">🔀</span> Allocation Rules
+                </h2>
+                <p class="text-xs text-[#828f9f] font-bold mb-4">Assign registered students to selected exam hall.</p>
+
+                <div class="space-y-3.5">
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-[#828f9f] mb-1">Exam Title</label>
+                        <input type="text" id="exam_name" placeholder="e.g. Mid-Term Physics 2026" class="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-bold rounded-xl focus:outline-none focus:border-[#4f46e5]">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-black uppercase text-[#828f9f] mb-1">Select Target Room</label>
+                        <select id="selected_room_id" onchange="updateRoomCapacityInfo()" class="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-bold rounded-xl focus:outline-none focus:border-[#4f46e5]">
+                            <option value="">-- Choose Classroom --</option>
+                        </select>
+                        <p id="room-cap-info" class="text-[10px] font-bold text-indigo-600 mt-1"></p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-[#828f9f] mb-1">From User ID</label>
+                            <input type="text" id="range_from" placeholder="First ID..." class="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-mono font-bold rounded-xl focus:outline-none focus:border-[#4f46e5]">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-[#828f9f] mb-1">To User ID</label>
+                            <input type="text" id="range_to" placeholder="Last ID..." class="w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-mono font-bold rounded-xl focus:outline-none focus:border-[#4f46e5]">
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-black text-[#2d3748]">Allow Same Class Nearby?</p>
+                            <p class="text-[10px] text-[#828f9f] font-bold">If disabled, algorithm separates classmates.</p>
+                        </div>
+                        <input type="checkbox" id="allow_adjacent" class="w-4 h-4 accent-indigo-600 cursor-pointer">
+                    </div>
+
+                    <button onclick="generateSeatingLayout()" class="w-full py-2.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-black text-xs rounded-xl transition cursor-pointer shadow-md shadow-indigo-100">
+                        ⚡ Generate Matrix Layout
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- RIGHT PANEL: PREVIEW & INTERACTIVE MATRIX -->
+        <div class="lg:col-span-8">
+            <section class="bg-white border border-slate-100/40 p-6 rounded-[28px] shadow-xs print-area">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-black text-[#2d3748] tracking-tight flex items-center gap-2">
+                            <span>📐</span> Seating Allocation Preview
+                        </h2>
+                        <p id="preview-subtitle" class="text-xs text-[#828f9f] font-bold mt-0.5">Select classroom and generate candidate layout.</p>
+                    </div>
+                    <div class="flex gap-2 no-print">
+                        <button onclick="saveSeatingLayoutToSupabase()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-xs">
+                            💾 Save Allocation
+                        </button>
+                        <button onclick="window.print()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl transition cursor-pointer flex items-center gap-1.5">
+                            🖨️ Print / Download PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MATRIX DISPLAY GRID -->
+                <div id="seating-matrix-container" class="overflow-x-auto min-h-[300px] flex items-center justify-center border-2 border-dashed border-slate-100 rounded-2xl p-4">
+                    <p class="text-xs font-bold text-[#828f9f] font-mono">No allocation matrix generated yet.</p>
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let LOADED_CLASSROOMS = [];
+        let LOADED_SAVED_ALLOCATIONS = [];
+        let ACTIVE_MATRIX_DATA = null;
+        let toastTimeout = null;
+
+        function flashToast(msg, type = 'success') {
+            const toast = document.getElementById('toast-notification');
+            const toastTitle = document.getElementById('toast-title');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastMsg.innerText = msg;
+
+            if (type === 'error') {
+                toastTitle.innerText = "Error"; toastIcon.innerText = "🛑";
+                toast.className = "toast-active fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 transition-all duration-300 ease-out";
+            } else {
+                toastTitle.innerText = "Success"; toastIcon.innerText = "✅";
+                toast.className = "toast-active fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 transition-all duration-300 ease-out";
+            }
+
+            toastTimeout = setTimeout(() => {
+                toast.className = "toast-enter fixed top-6 right-6 z-50 pointer-events-none flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-slate-900 text-white transition-all duration-300 ease-in";
+            }, 3500);
+        }
+
+        async function fetchClassrooms() {
+            try {
+                const { data, error } = await _supabase.from('classrooms').select('*').order('room_name');
+                if (error) throw error;
+                LOADED_CLASSROOMS = data || [];
+                
+                const selectEl = document.getElementById('selected_room_id');
+                selectEl.innerHTML = `<option value="">-- Choose Classroom --</option>` + 
+                    LOADED_CLASSROOMS.map(r => `<option value="${r.id}">${r.room_name} (Cap: ${r.total_capacity})</option>`).join('');
+            } catch (err) {
+                flashToast(`Fetch classrooms failed: ${err.message}`, 'error');
+            }
+        }
+
+        async function fetchSavedAllocationsList() {
+            try {
+                const { data, error } = await _supabase.from('exam_allocations').select('id, exam_name, classroom_id, classrooms(room_name)').order('created_at', { ascending: false });
+                if (error) throw error;
+                LOADED_SAVED_ALLOCATIONS = data || [];
+
+                const selectEl = document.getElementById('saved_exams_select');
+                selectEl.innerHTML = `<option value="">-- Load Saved Allocation (${LOADED_SAVED_ALLOCATIONS.length}) --</option>` +
+                    LOADED_SAVED_ALLOCATIONS.map(a => `<option value="${a.id}">${a.exam_name} @ ${a.classrooms?.room_name || 'Room'}</option>`).join('');
+            } catch (err) {
+                console.error("Fetch saved allocations error:", err.message);
+            }
+        }
+
+        async function loadSavedAllocation() {
+            const allocId = document.getElementById('saved_exams_select').value;
+            if (!allocId) return;
+
+            try {
+                const { data, error } = await _supabase.from('exam_allocations').select('*, classrooms(*)').eq('id', allocId).single();
+                if (error) throw error;
+                if (!data) return;
+
+                document.getElementById('exam_name').value = data.exam_name;
+                document.getElementById('selected_room_id').value = data.classroom_id;
+                document.getElementById('range_from').value = data.student_range_from || '';
+                document.getElementById('range_to').value = data.student_range_to || '';
+                document.getElementById('allow_adjacent').checked = data.allow_same_class_adjacent;
+
+                updateRoomCapacityInfo();
+
+                ACTIVE_MATRIX_DATA = {
+                    room: data.classrooms,
+                    matrix: data.seating_layout
+                };
+
+                renderSeatingMatrix();
+                flashToast(`Loaded layout for: ${data.exam_name}`);
+            } catch (err) {
+                flashToast(`Failed to load allocation: ${err.message}`, 'error');
+            }
+        }
+
+        async function deleteCurrentAllocation() {
+            const allocId = document.getElementById('saved_exams_select').value;
+            if (!allocId) return flashToast("Please select a saved exam allocation from the dropdown first.", "error");
+
+            if (!confirm("Are you sure you want to delete this saved exam allocation from Supabase?")) return;
+
+            try {
+                const { error } = await _supabase.from('exam_allocations').delete().eq('id', allocId);
+                if (error) throw error;
+                flashToast("Allocation deleted successfully!");
+                fetchSavedAllocationsList();
+                document.getElementById('saved_exams_select').value = "";
+            } catch (err) {
+                flashToast(`Delete failed: ${err.message}`, 'error');
+            }
+        }
+
+        function updateRoomCapacityInfo() {
+            const roomId = document.getElementById('selected_room_id').value;
+            const room = LOADED_CLASSROOMS.find(r => r.id == roomId);
+            const infoEl = document.getElementById('room-cap-info');
+            if (room) {
+                infoEl.innerText = `Layout: ${room.no_of_rows} Rows × ${room.benches_per_row} Benches (${room.students_per_bench} seats/bench) = Max ${room.total_capacity} Capacity`;
+            } else {
+                infoEl.innerText = '';
+            }
+        }
+
+        async function handleCreateClassroom(e) {
+            e.preventDefault();
+            const room_name = document.getElementById('room_name').value.trim();
+            const no_of_rows = parseInt(document.getElementById('no_of_rows').value);
+            const benches_per_row = parseInt(document.getElementById('benches_per_row').value);
+            const students_per_bench = parseInt(document.getElementById('students_per_bench').value);
+
+            try {
+                const { error } = await _supabase.from('classrooms').insert([{
+                    room_name, no_of_rows, benches_per_row, students_per_bench
+                }]);
+
+                if (error) throw error;
+                flashToast("Classroom created successfully!");
+                document.getElementById('classroom-form').reset();
+                fetchClassrooms();
+            } catch (err) {
+                flashToast(`Save room error: ${err.message}`, 'error');
+            }
+        }
+
+        async function generateSeatingLayout() {
+            const roomId = document.getElementById('selected_room_id').value;
+            const rangeFrom = document.getElementById('range_from').value.trim();
+            const rangeTo = document.getElementById('range_to').value.trim();
+            const allowAdjacent = document.getElementById('allow_adjacent').checked;
+
+            if (!roomId) return flashToast("Please select a classroom", "error");
+
+            const room = LOADED_CLASSROOMS.find(r => r.id == roomId);
+            
+            try {
+                let query = _supabase.from('students').select('id, user_id, full_name, student_class, section').order('user_id', { ascending: true });
+                if (rangeFrom) query = query.gte('user_id', rangeFrom);
+                if (rangeTo) query = query.lte('user_id', rangeTo);
+
+                const { data: students, error } = await query;
+                if (error) throw error;
+
+                if (!students || students.length === 0) {
+                    return flashToast("No students found in specified User ID range", "error");
+                }
+
+                if (students.length > room.total_capacity) {
+                    flashToast(`Notice: ${students.length} students selected, room capacity is ${room.total_capacity}.`, 'error');
+                }
+
+                let availableStudents = [...students];
+
+                // Interleave strategy when same-class adjacent seating is prohibited
+                if (!allowAdjacent) {
+                    const grouped = {};
+                    availableStudents.forEach(s => {
+                        const cls = (s.student_class || 'GENERAL').trim();
+                        if (!grouped[cls]) grouped[cls] = [];
+                        grouped[cls].push(s);
+                    });
+
+                    const keys = Object.keys(grouped);
+                    const interleaved = [];
+                    let maxLen = Math.max(...keys.map(k => grouped[k].length));
+
+                    for (let i = 0; i < maxLen; i++) {
+                        keys.forEach(k => {
+                            if (grouped[k][i]) interleaved.push(grouped[k][i]);
+                        });
+                    }
+                    availableStudents = interleaved;
+                }
+
+                // Grid layout construction
+                let studentIdx = 0;
+                const matrix = [];
+
+                for (let r = 0; r < room.no_of_rows; r++) {
+                    const rowObj = { row_num: r + 1, benches: [] };
+                    for (let b = 0; b < room.benches_per_row; b++) {
+                        const benchObj = { bench_num: b + 1, seats: [] };
+                        for (let s = 0; s < room.students_per_bench; s++) {
+                            const student = availableStudents[studentIdx] || null;
+                            benchObj.seats.push({
+                                seat_num: s + 1,
+                                student: student
+                            });
+                            studentIdx++;
+                        }
+                        rowObj.benches.push(benchObj);
+                    }
+                    matrix.push(rowObj);
+                }
+
+                ACTIVE_MATRIX_DATA = { room, matrix };
+                renderSeatingMatrix();
+                flashToast("Seating matrix auto-calculated successfully!");
+            } catch (err) {
+                flashToast(`Allocation query failed: ${err.message}`, 'error');
+            }
+        }
+
+        function renderSeatingMatrix() {
+            const container = document.getElementById('seating-matrix-container');
+            if (!ACTIVE_MATRIX_DATA) return;
+
+            const { room, matrix } = ACTIVE_MATRIX_DATA;
+            const examTitle = document.getElementById('exam_name').value.trim() || 'General Exam';
+            document.getElementById('preview-subtitle').innerText = `${examTitle} | Room: ${room.room_name}`;
+
+            let html = `<div class="w-full space-y-6">`;
+            html += `<div class="text-center bg-slate-100 py-2.5 font-black text-xs uppercase tracking-widest text-slate-500 rounded-xl border border-slate-200/50">BLACKBOARD / TEACHER PODIUM</div>`;
+
+            matrix.forEach((row) => {
+                html += `<div class="bg-slate-50/70 border border-slate-200/60 p-4 rounded-2xl">
+                    <p class="text-[10px] font-black uppercase tracking-wider text-indigo-600 mb-3">Row ${row.row_num}</p>
+                    <div class="grid gap-4" style="grid-template-columns: repeat(${room.benches_per_row}, minmax(0, 1fr));">`;
+
+                row.benches.forEach((bench) => {
+                    html += `<div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                        <p class="text-[9px] font-black uppercase text-slate-400 mb-2 border-b border-slate-100 pb-1">Bench ${bench.bench_num}</p>
+                        <div class="grid gap-2" style="grid-template-columns: repeat(${room.students_per_bench}, minmax(0, 1fr));">`;
+
+                    bench.seats.forEach((seat) => {
+                        const st = seat.student;
+                        if (st) {
+                            html += `
+                            <div class="p-2 bg-[#eeebff]/50 border border-indigo-100 rounded-lg text-left">
+                                <div class="flex justify-between items-center text-[10px] font-mono font-bold text-indigo-700">
+                                    <span>${st.user_id || 'ID N/A'}</span>
+                                    <span class="text-[8px] bg-indigo-100 px-1 rounded text-indigo-900">${st.student_class || 'Cls'}</span>
+                                </div>
+                                <p class="text-xs font-black text-slate-800 truncate mt-0.5" title="${st.full_name}">${st.full_name}</p>
+                                <button onclick="editSeatStudent(${row.row_num}, ${bench.bench_num}, ${seat.seat_num})" class="no-print text-[9px] text-slate-400 hover:text-indigo-600 underline font-bold mt-1 block cursor-pointer">Swap / Edit</button>
+                            </div>`;
+                        } else {
+                            html += `
+                            <div class="p-2 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center flex flex-col items-center justify-center min-h-[52px]">
+                                <span class="text-[10px] font-bold text-slate-300">Vacant</span>
+                                <button onclick="editSeatStudent(${row.row_num}, ${bench.bench_num}, ${seat.seat_num})" class="no-print text-[9px] text-indigo-500 font-bold hover:underline cursor-pointer">Assign</button>
+                            </div>`;
+                        }
+                    });
+
+                    html += `</div></div>`;
+                });
+
+                html += `</div></div>`;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        async function editSeatStudent(rNum, bNum, sNum) {
+            const newUserId = prompt(`Enter Student User ID for Row ${rNum}, Bench ${bNum}, Seat ${sNum}:`);
+            if (newUserId === null) return;
+
+            const row = ACTIVE_MATRIX_DATA.matrix.find(r => r.row_num === rNum);
+            const bench = row.benches.find(b => b.bench_num === bNum);
+            const seat = bench.seats.find(s => s.seat_num === sNum);
+
+            if (newUserId.trim() === '') {
+                seat.student = null;
+                renderSeatingMatrix();
+                return;
+            }
+
+            try {
+                const { data, error } = await _supabase.from('students')
+                    .select('id, user_id, full_name, student_class, section')
+                    .eq('user_id', newUserId.trim())
+                    .maybeSingle();
+
+                if (error || !data) throw new Error("Student User ID not found in database.");
+
+                seat.student = data;
+                renderSeatingMatrix();
+                flashToast(`Updated Seat assignment for ${data.full_name}`);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function saveSeatingLayoutToSupabase() {
+            if (!ACTIVE_MATRIX_DATA) return flashToast("No allocation matrix to save", "error");
+
+            const examName = document.getElementById('exam_name').value.trim();
+            const roomId = document.getElementById('selected_room_id').value;
+            const rangeFrom = document.getElementById('range_from').value.trim();
+            const rangeTo = document.getElementById('range_to').value.trim();
+            const allowAdjacent = document.getElementById('allow_adjacent').checked;
+
+            if (!examName) return flashToast("Please specify Exam Title", "error");
+
+            const payload = {
+                exam_name: examName,
+                classroom_id: parseInt(roomId),
+                student_range_from: rangeFrom || null,
+                student_range_to: rangeTo || null,
+                allow_same_class_adjacent: allowAdjacent,
+                seating_layout: ACTIVE_MATRIX_DATA.matrix
+            };
+
+            try {
+                const { error } = await _supabase.from('exam_allocations').upsert(payload, {
+                    onConflict: 'exam_name,classroom_id'
+                });
+                
+                if (error) throw error;
+                flashToast("Seating allocation successfully committed!");
+                fetchSavedAllocationsList();
+            } catch (err) {
+                flashToast(`Database update failed: ${err.message}`, 'error');
+            }
+        }
+
+        window.onload = () => {
+            fetchClassrooms();
+            fetchSavedAllocationsList();
+        };
+    </script>
+</body>
+</html>

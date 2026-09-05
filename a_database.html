@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Engine | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --purple-main: #6366f1;
+            --purple-dark: #4f46e5;
+            --purple-light: #e0e7ff;
+            --purple-glow: rgba(99, 102, 241, 0.15);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .brand-gradient-bar {
+            background: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+        }
+
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 20;
+            background-color: #ffffff;
+            box-shadow: 2px 0 6px -1px rgba(15, 23, 42, 0.08);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .btn-interactive {
+            transition: all 0.12s ease-in-out;
+        }
+
+        .btn-interactive:active {
+            transform: scale(0.96);
+        }
+
+        .sidebar-transition {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .submenu-hidden {
+            display: none;
+        }
+
+        /* --- UPDATED FLOATING PILL TOAST NOTIFICATION STYLES --- */
+        #toast-container {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+
+        .toast-pill {
+            pointer-events: auto;
+            background-color: #0b1120;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 16px;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast-pill.toast-show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast-pill.toast-hide {
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.3s ease-in, opacity 0.3s ease-in;
+        }
+
+        .toast-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex selection:bg-indigo-500 selection:text-white text-xs">
+
+    <!-- MOBILE SIDEBAR OVERLAY -->
+    <div id="sidebar-overlay" onclick="toggleSidebarMenu()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 lg:hidden hidden"></div>
+
+    <!-- FLOATING SYSTEM NOTIFICATION CONTAINER -->
+    <div id="toast-container"></div>
+
+    <!-- SIDEBAR NAVIGATION (ASIDE) -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-xl lg:shadow-none" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Head Master Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive cursor-pointer" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
+                
+                <!-- Admissions Submenu Parent Accordion -->
+                <div>
+                    <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium cursor-pointer group">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
+                            <span>ADMISSION FORMS</span>
+                        </span>
+                        <i id="submenu-arrow-indicator" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="admissions-submenu" class="submenu-hidden pl-7 pr-1 mt-1 space-y-1 bg-slate-50/80 rounded-xl border border-slate-100 py-1.5">
+                        <a href="a_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Admin Admission Form</span>
+                        </a>
+                        <a href="f_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Faculty Admission Form</span>
+                        </a>
+                        <a href="s_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Student Admission Form</span>
+                        </a>
+                        <a href="w_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Warden Admission Form</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Navigation Module Links -->
+                <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY ASSIGNING PAGE</span>
+                </a>
+                
+                <a href="a_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
+                    <span>ATTENDANCE VIEW</span>
+                </a>
+
+                <a href="a_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="a_bonafide.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
+                    <span>BONAFIDE FORM</span>
+                </a>
+<a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
+    <span>VISITOR DETAILS</span>
+</a>
+                <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
+                    <span>ANNOUNCEMENT EDIT</span>
+                </a>
+
+                <a href="a_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QUESTION BANK</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">System Records</div>
+
+                <a href="a_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-indigo-600 bg-indigo-50/80 rounded-xl transition font-bold border border-indigo-100">
+                    <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
+                    <span>ADMIN DATABASE</span>
+                </a>
+
+                <a href="f_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DATABASE</span>
+                </a>
+
+                <a href="s_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT DATABASE</span>
+                </a>
+
+                <a href="w_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>WARDEN DATABASE</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governance</div>
+
+                <a href="a_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE CONFIRMING PAGE</span>
+                </a>
+
+                <a href="a_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="award" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET VIEW</span>
+                </a>
+
+                <a href="a_user.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                    <span>USER UPDATES</span>
+                </a>
+
+                <a href="a_password.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
+                    <span>PASSWORD UPDATES</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all btn-interactive border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE CONTAINER (OFFSET FOR SIDEBAR) -->
+    <div class="flex-1 lg:pl-72 flex flex-col min-w-0 min-h-screen">
+
+        <!-- COMPACT TOP NAVIGATION HEADER -->
+        <nav class="sticky top-0 z-30 glass-panel border-b border-slate-200 px-4 py-2.5 shadow-2xs">
+            <div class="max-w-[1920px] mx-auto flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg btn-interactive cursor-pointer">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shield" class="w-4 h-4 text-indigo-600"></i>
+                        <span class="text-sm font-black text-slate-900 tracking-tight">Administrators Control Engine</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-[10px] text-emerald-700 font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Database Live</span>
+                    </div>
+                    <a href="a_dashboard.html" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition border border-slate-200 flex items-center gap-1.5 btn-interactive">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN WORKSPACE CONTENT CONTAINER -->
+        <main class="flex-1 p-2.5 sm:p-4 max-w-[1920px] w-full space-y-3 mx-auto">
+
+            <!-- WORKSPACE HEADER METRICS BAR -->
+            <header class="bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-wrap justify-between items-center gap-3 relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1 brand-gradient-bar"></div>
+
+                <div>
+                    <h1 class="text-xs font-black text-slate-900 tracking-tight leading-tight uppercase">Master Inline Mutation Console</h1>
+                    <p class="text-[10px] text-slate-500 font-medium">
+                        Inline record mutation system synchronized with storage asset buckets and real-time subscription channels.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="fetchAdmissionsDatabase()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] rounded-lg shadow-xs transition cursor-pointer flex items-center gap-1.5 btn-interactive">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                        <span>Sync Base</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- DATA MATRIX TABLE CARD -->
+            <div class="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden flex flex-col">
+                
+                <!-- Compact Table Action Bar -->
+                <div class="px-3 py-2 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-[11px]">
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i>
+                        <span class="text-slate-600 font-bold">
+                            Total Records: 
+                            <span id="record-counter-badge" class="bg-indigo-100 text-indigo-700 px-1.5 py-0.2 font-mono font-bold rounded text-[10px] border border-indigo-200/60">0</span>
+                        </span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-medium hidden sm:block">
+                        Shift + Scroll horizontally for all fields
+                    </div>
+                </div>
+
+                <!-- Scrollable Dense Table Matrix Container -->
+                <div class="overflow-x-auto w-full">
+                    <table id="database-matrix-table" class="w-full text-left border-collapse min-w-[2800px] table-fixed">
+                        <thead>
+                            <!-- Column Titles Header -->
+                            <tr class="bg-slate-100/80 text-slate-500 text-[9px] font-black uppercase tracking-wider border-b border-slate-200">
+                                <th class="p-2 w-[110px] text-center sticky-col border-r border-slate-200">Actions</th>
+                                <th class="p-2 w-[60px]">ID</th>
+                                <th class="p-2 w-[55px] text-center">Photo</th>
+                                <th class="p-2 w-[180px]">Full Name</th>
+                                <th class="p-2 w-[120px]">User ID</th>
+                                <th class="p-2 w-[180px]">System Email</th>
+                                <th class="p-2 w-[130px]">Department</th>
+                                <th class="p-2 w-[130px]">Hostel</th>
+                                <th class="p-2 w-[100px]">Role</th>
+                                <th class="p-2 w-[110px]">Mobile</th>
+                                <th class="p-2 w-[130px]">Aadhaar Key</th>
+                                <th class="p-2 w-[110px]">DOB</th>
+                                <th class="p-2 w-[60px]">Age</th>
+                                <th class="p-2 w-[80px]">Gender</th>
+                                <th class="p-2 w-[120px]">Qualification</th>
+                                <th class="p-2 w-[80px] text-center">Blood</th>
+                                <th class="p-2 w-[120px]">ID Mark 1</th>
+                                <th class="p-2 w-[120px]">ID Mark 2</th>
+                                <th class="p-2 w-[90px]">Door</th>
+                                <th class="p-2 w-[150px]">Street</th>
+                                <th class="p-2 w-[120px]">Place</th>
+                                <th class="p-2 w-[120px]">District</th>
+                                <th class="p-2 w-[120px]">State</th>
+                                <th class="p-2 w-[90px]">Pincode</th>
+                                <th class="p-2 w-[180px]">Medical Notes</th>
+                            </tr>
+
+                            <!-- Matrix Filter Inputs Row -->
+                            <tr class="bg-white border-b border-slate-200">
+                                <td class="p-1 sticky-col border-r border-slate-200 text-center text-[9px] text-slate-400 font-black uppercase tracking-widest">FILTER</td>
+                                <td class="p-1"></td>
+                                <td class="p-1"></td>
+                                <td class="p-1"><input type="text" data-col="full_name" oninput="executeTableMatrixFiltering()" placeholder="Search..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="user_id" oninput="executeTableMatrixFiltering()" placeholder="UID..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="email" oninput="executeTableMatrixFiltering()" placeholder="Email..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="department" oninput="executeTableMatrixFiltering()" placeholder="Dept..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="hostel_name" oninput="executeTableMatrixFiltering()" placeholder="Hostel..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="role" oninput="executeTableMatrixFiltering()" placeholder="Role..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="mobile" oninput="executeTableMatrixFiltering()" placeholder="Phone..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="aadhaar" oninput="executeTableMatrixFiltering()" placeholder="Aadhaar..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="dob" oninput="executeTableMatrixFiltering()" placeholder="DOB..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="age" oninput="executeTableMatrixFiltering()" placeholder="Age..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="gender" oninput="executeTableMatrixFiltering()" placeholder="Gender..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="qualification" oninput="executeTableMatrixFiltering()" placeholder="Qual..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="blood_group" oninput="executeTableMatrixFiltering()" placeholder="Blood..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="id_mark_1" oninput="executeTableMatrixFiltering()" placeholder="Mark 1..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="id_mark_2" oninput="executeTableMatrixFiltering()" placeholder="Mark 2..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="door_no" oninput="executeTableMatrixFiltering()" placeholder="Door..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="street_name" oninput="executeTableMatrixFiltering()" placeholder="Street..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="place" oninput="executeTableMatrixFiltering()" placeholder="Place..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="district" oninput="executeTableMatrixFiltering()" placeholder="District..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="state" oninput="executeTableMatrixFiltering()" placeholder="State..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="pincode" oninput="executeTableMatrixFiltering()" placeholder="Pin..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                                <td class="p-1"><input type="text" data-col="medical_issues" oninput="executeTableMatrixFiltering()" placeholder="Medical..." class="w-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-medium rounded focus:bg-white focus:outline-none focus:border-indigo-500"></td>
+                            </tr>
+                        </thead>
+                        <tbody id="database-matrix-body" class="text-[11px] divide-y divide-slate-100 font-medium text-slate-700">
+                            <tr>
+                                <td colspan="25" class="p-8 text-center text-slate-400 font-mono">Synchronizing dataset cluster logs...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- COMPACT PROFILE MODAL POPUP -->
+    <div id="profile-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 z-50 hidden opacity-0 transition-all duration-200">
+        <div class="bg-white rounded-xl w-full max-w-[380px] p-5 shadow-xl border border-slate-100 relative transform scale-95 transition-all duration-200">
+            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <div class="flex flex-col items-center">
+                <div class="relative w-20 h-20 mb-3">
+                    <img id="modal-photo" src="" alt="Admin Profile" class="w-full h-full rounded-full object-cover border-2 border-slate-100 shadow-md bg-slate-50" onerror="this.src='kk.png'">
+                    <div class="absolute bottom-0 right-0 bg-emerald-500 text-white rounded-full p-1 ring-2 ring-white">
+                        <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+                    </div>
+                </div>
+
+                <h3 id="modal-name" class="text-base font-black text-slate-900 tracking-tight uppercase">ADMINISTRATOR</h3>
+                <span id="modal-role-badge" class="mt-0.5 px-2 py-0.2 font-black text-[9px] text-indigo-700 bg-indigo-50 rounded uppercase tracking-wider border border-indigo-100">ADMIN</span>
+                
+                <div class="w-full border-t border-slate-100 my-4"></div>
+
+                <div class="w-full space-y-2 text-[11px] font-medium px-1">
+                    <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                        <span class="text-slate-400">ID Reference</span>
+                        <span id="modal-id" class="font-mono font-bold text-slate-800">N/A</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                        <span class="text-slate-400">Email Address</span>
+                        <span id="modal-email" class="text-slate-700 font-bold truncate max-w-[200px]">N/A</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                        <span class="text-slate-400">Phone Contact</span>
+                        <span id="modal-phone" class="font-mono text-slate-700">N/A</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                        <span class="text-slate-400">Department Unit</span>
+                        <span id="modal-department" class="text-slate-900 font-bold">N/A</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-slate-400">Operational Hostel</span>
+                        <span id="modal-hostel" class="text-slate-700 font-bold">N/A</span>
+                    </div>
+                </div>
+
+                <button onclick="closeProfileModal()" class="mt-5 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-lg transition cursor-pointer btn-interactive">
+                    Close Profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRESERVED FUNCTIONAL JAVASCRIPT LOGIC -->
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const databaseMatrixBody = document.getElementById('database-matrix-body');
+
+        let MASTER_ADMINS_DATASTORES = [];
+        let EDITING_ROW_ID = null;
+        let CURRENT_ACTIVE_USER = null;
+
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function toggleAdmissionsSubmenu() {
+            const submenu = document.getElementById('admissions-submenu');
+            const arrow = document.getElementById('submenu-arrow-indicator');
+            submenu.classList.toggle('submenu-hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        /* --- UPDATED SHOW TOAST IMPLEMENTATION --- */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            // Map type aliases to design colors
+            let toastTypeClass = 'toast-green';
+            if (type === 'warning') toastTypeClass = 'toast-yellow';
+            if (type === 'error') toastTypeClass = 'toast-red';
+
+            const toast = document.createElement('div');
+            toast.className = `toast-pill ${toastTypeClass}`;
+            toast.innerHTML = `
+                <span class="toast-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </span>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Trigger slide-in animation
+            requestAnimationFrame(() => {
+                toast.classList.add('toast-show');
+            });
+
+            // Auto dismiss after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('toast-show');
+                toast.classList.add('toast-hide');
+                toast.addEventListener('transitionend', () => {
+                    toast.remove();
+                });
+            }, 4000);
+        }
+
+        function flashSystemStatus(message, state = 'success') {
+            showToast(message, state);
+        }
+
+        async function enforceSecuritySessionAuth() {
+            try {
+                const { data: { session }, error } = await _supabase.auth.getSession();
+                if (error || !session) {
+                    throw new Error("Missing or invalid user login credentials.");
+                }
+                
+                CURRENT_ACTIVE_USER = session.user;
+                
+                await fetchAdmissionsDatabase();
+                initializeRealtimeListener();
+            } catch (err) {
+                console.error("Access restriction invoked:", err.message);
+                alert("Unauthorized Entry. Rerouting to authorization interface...");
+                window.location.href = "login.html"; 
+            }
+        }
+
+        function initializeRealtimeListener() {
+            _supabase
+                .channel('schema-admins-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'admins' }, (payload) => {
+                    if (payload.eventType === 'INSERT') {
+                        MASTER_ADMINS_DATASTORES.push(payload.new);
+                        flashSystemStatus(`Live Addition: Record Added`, 'success');
+                    } 
+                    else if (payload.eventType === 'UPDATE') {
+                        const targetIdx = MASTER_ADMINS_DATASTORES.findIndex(a => Number(a.id) === Number(payload.new.id));
+                        if (targetIdx !== -1) MASTER_ADMINS_DATASTORES[targetIdx] = payload.new;
+                        flashSystemStatus(`Live Sync: Row ID #${payload.new.id} Modified`, 'warning');
+                    } 
+                    else if (payload.eventType === 'DELETE') {
+                        MASTER_ADMINS_DATASTORES = MASTER_ADMINS_DATASTORES.filter(a => Number(a.id) !== Number(payload.old.id));
+                        flashSystemStatus(`Live Sync: Row ID #${payload.old.id} Dropped`, 'error');
+                    }
+                    if (Number(EDITING_ROW_ID) !== Number(payload.new?.id)) {
+                        executeTableMatrixFiltering();
+                    }
+                })
+                .subscribe();
+        }
+
+        async function fetchAdmissionsDatabase() {
+            try {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="25" class="p-8 text-center text-slate-400 font-medium font-mono animate-pulse">Running database scan...</td></tr>`;
+                const { data, error } = await _supabase.from('admins').select('*').order('id', { ascending: true });
+                if (error) throw error;
+                MASTER_ADMINS_DATASTORES = data || [];
+                renderTableMatrixPayload(MASTER_ADMINS_DATASTORES);
+            } catch (err) {
+                console.error("Database query failed:", err);
+                databaseMatrixBody.innerHTML = `<tr><td colspan="25" class="p-8 text-center text-rose-600 font-medium font-mono">Error: ${err.message}</td></tr>`;
+                flashSystemStatus("Failed To Load Data", "error");
+            }
+        }
+
+        function renderTableMatrixPayload(recordsList) {
+            document.getElementById('record-counter-badge').innerText = recordsList.length;
+            if (recordsList.length === 0) {
+                databaseMatrixBody.innerHTML = `<tr><td colspan="25" class="p-8 text-center text-slate-400 font-mono font-medium">No records match parameters.</td></tr>`;
+                return;
+            }
+
+            databaseMatrixBody.innerHTML = recordsList.map(admin => {
+                const isEditing = Number(EDITING_ROW_ID) === Number(admin.id);
+                const displayAadhaar = admin.aadhaar ? `[Aadhaar Redacted]` : '—';
+                
+                const avatarView = admin.photo_url 
+                    ? `<img src="${admin.photo_url}" onclick="openProfileModal(${admin.id})" class="w-6 h-6 rounded-full object-cover border border-slate-200 mx-auto shadow-2xs cursor-pointer hover:scale-110 transition" onerror="this.src='kk.png'">` 
+                    : `<div onclick="openProfileModal(${admin.id})" class="w-6 h-6 bg-slate-100 border border-slate-200 flex items-center justify-center text-[8px] text-slate-400 mx-auto rounded-full font-bold cursor-pointer hover:bg-indigo-50 transition">N/A</div>`;
+
+                if (isEditing) {
+                    return `
+                    <tr class="bg-indigo-50/30 border-b border-slate-100 align-middle">
+                        <td class="p-1 sticky-col bg-slate-50 border-r border-slate-200 text-center flex items-center justify-center gap-1 h-9">
+                            <button onclick="inlineSaveMutation(${admin.id})" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9px] rounded transition cursor-pointer btn-interactive">Save</button>
+                            <button onclick="inlineCancelEdit()" class="px-2 py-0.5 bg-white hover:bg-slate-100 text-slate-600 font-bold text-[9px] rounded border border-slate-200 transition cursor-pointer btn-interactive">Exit</button>
+                        </td>
+                        <td class="p-1.5 font-mono font-bold text-slate-400">${admin.id}</td>
+                        <td class="p-1 text-center">
+                            <label class="block cursor-pointer">
+                                <span class="text-[9px] bg-slate-900 text-white px-1.5 py-0.5 font-bold rounded hover:bg-slate-800 transition">Upload</span>
+                                <input type="file" id="inline-photo-file" accept="image/*" class="hidden">
+                            </label>
+                            <input type="hidden" id="inline-photo-url-hidden" value="${admin.photo_url || ''}">
+                            <input type="hidden" id="inline-auth-uid" value="${admin.auth_uid || ''}">
+                        </td>
+                        <td class="p-1"><input type="text" id="inline-full_name" value="${admin.full_name || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] font-bold rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-user_id" value="${admin.user_id || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="email" id="inline-email" value="${admin.email || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-department" value="${admin.department || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-hostel_name" value="${admin.hostel_name || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-role" value="${admin.role || 'admin'}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-mobile" value="${admin.mobile || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-aadhaar" value="${admin.aadhaar || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="date" id="inline-dob" value="${admin.dob || ''}" class="w-full bg-white border border-slate-200 p-0.5 text-[11px] font-mono rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="number" id="inline-age" value="${admin.age !== null ? admin.age : ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-gender" value="${admin.gender || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-qualification" value="${admin.qualification || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-blood_group" value="${admin.blood_group || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-id_mark_1" value="${admin.id_mark_1 || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-id_mark_2" value="${admin.id_mark_2 || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-door_no" value="${admin.door_no || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-street_name" value="${admin.street_name || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-place" value="${admin.place || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-district" value="${admin.district || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-state" value="${admin.state || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><input type="text" id="inline-pincode" value="${admin.pincode || ''}" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono rounded focus:border-indigo-500 focus:outline-none"></td>
+                        <td class="p-1"><textarea id="inline-medical_issues" class="w-full bg-white border border-slate-200 px-1.5 py-0.5 text-[11px] resize-none rounded focus:border-indigo-500 focus:outline-none" rows="1">${admin.medical_issues || ''}</textarea></td>
+                    </tr>`;
+                }
+
+                return `
+                <tr class="hover:bg-indigo-50/20 transition border-b border-slate-100 text-slate-800 align-middle h-9">
+                    <td class="p-1 sticky-col border-r border-slate-200 text-center flex items-center justify-center gap-1 z-10 h-9">
+                        <button onclick="inlineEnableEdit(${admin.id})" class="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[9px] rounded transition cursor-pointer btn-interactive">Edit</button>
+                        <button onclick="dispatchDeleteRecord(${admin.id})" class="px-2 py-0.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white font-bold text-[9px] rounded border border-rose-100 hover:border-transparent transition cursor-pointer btn-interactive">Del</button>
+                    </td>
+                    <td class="p-2 font-mono font-bold text-slate-400">${admin.id}</td>
+                    <td class="p-1 text-center">${avatarView}</td>
+                    <td class="p-2 font-black text-slate-900 truncate hover:text-indigo-600 cursor-pointer" onclick="openProfileModal(${admin.id})" title="View Profile: ${admin.full_name || ''}">${admin.full_name || '—'}</td>
+                    <td class="p-2 font-mono text-slate-500 truncate">${admin.user_id || '—'}</td>
+                    <td class="p-2 truncate text-slate-600 font-bold" title="${admin.email || ''}">${admin.email || '—'}</td>
+                    <td class="p-2 text-slate-800 font-bold truncate">${admin.department || '—'}</td>
+                    <td class="p-2 text-slate-600 font-medium truncate">${admin.hostel_name || '—'}</td>
+                    <td class="p-2"><span class="px-1.5 py-0.2 font-bold text-[9px] text-indigo-700 bg-indigo-50 rounded uppercase border border-indigo-100">${admin.role || 'admin'}</span></td>
+                    <td class="p-2 font-mono font-medium text-slate-600">${admin.mobile || '—'}</td>
+                    <td class="p-2 font-mono tracking-wider text-slate-400">${displayAadhaar}</td>
+                    <td class="p-2 font-mono text-slate-500">${admin.dob || '—'}</td>
+                    <td class="p-2 font-mono font-bold">${admin.age !== null && admin.age !== undefined ? admin.age : '—'}</td>
+                    <td class="p-2 text-slate-400 uppercase text-[9px] font-bold">${admin.gender || '—'}</td>
+                    <td class="p-2 truncate text-slate-600 font-medium">${admin.qualification || '—'}</td>
+                    <td class="p-2 font-mono text-center"><span class="px-1.5 py-0.2 font-black text-[9px] text-rose-600 bg-rose-50 border border-rose-100 rounded">${admin.blood_group || '—'}</span></td>
+                    <td class="p-2 text-slate-500 truncate font-medium">${admin.id_mark_1 || '—'}</td>
+                    <td class="p-2 text-slate-500 truncate font-medium">${admin.id_mark_2 || '—'}</td>
+                    <td class="p-2 font-mono text-slate-600">${admin.door_no || '—'}</td>
+                    <td class="p-2 truncate text-slate-600 font-medium">${admin.street_name || '—'}</td>
+                    <td class="p-2 text-slate-600 font-medium truncate">${admin.place || '—'}</td>
+                    <td class="p-2 text-slate-600 font-medium truncate">${admin.district || '—'}</td>
+                    <td class="p-2 text-slate-600 font-medium truncate">${admin.state || '—'}</td>
+                    <td class="p-2 font-mono text-indigo-600 bg-indigo-50 py-0.2 px-1.5 rounded text-center inline-block font-bold border border-indigo-100">${admin.pincode || '—'}</td>
+                    <td class="p-2 truncate text-slate-400 font-medium" title="${admin.medical_issues || ''}">${admin.medical_issues ? admin.medical_issues : 'None Recorded'}</td>
+                </tr>`;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function openProfileModal(id) {
+            const admin = MASTER_ADMINS_DATASTORES.find(a => Number(a.id) === Number(id));
+            if (!admin) return;
+
+            document.getElementById('modal-photo').src = admin.photo_url || 'kk.png';
+            document.getElementById('modal-name').innerText = admin.full_name || 'Administrator';
+            document.getElementById('modal-id').innerText = admin.user_id || `ID: ${admin.id}`;
+            document.getElementById('modal-role-badge').innerText = admin.role || 'Admin';
+            document.getElementById('modal-email').innerText = admin.email || '—';
+            document.getElementById('modal-phone').innerText = admin.mobile || '—';
+            document.getElementById('modal-department').innerText = admin.department || 'Not Assigned';
+            document.getElementById('modal-hostel').innerText = admin.hostel_name || '—';
+
+            const modal = document.getElementById('profile-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function executeTableMatrixFiltering() {
+            const filters = Array.from(document.querySelectorAll('input[data-col]'));
+            const dynamicMatches = MASTER_ADMINS_DATASTORES.filter(row => {
+                return filters.every(input => {
+                    const value = (input.value || '').trim().toLowerCase();
+                    if (!value) return true; 
+                    const field = input.getAttribute('data-col');
+                    const targetVal = String(row[field] || '').toLowerCase();
+                    return targetVal.includes(value);
+                });
+            });
+            renderTableMatrixPayload(dynamicMatches);
+        }
+
+        function inlineEnableEdit(id) {
+            EDITING_ROW_ID = id;
+            executeTableMatrixFiltering();
+        }
+
+        function inlineCancelEdit() {
+            EDITING_ROW_ID = null;
+            executeTableMatrixFiltering();
+        }
+
+        const parseSqlValue = (val) => (val && val.trim() !== '') ? val.trim() : null;
+
+        async function inlineSaveMutation(targetId) {
+            const fullName = document.getElementById('inline-full_name').value.trim();
+            const email = document.getElementById('inline-email').value.trim();
+            const aadhaar = document.getElementById('inline-aadhaar').value.trim();
+            const dob = document.getElementById('inline-dob').value;
+            const gender = document.getElementById('inline-gender').value.trim();
+
+            if (!fullName || !email || !aadhaar || !dob || !gender) {
+                alert("Validation error: Name, Email, Aadhaar, DOB, and Gender are required fields.");
+                return;
+            }
+
+            let uploadedPhotoUrl = document.getElementById('inline-photo-url-hidden').value;
+            const fileInput = document.getElementById('inline-photo-file');
+
+            if (fileInput && fileInput.files.length > 0) {
+                if (uploadedPhotoUrl && uploadedPhotoUrl.includes('/storage/v1/object/public/student-photos/')) {
+                    try {
+                        const rawOldPath = uploadedPhotoUrl.split('/student-photos/').pop();
+                        const cleanOldPath = decodeURIComponent(rawOldPath);
+                        
+                        if (cleanOldPath && cleanOldPath !== 'admin-placeholder.png') {
+                            flashSystemStatus("Evicting obsolete photo...", "warning");
+                            await _supabase.storage.from('student-photos').remove([cleanOldPath]);
+                        }
+                    } catch (evictionErr) {
+                        console.error("Non-blocking asset swap cleanup warning:", evictionErr);
+                    }
+                }
+
+                flashSystemStatus("Streaming asset to storage...", "warning");
+                const targetFile = fileInput.files[0];
+                const cleanExtension = targetFile.name.split('.').pop();
+                const pathGeneration = `passports/adm_${crypto.randomUUID()}_${Date.now()}.${cleanExtension}`;
+
+                try {
+                    const { error: uploadError } = await _supabase.storage
+                        .from('student-photos')
+                        .upload(pathGeneration, targetFile, { cacheControl: '3600', upsert: true });
+                    
+                    if (uploadError) throw uploadError;
+                    const { data: urlData } = _supabase.storage.from('student-photos').getPublicUrl(pathGeneration);
+                    if (urlData?.publicUrl) uploadedPhotoUrl = urlData.publicUrl;
+                } catch (storageErr) {
+                    console.error("Bucket asset write failure:", storageErr);
+                    flashSystemStatus("Storage Sync Conflict", "error");
+                    return;
+                }
+            }
+
+            const ageInput = document.getElementById('inline-age').value;
+            const authUidInput = document.getElementById('inline-auth-uid').value;
+
+            const updatePayload = {
+                full_name: fullName,
+                email: email,
+                department: parseSqlValue(document.getElementById('inline-department').value),
+                hostel_name: document.getElementById('inline-hostel_name').value.trim() || 'N/A',
+                mobile: parseSqlValue(document.getElementById('inline-mobile').value),
+                aadhaar: aadhaar,
+                dob: dob,
+                age: ageInput !== '' ? parseInt(ageInput) : null,
+                gender: gender,
+                qualification: parseSqlValue(document.getElementById('inline-qualification').value),
+                blood_group: parseSqlValue(document.getElementById('inline-blood_group').value),
+                user_id: parseSqlValue(document.getElementById('inline-user_id').value),
+                door_no: parseSqlValue(document.getElementById('inline-door_no').value),
+                street_name: parseSqlValue(document.getElementById('inline-street_name').value),
+                place: parseSqlValue(document.getElementById('inline-place').value),
+                district: parseSqlValue(document.getElementById('inline-district').value),
+                state: parseSqlValue(document.getElementById('inline-state').value),
+                pincode: parseSqlValue(document.getElementById('inline-pincode').value),
+                id_mark_1: parseSqlValue(document.getElementById('inline-id_mark_1').value),
+                id_mark_2: parseSqlValue(document.getElementById('inline-id_mark_2').value),
+                medical_issues: parseSqlValue(document.getElementById('inline-medical_issues').value),
+                photo_url: parseSqlValue(uploadedPhotoUrl),
+                role: document.getElementById('inline-role').value.trim() || 'admin',
+                auth_uid: authUidInput !== '' ? authUidInput : null
+            };
+
+            EDITING_ROW_ID = null;
+            flashSystemStatus("Committing transaction parameters...", "warning");
+
+            try {
+                const { error } = await _supabase.from('admins').update(updatePayload).eq('id', targetId);
+                if (error) throw error;
+                flashSystemStatus("Record Saved Successfully", "success");
+            } catch (err) {
+                console.error("Mutation failure:", err);
+                flashSystemStatus("Error saving mutation", "error");
+            }
+        }
+
+        async function dispatchDeleteRecord(id) {
+            if (!confirm("Permanently delete this administrator record? This automatically drops their profile photo asset from the storage bucket and drops the account mapping layers.")) return;
+
+            const record = MASTER_ADMINS_DATASTORES.find(a => Number(a.id) === Number(id));
+            if (!record) return;
+
+            const photoUrl = record.photo_url;
+
+            if (photoUrl && photoUrl.includes('/storage/v1/object/public/student-photos/')) {
+                try {
+                    const rawPath = photoUrl.split('/student-photos/').pop();
+                    const relativePath = decodeURIComponent(rawPath);
+                    
+                    if (relativePath && relativePath !== 'admin-placeholder.png') {
+                        flashSystemStatus("Clearing raw asset from cloud bucket...", "warning");
+                        const { error: storageError } = await _supabase.storage
+                            .from('student-photos')
+                            .remove([relativePath]);
+                        
+                        if (storageError) {
+                            console.error("Bucket eviction failed:", storageError.message);
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Storage address pattern extraction failed:", err);
+                }
+            }
+
+            try {
+                flashSystemStatus("Removing entry from database matrix...", "warning");
+                const { error } = await _supabase.from('admins').delete().eq('id', id);
+                if (error) throw error;
+                flashSystemStatus("Record dropped successfully", "success");
+                fetchAdmissionsDatabase();
+            } catch (err) {
+                console.error("Database deletion process encountered a failure:", err);
+                alert(`Failed to delete table row entry: ${err.message}`);
+                flashSystemStatus("Error processing deletion", "error");
+            }
+        }
+
+        function triggerSystemLogout() {
+            _supabase.auth.signOut().then(() => {
+                window.location.href = "login.html";
+            });
+        }
+
+        window.onload = () => {
+            enforceSecuritySessionAuth();
+            if (window.lucide) lucide.createIcons();
+        };
+    </script>
+</body>
+</html>

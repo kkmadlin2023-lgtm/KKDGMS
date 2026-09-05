@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HM Attendance View | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar-transition {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(6px);
+        }
+        .submenu-hidden {
+            display: none;
+        }
+        .submenu-open {
+            display: block;
+        }
+
+        /* Top-Right Floating Pill Toast Notifications */
+        .toast-pill {
+            background-color: #0b1120;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 16px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+            pointer-events: auto;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .toast-pill.fade-out {
+            animation: toastFadeOut 0.3s ease-forward;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .toast-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-green .toast-icon { color: #10b981; }
+        .toast-yellow .toast-icon { color: #f59e0b; }
+        .toast-red .toast-icon { color: #ef4444; }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes toastFadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-700 font-sans antialiased relative min-h-screen flex bg-slate-50">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-3 w-auto max-w-sm pointer-events-none"></div>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" onclick="toggleSidebarMenu()" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs hidden lg:hidden transition-opacity"></div>
+
+    <!-- Enterprise Sidebar Navigation -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-sm" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Head Master Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
+                
+                <!-- Admissions Submenu Parent Accordion -->
+                <div>
+                    <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium cursor-pointer group">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
+                            <span>ADMISSION FORMS</span>
+                        </span>
+                        <i id="submenu-arrow-indicator" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="admissions-submenu" class="submenu-hidden pl-7 pr-1 mt-1 space-y-1 bg-slate-50/80 rounded-xl border border-slate-100 py-1.5">
+                        <a href="a_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Admin Admission Form</span>
+                        </a>
+                        <a href="f_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Faculty Admission Form</span>
+                        </a>
+                        <a href="s_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Student Admission Form</span>
+                        </a>
+                        <a href="w_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Warden Admission Form</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Navigation Module Links -->
+                <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY ASSIGNING PAGE</span>
+                </a>
+                
+                <a href="a_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-indigo-600 bg-indigo-50/80 rounded-xl transition font-medium">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-600"></i>
+                    <span>ATTENDANCE VIEW</span>
+                </a>
+
+                <a href="a_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="a_bonafide.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
+                    <span>BONAFIDE FORM</span>
+                </a>
+                <a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
+                    <span>VISITOR DETAILS</span>
+                </a>
+                <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
+                    <span>ANNOUNCEMENT EDIT</span>
+                </a>
+
+                <a href="a_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QUESTION BANK</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">System Records</div>
+
+                <a href="a_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>ADMIN DATABASE</span>
+                </a>
+
+                <a href="f_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DATABASE</span>
+                </a>
+
+                <a href="s_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT DATABASE</span>
+                </a>
+
+                <a href="w_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>WARDEN DATABASE</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governance</div>
+
+                <a href="a_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE CONFIRMING PAGE</span>
+                </a>
+
+                <a href="a_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="award" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET VIEW</span>
+                </a>
+
+                <a href="a_user.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                    <span>USER UPDATES</span>
+                </a>
+
+                <a href="a_password.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
+                    <span>PASSWORD UPDATES</span>
+                </a>
+                <a href="a_ldetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Login Audit Log
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all border border-rose-100 hover:border-transparent cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Layout Structure -->
+    <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+        
+        <!-- Top Sticky Header -->
+        <header class="h-16 bg-white border-b border-slate-100 px-6 flex justify-between items-center sticky top-0 z-30">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl cursor-pointer">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <h1 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    KKDGMS <span class="text-slate-300 font-light">|</span> <span class="text-xs font-semibold text-slate-500">Head Master Attendance View</span>
+                </h1>
+            </div>
+            
+            <!-- Profile Trigger Box -->
+            <div class="flex items-center gap-4">
+                <div onclick="toggleProfileModal(true)" id="header-profile-box" class="flex items-center gap-3 bg-slate-50 hover:bg-slate-100/80 px-3 py-1.5 rounded-xl border border-slate-100 cursor-pointer transition select-none">
+                    <img id="user-avatar" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Avatar" class="w-8 h-8 rounded-full object-cover border border-slate-200">
+                    <div class="text-left hidden md:block">
+                        <div id="user-display-name" class="text-xs font-bold text-slate-800">Loading profile...</div>
+                        <div id="user-display-role" class="text-[10px] text-indigo-600 font-mono font-bold uppercase tracking-wider">Verifying Admin...</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 ml-1"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Inner workspace container -->
+        <main id="portal-workspace" class="p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 flex-1 opacity-0 transition-opacity duration-300">
+            
+            <div class="bg-white border border-slate-100 rounded-3xl p-6 lg:p-8 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">🛡️ Real-Time Attendance Ledger</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Micro inspection track metrics covering registered classes, section blocks, and timelines.</p>
+                </div>
+                <div class="flex flex-wrap gap-2.5">
+                    <a href="a_dashboard.html" class="px-4 py-2.5 bg-slate-100 border border-slate-200/50 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200/70 transition flex items-center gap-1.5">
+                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filters Grid Matrix -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white border border-slate-100 rounded-3xl p-6 shadow-xs">
+                <div>
+                    <label class="block text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Target Date</label>
+                    <input type="date" id="admin-calendar-filter" onchange="pullGlobalAttendanceLedgerLogs()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-black text-slate-400 mb-1.5 tracking-wider">Filter Class Room</label>
+                    <select id="admin-class-filter" onchange="renderAttendanceDisplayMatrix()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition cursor-pointer">
+                        <option value="ALL">Show All Structural Classes</option>
+                    </select>
+                </div>
+                <div class="flex flex-col justify-end">
+                    <button onclick="pullGlobalAttendanceLedgerLogs()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm shadow-indigo-100 cursor-pointer flex items-center justify-center gap-2">
+                        <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Refresh Table
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analytics Overview Cards Counter -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-5 bg-white border border-slate-100 rounded-3xl shadow-xs">
+                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Active Class Rooms</div>
+                    <div id="stat-logs-count" class="text-xl font-black text-slate-800 mt-1">0 Rooms</div>
+                </div>
+                <div class="p-5 bg-white border border-slate-100 rounded-3xl shadow-xs">
+                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Students</div>
+                    <div id="stat-total-students" class="text-xl font-black text-slate-800 mt-1">0</div>
+                </div>
+                <div class="p-5 bg-emerald-50/60 border border-emerald-100/50 rounded-3xl shadow-xs">
+                    <div class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">Present Count</div>
+                    <div id="stat-total-present" class="text-xl font-black text-emerald-700 mt-1">0</div>
+                </div>
+                <div class="p-5 bg-rose-50/60 border border-rose-100/50 rounded-3xl shadow-xs">
+                    <div class="text-[10px] uppercase font-bold text-rose-600 tracking-wider">Absent Count</div>
+                    <div id="stat-total-absent" class="text-xl font-black text-rose-700 mt-1">0</div>
+                </div>
+            </div>
+
+            <!-- Attendance Data Presentation Table -->
+            <div class="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
+                <div class="px-6 py-4.5 bg-slate-50/50 border-b border-slate-100">
+                    <span class="text-xs uppercase font-bold tracking-wider text-slate-500 flex items-center gap-2" id="audit-table-title">
+                        <span class="inline-block w-2 h-2 rounded-full bg-indigo-500"></span> Today's Attendance Entries
+                    </span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap table-auto">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-100">
+                                <th class="py-4 px-6">Class & Section</th>
+                                <th class="py-4 px-6">Incharge Faculty</th>
+                                <th class="py-4 px-6">Attendance Details</th>
+                                <th class="py-4 px-6">Updated Date & Timestamp</th>
+                                <th class="py-4 px-6 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-audit-table-body" class="divide-y divide-slate-100 text-xs">
+                            <tr>
+                                <td colspan="5" class="text-center py-16 text-slate-400 font-semibold animate-pulse">Initializing Data Maps ...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Centered Streamlined Profile Details Pop-up Modal -->
+    <div id="profile-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-300 relative mx-4">
+            
+            <button onclick="toggleProfileModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-lg hover:bg-slate-100 transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="flex flex-col items-center text-center pb-4">
+                <div class="relative mb-3">
+                    <img id="modal-user-avatar" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-2 border-slate-100 shadow-sm">
+                </div>
+                <h3 id="modal-user-name" class="text-base font-bold text-slate-800">Admin Account</h3>
+            </div>
+
+            <div class="py-3 border-t border-b border-slate-100 space-y-3 text-xs my-2">
+                <div class="flex justify-between items-center py-0.5">
+                    <span class="text-slate-400">ID</span>
+                    <span id="modal-user-id" class="font-mono text-slate-700 font-semibold">—</span>
+                </div>
+                <div class="flex justify-between items-center py-0.5">
+                    <span class="text-slate-400">Email</span>
+                    <span id="modal-user-email" class="font-mono text-slate-600">—</span>
+                </div>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+                <button onclick="toggleProfileModal(false)" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer text-center">
+                    Close Profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roster Micro Inspection Modal Panel Backdrop -->
+    <div id="roster-modal-backdrop" class="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] transform scale-95 transition-transform duration-200 border border-slate-100">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2" id="modal-header-title">Roster Micro Inspection</h3>
+                    <p class="text-[10px] text-slate-400 mt-0.5" id="modal-header-subtitle">Detailed tracking index</p>
+                </div>
+                <button onclick="dismissRosterAuditModal()" class="w-7 h-7 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-bold transition flex items-center justify-center cursor-pointer">✕</button>
+            </div>
+            <div class="overflow-y-auto p-6 space-y-2.5" id="modal-roster-list-body">
+            </div>
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="dismissRosterAuditModal()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition cursor-pointer">Close Inspection Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let GLOBAL_ATTENDANCE_RAW_DATA = [];
+        let PROFILE_FACULTY_MAP = {};
+
+        const portalWorkspace = document.getElementById('portal-workspace');
+        const auditTableBody = document.getElementById('admin-audit-table-body');
+        const calendarFilter = document.getElementById('admin-calendar-filter');
+        const classFilter = document.getElementById('admin-class-filter');
+        const toastContainer = document.getElementById('toast-container');
+        const rosterModalBackdrop = document.getElementById('roster-modal-backdrop');
+
+        // Initialize Lucide Icons
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+        });
+
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        function toggleAdmissionsSubmenu() {
+            const submenu = document.getElementById('admissions-submenu');
+            const arrow = document.getElementById('submenu-arrow-indicator');
+            submenu.classList.toggle('submenu-hidden');
+            submenu.classList.toggle('submenu-open');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        function toggleProfileModal(show) {
+            const modal = document.getElementById('profile-modal');
+            const inner = modal.querySelector('div');
+            if (show) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    inner.classList.remove('scale-95');
+                }, 10);
+            } else {
+                modal.classList.add('opacity-0');
+                inner.classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        document.getElementById('profile-modal').addEventListener('click', function(e) {
+            if (e.target === this) toggleProfileModal(false);
+        });
+
+        async function triggerSystemLogout() {
+            await _supabase.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            
+            let colorClass = 'toast-green';
+            if (type === 'error' || type === 'red') {
+                colorClass = 'toast-red';
+            } else if (type === 'warning' || type === 'yellow') {
+                colorClass = 'toast-yellow';
+            }
+
+            toast.className = `toast-pill ${colorClass}`;
+            
+            const shieldSvg = `
+                <span class="toast-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </span>
+            `;
+
+            toast.innerHTML = `${shieldSvg}<span>${message}</span>`;
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function triggerNotification(message, variant = 'success') {
+            showToast(message, variant);
+        }
+
+        async function verifyAdminAuthenticationSession() {
+            const { data: { session }, error } = await _supabase.auth.getSession();
+            if (error || !session) {
+                window.location.href = "login.html";
+                return;
+            }
+            
+            try {
+                const { data: adminRecord, error: adminErr } = await _supabase
+                    .from('admins')
+                    .select('full_name, role, photo_url, department, email, user_id')
+                    .eq('auth_uid', session.user.id)
+                    .maybeSingle();
+                
+                if (adminErr || !adminRecord || adminRecord.role !== 'admin') {
+                    await _supabase.auth.signOut();
+                    window.location.href = "login.html";
+                    return;
+                }
+                
+                document.getElementById('user-display-name').innerText = adminRecord.full_name || "Admin Account";
+                document.getElementById('user-display-role').innerText = adminRecord.department || adminRecord.role;
+                if (adminRecord.photo_url) {
+                    document.getElementById('user-avatar').src = adminRecord.photo_url;
+                    document.getElementById('modal-user-avatar').src = adminRecord.photo_url;
+                }
+                
+                document.getElementById('modal-user-name').innerText = adminRecord.full_name;
+                document.getElementById('modal-user-email').innerText = adminRecord.email || session.user.email;
+                document.getElementById('modal-user-id').innerText = adminRecord.user_id || '—';
+                
+            } catch (err) {
+                console.error(err);
+                window.location.href = "login.html";
+                return;
+            }
+
+            calendarFilter.value = new Date().toISOString().split('T')[0];
+            await compileInternalFacultyProfilingMap();
+            await pullGlobalAttendanceLedgerLogs();
+            
+            portalWorkspace.classList.remove('opacity-0');
+        }
+
+        async function compileInternalFacultyProfilingMap() {
+            const { data: facultyList, error } = await _supabase
+                .from('faculty_details')
+                .select('user_id, full_name, department, photo_url');
+
+            if (!error && facultyList) {
+                facultyList.forEach(fac => {
+                    PROFILE_FACULTY_MAP[fac.user_id] = {
+                        name: fac.full_name,
+                        dept: fac.department,
+                        photo: fac.photo_url
+                    };
+                });
+            }
+        }
+
+        async function pullGlobalAttendanceLedgerLogs() {
+            const selectedDate = calendarFilter.value;
+            if (!selectedDate) return;
+
+            auditTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-16 text-slate-400 font-semibold animate-pulse"><div class="flex flex-col items-center gap-2"><i data-lucide="loader-2" class="w-6 h-6 animate-spin text-indigo-500"></i> Querying analytical database ledger configurations...</div></td></tr>`;
+            lucide.createIcons();
+
+            const { data: logs, error } = await _supabase
+                .from('student_attendance')
+                .select('*')
+                .eq('date', selectedDate);
+
+            if (error) {
+                triggerNotification("Database ledger link anomaly encountered.", "error");
+                auditTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-rose-500 font-bold">Failed to retrieve historical tracking elements.</td></tr>`;
+                return;
+            }
+
+            GLOBAL_ATTENDANCE_RAW_DATA = logs || [];
+            reconstructClassSelectorOptions();
+            renderAttendanceDisplayMatrix();
+            triggerNotification(`Aggregated log records loaded completely for ${selectedDate}.`, "info");
+        }
+
+        function reconstructClassSelectorOptions() {
+            const currentSelection = classFilter.value;
+            classFilter.innerHTML = '<option value="ALL">Show All Structural Classes</option>';
+            
+            const uniqueRooms = [...new Set(GLOBAL_ATTENDANCE_RAW_DATA.map(log => `${log.class}-${log.section}`))].sort();
+            
+            uniqueRooms.forEach(roomKey => {
+                const opt = document.createElement('option');
+                opt.value = roomKey;
+                opt.innerText = `Class Room ${roomKey}`;
+                classFilter.appendChild(opt);
+            });
+
+            if (uniqueRooms.includes(currentSelection)) {
+                classFilter.value = currentSelection;
+            }
+        }
+
+        function renderAttendanceDisplayMatrix() {
+            const classFilterCriteria = classFilter.value;
+            auditTableBody.innerHTML = '';
+
+            const filteredDataset = GLOBAL_ATTENDANCE_RAW_DATA.filter(log => {
+                if (classFilterCriteria === 'ALL') return true;
+                return `${log.class}-${log.section}` === classFilterCriteria;
+            });
+
+            if (filteredDataset.length === 0) {
+                auditTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-16 text-slate-400 font-medium">No configuration metrics recorded for targeted parameters.</td></tr>`;
+                calculateGlobalMetricsReadouts(filteredDataset);
+                return;
+            }
+
+            filteredDataset.forEach((log, loopIndex) => {
+                const facultyRef = PROFILE_FACULTY_MAP[log.faculty_id] || { name: `ID: ${log.faculty_id}`, dept: 'System Assignment', photo: null };
+                
+                const rosterArray = log.attendance_data || [];
+                const totalStudents = rosterArray.length;
+                const presentsCount = rosterArray.filter(s => s.status === 'Present').length;
+                const absentsCount = totalStudents - presentsCount;
+                const photo = facultyRef.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80';
+
+                const parseTime = new Date(log.updated_at);
+                const formatTimestamp = parseTime.toLocaleDateString() + ' @ ' + parseTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/70 transition duration-75 text-slate-600";
+                tr.innerHTML = `
+                    <td class="py-4 px-6 font-medium text-slate-700">
+                        <span class="bg-indigo-50/70 text-indigo-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-indigo-100/50">Class ${escapeHtmlString(log.class)}</span> 
+                        <span class="text-slate-300 px-1.5"><i data-lucide="chevron-right" class="w-3 h-3 inline"></i></span> 
+                        <span class="font-bold text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200/20">${escapeHtmlString(log.section)}</span>
+                    </td>
+                    <td class="py-4 px-6 font-semibold text-slate-900">
+                        <div class="flex items-center gap-3">
+                            <img src="${escapeHtmlString(photo)}" alt="Profile photo" class="w-9 h-9 rounded-full object-cover border border-slate-100 shadow-2xs">
+                            <div>
+                                <div class="font-bold text-slate-800 text-xs">${escapeHtmlString(facultyRef.name)}</div>
+                                <div class="text-[10px] text-slate-400 font-normal mt-0.5">${escapeHtmlString(facultyRef.dept)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="font-bold text-slate-700 bg-slate-100 border border-slate-200/30 px-2 py-0.5 rounded-md">Total: ${totalStudents}</span> 
+                            <span class="font-bold text-emerald-700 bg-emerald-50 border border-emerald-100/40 px-2 py-0.5 rounded-md">P: ${presentsCount}</span> 
+                            <span class="font-bold text-rose-700 bg-rose-50 border border-rose-100/40 px-2 py-0.5 rounded-md">A: ${absentsCount}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 font-mono text-[10px] text-slate-400">${formatTimestamp}</td>
+                    <td class="py-4 px-6 text-center">
+                        <button onclick="launchRosterAuditModal(${loopIndex})" class="text-indigo-600 hover:text-indigo-900 font-bold text-xs cursor-pointer inline-flex items-center gap-1 transition">
+                            <i data-lucide="search" class="w-3.5 h-3.5 inline"></i> Inspect Panel
+                        </button>
+                    </td>
+                `;
+                auditTableBody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+            calculateGlobalMetricsReadouts(filteredDataset);
+        }
+
+        function calculateGlobalMetricsReadouts(activeDataset) {
+            let totalRooms = activeDataset.length;
+            let totalStudents = 0;
+            let totalPresents = 0;
+
+            activeDataset.forEach(log => {
+                const data = log.attendance_data || [];
+                totalStudents += data.length;
+                totalPresents += data.filter(s => s.status === 'Present').length;
+            });
+            let totalAbsents = totalStudents - totalPresents;
+
+            document.getElementById('stat-logs-count').innerText = `${totalRooms} Room${totalRooms === 1 ? '' : 's'}`;
+            document.getElementById('stat-total-students').innerText = totalStudents;
+            document.getElementById('stat-total-present').innerText = totalPresents;
+            document.getElementById('stat-total-absent').innerText = totalAbsents;
+        }
+
+        function launchRosterAuditModal(targetDatasetIndex) {
+            const logItem = GLOBAL_ATTENDANCE_RAW_DATA[targetDatasetIndex];
+            if (!logItem) return;
+
+            const facultyRef = PROFILE_FACULTY_MAP[logItem.faculty_id] || { name: logItem.faculty_id };
+            document.getElementById('modal-header-title').innerText = `Class Room ${logItem.class}-${logItem.section}`;
+            document.getElementById('modal-header-subtitle').innerText = `Marked by ${facultyRef.name} on Log Date: ${logItem.date}`;
+
+            const container = document.getElementById('modal-roster-list-body');
+            container.innerHTML = '';
+
+            const rosterData = logItem.attendance_data || [];
+            
+            rosterData.forEach(student => {
+                const isPresent = student.status === 'Present';
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-3.5 bg-slate-50 rounded-xl border border-slate-200/40 text-xs";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-slate-800">${escapeHtmlString(student.name)}</div>
+                        <div class="text-[10px] font-mono text-slate-400 mt-0.5">ID Key Index: #${student.student_id}</div>
+                    </div>
+                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase font-mono border ${isPresent ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}">
+                        ${student.status}
+                    </span>
+                `;
+                container.appendChild(div);
+            });
+
+            rosterModalBackdrop.classList.remove('hidden');
+            const modalBox = rosterModalBackdrop.querySelector('div');
+            setTimeout(() => {
+                rosterModalBackdrop.classList.remove('opacity-0');
+                modalBox.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function dismissRosterAuditModal() {
+            const modalBox = rosterModalBackdrop.querySelector('div');
+            rosterModalBackdrop.classList.add('opacity-0');
+            modalBox.classList.add('scale-95');
+            setTimeout(() => rosterModalBackdrop.classList.add('hidden'), 200);
+        }
+
+        function escapeHtmlString(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        window.onload = () => {
+            verifyAdminAuthenticationSession();
+        };
+    </script>
+</body>
+</html>
