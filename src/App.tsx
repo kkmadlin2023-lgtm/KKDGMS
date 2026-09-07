@@ -137,29 +137,37 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans antialiased">
-      {/* Top Navigation */}
-      <Navbar
+    <div className="flex h-screen w-full bg-slate-50 font-sans overflow-hidden text-slate-900">
+      {/* High Density Left Sidebar */}
+      <Sidebar
         currentRole={currentRole}
-        onRoleChange={handleRoleChange}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
       />
 
-      {/* Main Workspace Body with Sidebar */}
-      <div className="flex-1 flex max-w-[1600px] w-full mx-auto">
-        {/* Sidebar */}
-        <Sidebar
+      {/* Main Column: Header on top, Dynamic Viewport below */}
+      <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <Navbar
           currentRole={currentRole}
+          onRoleChange={handleRoleChange}
           activeTab={activeTab}
           onSelectTab={setActiveTab}
+          activeSession={{
+            user_id: currentRole === 'admin' ? 'AD-2024-001' : currentRole === 'faculty' ? 'FAC-PHY-102' : currentRole === 'warden' ? 'WRD-BH-01' : 'STD-2024-0142',
+            role: currentRole,
+            full_name: currentRole === 'admin' ? 'Dr. R. Sundaram, Principal' : currentRole === 'faculty' ? 'T. Selvakumar, M.Sc., B.Ed.' : currentRole === 'warden' ? 'K. Murugan, Warden' : 'A. Dhanush Kumar',
+            token: 'jwt-token-active'
+          }}
+          onOpenLogin={() => setActiveTab('security')}
+          onNavigateTab={setActiveTab}
         />
 
-        {/* Dynamic View Canvas */}
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto max-w-[calc(100vw-256px)]">
+        {/* Dynamic Scrollable Content Workspace */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 bg-slate-50">
           {renderContent()}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

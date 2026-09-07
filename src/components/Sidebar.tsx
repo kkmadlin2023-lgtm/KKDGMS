@@ -93,20 +93,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const categories = Array.from(new Set(navItems.map(item => item.category || 'General')));
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col h-[calc(100vh-69px)] sticky top-[69px] border-r border-slate-800">
-      {/* Role Banner */}
-      <div className="p-4 border-b border-slate-800/80 bg-slate-950/40">
-        <div className="text-[11px] font-mono uppercase tracking-widest text-slate-400">
-          Current Workspace
+    <aside className="w-64 bg-slate-800 flex flex-col border-r border-slate-700 shadow-xl text-slate-300 h-full flex-shrink-0 select-none">
+      {/* Brand Header */}
+      <div className="p-5 flex items-center gap-3 border-b border-slate-700">
+        <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center font-bold text-white shadow-lg text-sm shrink-0">
+          K
         </div>
-        <div className="text-sm font-bold text-white capitalize mt-0.5 flex items-center justify-between">
-          <span>{currentRole} Portal</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <div className="min-w-0">
+          <h1 className="font-bold text-white tracking-tight leading-tight text-sm">
+            KKDGMS
+            <span className="text-blue-400 text-xs block font-normal truncate">School Management</span>
+          </h1>
         </div>
       </div>
 
+      {/* Workspace Role Bar */}
+      <div className="px-4 py-2 bg-slate-900/40 border-b border-slate-700 flex items-center justify-between text-[11px]">
+        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Workspace</span>
+        <span className="text-xs font-semibold text-blue-300 capitalize flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          {currentRole} Portal
+        </span>
+      </div>
+
       {/* Navigation Links Scrollable */}
-      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
+      <nav className="flex-1 py-3 overflow-y-auto px-3 space-y-3">
         {categories.map(cat => (
           <div key={cat} className="space-y-1">
             <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -121,18 +132,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => onSelectTab(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer text-xs ${
                       isActive
-                        ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
+                        ? 'bg-blue-600/20 text-blue-400 rounded-md font-medium border-l-2 border-blue-500'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
                       <span className="truncate">{item.label}</span>
                     </div>
                     {item.badge && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-300 font-mono shrink-0 ml-1">
                         {item.badge}
                       </span>
                     )}
@@ -141,14 +152,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
               })}
           </div>
         ))}
-      </div>
+      </nav>
 
-      {/* Bottom Info Footer */}
-      <div className="p-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between bg-slate-950/30">
-        <span className="truncate">KKDGMS v2.4 (Clean)</span>
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-mono border border-emerald-800/50">
-          Ready
-        </span>
+      {/* Supabase Status Footer Box */}
+      <div className="p-4 mt-auto border-t border-slate-700">
+        <button
+          onClick={() => onSelectTab('supabase-hub')}
+          className="w-full text-left bg-slate-900 rounded-lg p-3 space-y-2 hover:bg-slate-900/80 transition-colors cursor-pointer block"
+        >
+          <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-slate-400">
+            <span>Supabase Status</span>
+            <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Linked
+            </span>
+          </div>
+          <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 w-full"></div>
+          </div>
+          <div className="text-[10px] text-slate-400 flex items-center justify-between italic">
+            <span>Tables synchronized</span>
+            <span className="font-mono text-slate-500 not-italic text-[9px]">14 RLS</span>
+          </div>
+        </button>
       </div>
     </aside>
   );

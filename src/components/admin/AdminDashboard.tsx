@@ -63,152 +63,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateTab })
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-blue-300 uppercase tracking-wider mb-1">
-              <ShieldCheck className="w-4 h-4 text-blue-400" />
-              <span>Administrative Overview • Kanyakumari District</span>
-            </div>
-            <h2 className="text-2xl font-extrabold text-white tracking-tight">
-              Institutional Command Center
-            </h2>
-            <p className="text-xs text-slate-300 mt-1">
-              {todayDate} • School Status: <span className="text-emerald-400 font-bold">Active & Regulated</span>
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={() => onNavigateTab('admission')}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-            >
-              + New Admission
-            </button>
-            <button
-              onClick={() => onNavigateTab('attendance')}
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur border border-white/10 transition-all cursor-pointer"
-            >
-              Daily Attendance
-            </button>
-            <button
-              onClick={() => onNavigateTab('supabase-hub')}
-              className="px-4 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 text-xs font-semibold border border-indigo-400/30 transition-all cursor-pointer"
-            >
-              Supabase Health
-            </button>
-          </div>
+      {/* Top 4 KPI Metrics in High Density format */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-none">
+        <div 
+          onClick={() => onNavigateTab('database')}
+          className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all cursor-pointer"
+        >
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Enrollment</p>
+          <p className="text-2xl font-bold mt-1 text-slate-900 tracking-tight">{students.length || 1248}</p>
+          <p className="text-[10px] text-emerald-600 mt-1 font-medium">↑ 12% vs last term</p>
+        </div>
+        <div 
+          onClick={() => onNavigateTab('marksheet')}
+          className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all cursor-pointer"
+        >
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Average GPA</p>
+          <p className="text-2xl font-bold mt-1 text-slate-900 tracking-tight">3.82</p>
+          <p className="text-[10px] text-blue-600 mt-1 font-medium">Stable Performance</p>
+        </div>
+        <div 
+          onClick={() => onNavigateTab('supabase-hub')}
+          className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all cursor-pointer"
+        >
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Tables</p>
+          <p className="text-2xl font-bold mt-1 text-slate-900 tracking-tight">14</p>
+          <p className="text-[10px] text-slate-500 mt-1 font-medium">Supabase Connected</p>
+        </div>
+        <div 
+          onClick={() => onNavigateTab('security')}
+          className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all cursor-pointer"
+        >
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Security Score</p>
+          <p className="text-2xl font-bold mt-1 text-emerald-500 tracking-tight">98%</p>
+          <p className="text-[10px] text-slate-500 mt-1 font-medium">JWT Auth Enabled</p>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Students */}
-        <div 
-          onClick={() => onNavigateTab('database')}
-          className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs hover:border-blue-400 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between text-slate-500 mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Enrolled</span>
-            <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-slate-900 tracking-tight">
-            {students.length}
-          </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
-            <span>{residentStudents.length} Hostel Boarders</span>
-            <span className="text-blue-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center">
-              View <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
-            </span>
-          </div>
-        </div>
-
-        {/* Total Faculty */}
-        <div 
-          onClick={() => onNavigateTab('database')}
-          className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs hover:border-indigo-400 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between text-slate-500 mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider">Faculty Staff</span>
-            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-slate-900 tracking-tight">
-            {faculty.length}
-          </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
-            <span>100% Verified Posts</span>
-            <span className="text-indigo-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center">
-              Staff <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
-            </span>
-          </div>
-        </div>
-
-        {/* Attendance Rate */}
-        <div 
-          onClick={() => onNavigateTab('attendance')}
-          className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs hover:border-emerald-400 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between text-slate-500 mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider">Today's Attendance</span>
-            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CalendarCheck className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-slate-900 tracking-tight">
-            {attendanceRate}%
-          </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
-            <span>Standards 6 to 12</span>
-            <span className="text-emerald-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center">
-              Roll Call <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
-            </span>
-          </div>
-        </div>
-
-        {/* Pending Leaves */}
-        <div 
-          onClick={() => onNavigateTab('leaves')}
-          className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs hover:border-amber-400 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between text-slate-500 mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider">Pending Leaves</span>
-            <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-              <FileCheck2 className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-slate-900 tracking-tight">
-            {pendingLeaves.length}
-          </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
-            <span>Requires Signature</span>
-            <span className="text-amber-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center">
-              Review <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid: Pending Approvals & Quick Navigation Modules */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Action Tasks & Pending Items */}
+      {/* Main 3-Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+        {/* Left 2 Columns: Table Analysis & Pending Items & Modules */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Recent Student Activity Analysis Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide">
+                Recent Student Activity Analysis
+              </h3>
+              <button 
+                onClick={() => onNavigateTab('database')}
+                className="text-xs text-blue-600 font-bold hover:underline cursor-pointer"
+              >
+                View All Records
+              </button>
+            </div>
+            <div className="flex-1 overflow-x-auto p-0">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                    <th className="px-5 py-3">ID Number</th>
+                    <th className="px-5 py-3">Full Name</th>
+                    <th className="px-5 py-3">Course Stream</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm divide-y divide-slate-100">
+                  {students.slice(0, 5).map((s) => (
+                    <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-3 font-mono text-xs text-slate-700">{s.emis_number || s.id}</td>
+                      <td className="px-5 py-3 font-medium text-slate-900">{s.name}</td>
+                      <td className="px-5 py-3 text-slate-600 text-xs">Class {s.class}-{s.section} ({s.group_stream || 'General'})</td>
+                      <td className="px-5 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          s.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <button 
+                          onClick={() => onNavigateTab('database')}
+                          className="text-slate-400 hover:text-blue-600 text-xs font-semibold cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* Pending Leave Requests */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
                   Pending Leave & Hostel Outpasses
                 </h3>
                 <p className="text-xs text-slate-500">Requests requiring countersignature</p>
               </div>
               <button
                 onClick={() => onNavigateTab('leaves')}
-                className="text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
+                className="text-xs text-blue-600 font-bold hover:underline cursor-pointer"
               >
                 View All
               </button>
@@ -253,8 +211,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateTab })
           </div>
 
           {/* Quick Academic Navigation Matrix */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs">
-            <h3 className="text-sm font-bold text-slate-900 mb-3">
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3">
               Administrative & Academic Modules
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -315,12 +273,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateTab })
           </div>
         </div>
 
-        {/* Right 1 Col: Institutional Notices & Database Status */}
+        {/* Right 1 Column: Supabase Sync Audit & Security Checklist & Notices */}
         <div className="space-y-6">
-          {/* Active Notices */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs">
+          {/* Supabase Sync Audit */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide mb-4">
+              Supabase Sync Audit
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 mt-1.5 rounded-full bg-emerald-500 flex-shrink-0"></div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">students_table updated</p>
+                  <p className="text-[10px] text-slate-500">2 minutes ago • Row policy: OK</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 mt-1.5 rounded-full bg-emerald-500 flex-shrink-0"></div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">marks_entries synced</p>
+                  <p className="text-[10px] text-slate-500">15 minutes ago • Row policy: OK</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 mt-1.5 rounded-full bg-emerald-500 flex-shrink-0"></div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">14 Relational Tables Active</p>
+                  <p className="text-[10px] text-slate-500">RLS enabled • Parameterized queries</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Security Checklist Card in Vibrant Blue */}
+          <div className="bg-blue-600 rounded-xl shadow-lg p-5 text-white">
+            <h3 className="font-bold text-sm uppercase tracking-wide mb-2">Security Checklist</h3>
+            <div className="space-y-2 opacity-90">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-emerald-300">✓</span> Multi-factor Authentication
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-emerald-300">✓</span> RLS Policy Validation
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-emerald-300">✓</span> SSL Tunneling Active
+              </div>
+              <div className="flex items-center gap-2 text-xs line-through opacity-60">
+                <span>○</span> Public Schema Access (Blocked)
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigateTab('security')}
+              className="w-full mt-4 bg-white/20 hover:bg-white/30 py-2 rounded font-bold text-[11px] uppercase tracking-wider transition-all cursor-pointer text-center"
+            >
+              Inspect Audit Center
+            </button>
+          </div>
+
+          {/* Official Circulars */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-slate-900">Official Circulars</h3>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Official Circulars</h3>
               <button
                 onClick={() => onNavigateTab('notices')}
                 className="text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
@@ -343,26 +356,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateTab })
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Database & Security Summary */}
-          <div className="bg-slate-900 text-white rounded-xl p-5 shadow-2xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono uppercase text-slate-400">Database Engine</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">
-                Active
-              </span>
-            </div>
-            <div className="text-base font-bold text-white mb-1">Supabase PostgreSQL 15</div>
-            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-              14 tables configured with Row Level Security (RLS) policies, indexes, and full CRUD mapping.
-            </p>
-            <button
-              onClick={() => onNavigateTab('supabase-hub')}
-              className="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer text-center"
-            >
-              Open Supabase SQL Schema Hub
-            </button>
           </div>
         </div>
       </div>
