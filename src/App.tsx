@@ -1,13 +1,16 @@
 // =====================================================================
 // KKDGMS — Master Single Page Application Router & Hub
+// Enhanced with Strict Role-Based Access Control (RBAC) & Session Guards
 // =====================================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole } from './types';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { PublicHome } from './components/public/PublicHome';
 import { LoginModal } from './components/auth/LoginModal';
+import { api } from './lib/supabase';
+import { ShieldAlert, ArrowLeft, KeyRound } from 'lucide-react';
 
 // Admin Views
 import { AdminDashboard } from './components/admin/AdminDashboard';
@@ -43,6 +46,46 @@ import { WardenGatePassManager } from './components/warden/WardenGatePassManager
 // Technician Views
 import { TechnicianDashboard } from './components/technician/TechnicianDashboard';
 
+// Strict Role-To-Tab Permission Matrix (RBAC Guard)
+const ROLE_ALLOWED_TABS: Record<UserRole, string[]> = {
+  admin: [
+    'dashboard', 'database', 'admission', 'attendance', 'marksheet',
+    'online-exams', 'question-bank', 'leaves', 'faculty-assign', 'bonafide',
+    'visitors', 'stories-events', 'fcm-notices', 'feedback', 'permissions',
+    'database-crud', 'security', 'supabase-hub'
+  ],
+  faculty: [
+    'faculty-dashboard', 'faculty-attendance', 'faculty-marksheet',
+    'faculty-online-exam', 'faculty-qb', 'faculty-leaves',
+    'faculty-students', 'faculty-feedback'
+  ],
+  student: [
+    'student-dashboard', 'student-exam-portal', 'student-marksheet',
+    'student-qb', 'student-leaves', 'student-bonafide',
+    'student-profile', 'student-feedback'
+  ],
+  warden: [
+    'warden-dashboard', 'warden-gate', 'warden-leaves',
+    'warden-residents', 'warden-visitors'
+  ],
+  technician: [
+    'technician-dashboard', 'technician-qp', 'technician-docs',
+    'technician-expenses', 'technician-periods'
+  ],
+  guest: [
+    'guest-dashboard', 'supabase-hub'
+  ]
+};
+
+const DEFAULT_ROLE_DASHBOARDS: Record<UserRole, string> = {
+  admin: 'dashboard',
+  faculty: 'faculty-dashboard',
+  student: 'student-dashboard',
+  warden: 'warden-dashboard',
+  technician: 'technician-dashboard',
+  guest: 'guest-dashboard'
+};
+
 export default function App() {
   const [viewMode, setViewMode] = useState<'public' | 'erp'>('public');
   const [currentRole, setCurrentRole] = useState<UserRole>('admin');
@@ -55,69 +98,154 @@ export default function App() {
     email: 'principal@kkdgms.edu.in'
   });
 
+  // Restore authenticated session from sessionStorage on load
+  useEffect(() => {
+    try {
+      const savedSession = sessionStorage.getItem('kkdgms_active_session');
+      if (savedSession) {
+        const parsed = JSON.parse(savedSession);
+        if (parsed && parsed.role) {
+          setActiveSession(parsed);
+          setCurrentRole(parsed.role);
+          setActiveTab(DEFAULT_ROLE_DASHBOARDS[parsed.role as UserRole] || 'dashboard');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse saved session', e);
+    }
+  }, []);
+
   const handleRoleChange = (newRole: UserRole) => {
     setCurrentRole(newRole);
-    if (newRole === 'admin') setActiveTab('dashboard');
-    else if (newRole === 'faculty') setActiveTab('faculty-dashboard');
-    else if (newRole === 'student') setActiveTab('student-dashboard');
-    else if (newRole === 'warden') setActiveTab('warden-dashboard');
-    else if (newRole === 'technician') setActiveTab('technician-dashboard');
-    else if (newRole === 'guest') setActiveTab('guest-dashboard');
+    const defaultTab = DEFAULT_ROLE_DASHBOARDS[newRole] || 'dashboard';
+    setActiveTab(defaultTab);
   };
 
   const handleLoginSuccess = (role: UserRole, sessionData: any) => {
+    const verifiedSession = {
+      ...sessionData,
+      role
+    };
     setCurrentRole(role);
-    setActiveSession(sessionData);
+    setActiveSession(verifiedSession);
+    try {
+      sessionStorage.setItem('kkdgms_active_session', JSON.stringify(verifiedSession));
+    } catch (e) {}
     handleRoleChange(role);
     setViewMode('erp');
   };
 
+  const handleSignOut = async () => {
+    try {
+      await api.logAudit({
+        user_id: activeSession.user_id,
+        email: activeSession.email,
+        role: currentRole,
+        action: `User signed out from ${currentRole} workspace`,
+        status: 'SUCCESS'
+      });
+    } catch (e) {}
+
+    sessionStorage.removeItem('kkdgms_active_session');
+    setViewMode('public');
+    setShowLoginModal(false);
+  };
+
+  // Safe navigation with RBAC verification
+  const handleSelectTab = (tabId: string) => {
+    const allowedTabs = ROLE_ALLOWED_TABS[currentRole] || [];
+    if (!allowedTabs.includes(tabId)) {
+      api.logAudit({
+        user_id: activeSession.user_id,
+        email: activeSession.email,
+        role: currentRole,
+        action: `SECURITY WARNING: Unauthorized navigation attempt to restricted view: ${tabId}`,
+        status: 'FAILED'
+      }).catch(() => {});
+    }
+    setActiveTab(tabId);
+  };
+
   const renderContent = () => {
+    const allowedTabs = ROLE_ALLOWED_TABS[currentRole] || [];
+
+    // RBAC Security Check: Block unauthorized view rendering
+    if (!allowedTabs.includes(activeTab)) {
+      return (
+        <div className="max-w-2xl mx-auto my-12 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-3xl border-2 border-rose-200 shadow-xl p-8 text-center space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mx-auto shadow-inner">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-100 text-rose-800">
+                HTTP 403 • Access Prohibited
+              </span>
+              <h3 className="text-xl font-black text-slate-900">
+                Role Permission Required
+              </h3>
+              <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                Your currently authenticated role (<strong className="text-rose-700 capitalize font-bold">{currentRole}</strong>) does not have access permissions for the requested section (<code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800 font-mono text-[11px]">{activeTab}</code>).
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-left text-[11px] text-slate-500 font-mono space-y-1">
+              <div><strong className="text-slate-700">Authenticated Identity:</strong> {activeSession.user_id} ({activeSession.full_name})</div>
+              <div><strong className="text-slate-700">Active Security Scope:</strong> {currentRole}</div>
+              <div><strong className="text-slate-700">Audit Status:</strong> Security event logged to database</div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setActiveTab(DEFAULT_ROLE_DASHBOARDS[currentRole])}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Return to {currentRole} Dashboard</span>
+              </button>
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-slate-200"
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>Switch Role / Re-Authenticate</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       // Admin Views
       case 'dashboard':
-        return <AdminDashboard onNavigateTab={setActiveTab} />;
+        return <AdminDashboard onNavigateTab={handleSelectTab} />;
       case 'database':
-        return <StudentFacultyDatabase onNavigateAdmission={() => setActiveTab('admission')} />;
+        return <StudentFacultyDatabase onNavigateAdmission={() => handleSelectTab('admission')} />;
       case 'admission':
-        return <AdmissionForm onSuccessNavigate={() => setActiveTab('database')} />;
+        return <AdmissionForm onSuccessNavigate={() => handleSelectTab('database')} />;
       case 'attendance':
-      case 'faculty-attendance':
         return <AttendanceManager />;
       case 'marksheet':
-      case 'faculty-marksheet':
-      case 'student-marksheet':
         return <MarksheetManager />;
       case 'online-exams':
-      case 'faculty-online-exam':
         return <FacultyOnlineExamCreator />;
-      case 'student-exam-portal':
-        return <StudentOnlineExamPortal />;
       case 'leaves':
-      case 'faculty-leaves':
-      case 'student-leaves':
-      case 'warden-leaves':
         return <LeaveApprovals />;
       case 'question-bank':
-      case 'faculty-qb':
-      case 'student-qb':
         return <QuestionBankAdmin />;
       case 'faculty-assign':
         return <FacultyAssignment />;
       case 'bonafide':
-      case 'student-bonafide':
         return <BonafideGenerator />;
       case 'visitors':
-      case 'warden-visitors':
         return <VisitorGatePass />;
       case 'stories-events':
         return <EventsStoriesManager />;
       case 'fcm-notices':
-      case 'notices':
         return <FCMNotificationSender />;
       case 'feedback':
-      case 'faculty-feedback':
-      case 'student-feedback':
         return <FeedbackManager />;
       case 'permissions':
         return <RolePermissionsMatrix />;
@@ -130,23 +258,46 @@ export default function App() {
 
       // Faculty Views
       case 'faculty-dashboard':
-        return <FacultyDashboard onNavigateTab={setActiveTab} />;
+        return <FacultyDashboard onNavigateTab={handleSelectTab} />;
+      case 'faculty-attendance':
+        return <AttendanceManager />;
+      case 'faculty-marksheet':
+        return <MarksheetManager />;
+      case 'faculty-online-exam':
+        return <FacultyOnlineExamCreator />;
+      case 'faculty-qb':
+        return <QuestionBankAdmin />;
+      case 'faculty-leaves':
+        return <LeaveApprovals />;
       case 'faculty-students':
-      case 'warden-residents':
-        return <StudentFacultyDatabase onNavigateAdmission={() => setActiveTab('admission')} />;
+        return <StudentFacultyDatabase onNavigateAdmission={() => handleSelectTab('admission')} />;
+      case 'faculty-feedback':
+        return <FeedbackManager />;
 
       // Student Views
       case 'student-dashboard':
-        return <StudentDashboard onNavigateTab={setActiveTab} />;
+        return <StudentDashboard onNavigateTab={handleSelectTab} />;
+      case 'student-exam-portal':
+        return <StudentOnlineExamPortal />;
+      case 'student-marksheet':
+        return <MarksheetManager />;
+      case 'student-qb':
+        return <QuestionBankAdmin />;
+      case 'student-leaves':
+        return <LeaveApprovals />;
+      case 'student-bonafide':
+        return <BonafideGenerator />;
+      case 'student-feedback':
+        return <FeedbackManager />;
       case 'student-profile':
         return (
           <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in">
             <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-8 text-center relative overflow-hidden">
               <div className="w-24 h-24 rounded-3xl bg-indigo-50 text-indigo-700 font-black text-3xl flex items-center justify-center mx-auto mb-4 border-2 border-indigo-200 shadow-xs">
-                D
+                {activeSession.full_name?.charAt(0) || 'S'}
               </div>
-              <h2 className="text-2xl font-black text-slate-900">A. Dhanush Kumar</h2>
-              <div className="text-xs font-mono font-bold text-indigo-700 mt-1">EMIS Roll: EMIS202401</div>
+              <h2 className="text-2xl font-black text-slate-900">{activeSession.full_name}</h2>
+              <div className="text-xs font-mono font-bold text-indigo-700 mt-1">EMIS Roll: {activeSession.user_id}</div>
               <p className="text-xs text-slate-500 mt-1">
                 Standard 12 - Section A • English Medium (Bio-Maths)
               </p>
@@ -183,9 +334,15 @@ export default function App() {
 
       // Warden Views
       case 'warden-dashboard':
-        return <WardenDashboard onNavigateTab={setActiveTab} />;
+        return <WardenDashboard onNavigateTab={handleSelectTab} />;
       case 'warden-gate':
         return <WardenGatePassManager />;
+      case 'warden-leaves':
+        return <LeaveApprovals />;
+      case 'warden-residents':
+        return <StudentFacultyDatabase onNavigateAdmission={() => handleSelectTab('admission')} />;
+      case 'warden-visitors':
+        return <VisitorGatePass />;
 
       // Technician Views
       case 'technician-dashboard':
@@ -206,7 +363,7 @@ export default function App() {
               </p>
               <button
                 onClick={() => setViewMode('public')}
-                className="px-6 py-3 bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl shadow-md"
+                className="px-6 py-3 bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl shadow-md cursor-pointer"
               >
                 Browse Public Website
               </button>
@@ -215,7 +372,7 @@ export default function App() {
         );
 
       default:
-        return <AdminDashboard onNavigateTab={setActiveTab} />;
+        return <AdminDashboard onNavigateTab={handleSelectTab} />;
     }
   };
 
@@ -236,11 +393,11 @@ export default function App() {
   // ERP Dashboard Workspace Mode
   return (
     <div className="flex h-screen w-full bg-slate-50 font-sans overflow-hidden text-slate-900">
-      {/* Left Sidebar */}
+      {/* Left Sidebar (Filtered strictly by currentRole) */}
       <Sidebar
         currentRole={currentRole}
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={handleSelectTab}
         onViewPublicSite={() => setViewMode('public')}
       />
 
@@ -251,14 +408,15 @@ export default function App() {
           currentRole={currentRole}
           onRoleChange={handleRoleChange}
           activeTab={activeTab}
-          onSelectTab={setActiveTab}
+          onSelectTab={handleSelectTab}
           activeSession={activeSession}
           onOpenLogin={() => setShowLoginModal(true)}
-          onNavigateTab={setActiveTab}
+          onNavigateTab={handleSelectTab}
           onViewPublicSite={() => setViewMode('public')}
+          onSignOut={handleSignOut}
         />
 
-        {/* Dynamic Scrollable Content */}
+        {/* Dynamic Scrollable Content with RBAC Protection */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 bg-slate-50">
           {renderContent()}
         </div>

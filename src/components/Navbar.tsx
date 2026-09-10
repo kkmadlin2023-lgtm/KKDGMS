@@ -148,47 +148,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="hidden md:inline font-semibold text-slate-700">RLS Active</span>
         </div>
 
-        {/* Role Switcher Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all hover:opacity-90 cursor-pointer ${currentRoleConfig.color}`}
-          >
-            <CurrentIcon className="w-4 h-4" />
-            <span className="hidden md:inline">{currentRoleConfig.title}</span>
-            <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-          </button>
-
-          {showRoleDropdown && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-              <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Switch Operating Portal
-              </div>
-              {(Object.keys(roleLabels) as UserRole[]).map((role) => {
-                const item = roleLabels[role];
-                const Icon = item.icon;
-                const isCurrent = currentRole === role;
-                return (
-                  <button
-                    key={role}
-                    onClick={() => {
-                      onRoleChange(role);
-                      setShowRoleDropdown(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer ${
-                      isCurrent ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-600'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-4 h-4 text-slate-500" />
-                      <span>{item.title}</span>
-                    </div>
-                    {isCurrent && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+        {/* Verified Authenticated Role Badge (Role Locked) */}
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold select-none ${currentRoleConfig.color}`}>
+          <CurrentIcon className="w-4 h-4" />
+          <span className="hidden md:inline">{currentRoleConfig.title}</span>
+          <Shield className="w-3.5 h-3.5 text-emerald-600 ml-0.5" title="Role Verified & Access-Restricted" />
         </div>
 
         {/* Notification Bell */}
@@ -229,11 +193,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
 
-        {/* User Account / Sign Out */}
+        {/* User Account / Profile */}
         <div
           onClick={onOpenLogin}
           className="flex items-center gap-2.5 pl-2 border-l border-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
-          title="Account Information & Portal Switch"
+          title="Switch Account / Sign In"
         >
           <div className="w-8 h-8 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-xs shrink-0">
             {activeSession.full_name ? activeSession.full_name.charAt(0) : 'U'}
@@ -247,6 +211,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Explicit Sign Out Button */}
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            className="p-2 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer border border-transparent hover:border-rose-200"
+            title="Sign Out & Lock Workspace"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </header>
   );
