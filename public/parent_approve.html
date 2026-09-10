@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Parent Leave Approval | KKDGMS Navalcadu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        html { scroll-behavior: smooth; }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-up { animation: fade-in-up 0.5s ease forwards; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4 font-sans antialiased">
+
+    <div class="w-full max-w-lg animate-fade-up">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <img src="/kk.png" class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-slate-800 p-2 object-contain" alt="KKDGMS" onerror="this.src='/icon.jpg'">
+            <h1 class="text-base font-black uppercase tracking-widest text-white">KKDGMS NAVALCADU</h1>
+            <p class="text-xs text-amber-400 font-semibold mt-0.5">Kanyakumari District Government Model School</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="bg-slate-900 border border-white/10 rounded-3xl p-8 text-center shadow-2xl">
+            <div class="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-xs font-semibold text-slate-400">Verifying secure student outpass token...</p>
+        </div>
+
+        <!-- Approval Card (hidden by default) -->
+        <div id="approval-card" class="hidden bg-slate-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+            <div class="bg-indigo-600 px-6 py-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                        <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-black text-white uppercase tracking-wider">Hostel Leave & Outpass Request</h2>
+                        <p class="text-xs text-indigo-200">Parent / Guardian Verification Portal</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div class="bg-slate-800/70 rounded-2xl p-4 space-y-2.5 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase font-semibold">Student Name</span>
+                        <span id="student-name" class="font-bold text-white">A. Dhanush Kumar</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase font-semibold">Class & Section</span>
+                        <span id="student-class" class="font-semibold text-slate-300">Class 12 - Section A</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase font-semibold">EMIS Roll No</span>
+                        <span id="student-roll" class="font-mono text-indigo-300">EMIS202401</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/70 rounded-2xl p-4 space-y-2.5 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase font-semibold">From Date</span>
+                        <span id="leave-from" class="font-bold text-amber-400">12 Oct 2024</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase font-semibold">To Date</span>
+                        <span id="leave-to" class="font-bold text-amber-400">15 Oct 2024</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase font-semibold">Reason for Leave</span>
+                        <span id="leave-reason" class="font-medium text-slate-200">Family temple festival</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="respondLeave('declined')" class="py-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold hover:bg-rose-500/20 transition-all cursor-pointer">
+                        Decline Leave
+                    </button>
+                    <button onclick="respondLeave('approved')" class="py-3 px-4 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20 cursor-pointer">
+                        Confirm & Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="success-state" class="hidden bg-slate-900 border border-white/10 rounded-3xl p-8 text-center shadow-2xl">
+            <div class="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-400"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">Parent Response Recorded</h3>
+            <p class="text-xs text-slate-400 mt-2">The approval status has been updated in the KKDGMS ERP hostel register.</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        setTimeout(() => {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('approval-card').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }, 600);
+
+        function respondLeave(status) {
+            document.getElementById('approval-card').classList.add('hidden');
+            document.getElementById('success-state').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
