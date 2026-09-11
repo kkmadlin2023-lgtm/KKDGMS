@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students Leave Apply | KKDGMS</title>
+    <link class="rounded-full" rel="icon" type="image/x-icon" href="kk.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- ========================================================= -->
+    <!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+    <!-- ========================================================= -->
+    <script>
+        (function() {
+            const currentUrl = new URL(window.location.href);
+            const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+            // Prevent infinite loops if we are already on redirect.html
+            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+                // Encode target URL so query params (like ?leave_id=123) are preserved
+                const targetUrl = encodeURIComponent(window.location.href);
+                window.location.replace(`redirect.html?target=${targetUrl}`);
+            }
+        })();
+    </script>
+    <!-- ========================================================= -->
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #f1f5f9; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .transition-all-300 { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .animate-subtle-pulse { animation: subtlePulse 2s infinite ease-in-out; }
+        @keyframes subtlePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(0.98); }
+        }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-900 font-sans antialiased min-h-screen selection:bg-emerald-600 selection:text-white flex flex-col lg:flex-row">
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebar-backdrop" onclick="toggleSidebarMenu()" class="fixed inset-0 bg-slate-900/50 z-40 lg:hidden hidden backdrop-blur-xs transition-opacity"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-lg" aria-label="Sidebar Navigation">
+        <div>
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Faculty Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg" aria-label="Close Sidebar">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-1 text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Main Menu</div>
+                
+                <a href="f_dashboard.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DASHBOARD</span>
+                </a>
+                
+                <a href="f_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-check" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT ATTENDANCE</span>
+                </a>
+                
+                <a href="f_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QB</span>
+                </a>
+
+                <a href="f_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="f_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 bg-indigo-50/80 text-indigo-600 rounded-xl font-bold transition shadow-xs border border-indigo-100/50">
+                    <i data-lucide="calendar-off" class="w-4 h-4 text-indigo-600"></i>
+                    <span>LEAVE APPLY</span>
+                </a>
+
+                <a href="f_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET ENTRY</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer Action -->
+        <div class="p-4 border-t border-slate-100">
+            <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all border border-rose-100 hover:border-transparent shadow-xs cursor-pointer">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span>LOGOUT</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Layout Wrapper -->
+    <div class="flex-1 lg:pl-72 flex flex-col min-h-screen">
+
+        <!-- Toast Notification HUD -->
+        <div id="toast-notification" class="fixed top-6 right-6 z-50 bg-slate-900/95 backdrop-blur-md text-white font-sans text-xs font-semibold px-5 py-4 shadow-2xl border border-slate-800 tracking-wide transform translate-x-[120%] transition-all duration-300 rounded-xl flex items-center gap-3.5 max-w-md">
+            <div id="toast-icon-container" class="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-600/20 text-emerald-400 font-bold text-sm">
+                <span id="toast-icon">📡</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+                <span class="text-slate-400 text-[10px] uppercase font-bold font-mono tracking-widest">System Message</span>
+                <span id="toast-text" class="text-slate-100 font-medium">Synchronizing application streams...</span>
+            </div>
+        </div>
+
+        <!-- Main Navigation Header -->
+        <header class="w-full bg-white border-b border-slate-200/60 sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebarMenu()" class="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl focus:outline-none">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <span class="text-base font-extrabold text-[#0f172a] tracking-tight font-sans">KKDGMS</span>
+                    <span class="text-slate-300 text-sm font-light">|</span>
+                    <span class="text-xs font-medium text-slate-500 tracking-wide hidden sm:inline">Students Leave Apply View</span>
+                </div>
+                
+                <div onclick="openFacultyProfileModal()" class="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200/60 cursor-pointer transition-all duration-200">
+                    <div class="relative">
+                        <img id="header-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-slate-100">
+                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <div class="hidden sm:flex flex-col text-left">
+                        <span id="header-profile-name" class="text-xs font-bold text-slate-800 leading-tight">Loading Profile...</span>
+                        <span id="header-profile-role" class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider scale-90 origin-left mt-0.5">Faculty Node</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 ml-1 hidden sm:block"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sub-Header Actions Banner -->
+        <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base">📋</span>
+                        <h2 class="text-sm font-bold text-slate-900 tracking-tight">Academic Absence Control Deck</h2>
+                        <span id="profile-sync-badge" class="px-2 py-0.5 bg-amber-500 text-slate-950 font-mono text-[9px] font-bold rounded-md uppercase tracking-wider animate-pulse">Authenticating</span>
+                    </div>
+                    <p id="faculty-name-display" class="text-xs text-slate-500 mt-1 font-medium">Initializing contextual database handshake configurations...</p>
+                </div>
+                <div class="flex items-center gap-2.5 w-full md:w-auto">
+                    <button onclick="fetchLeavesDatabase()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer shadow-xs">
+                        🔄 Sync Datasets
+                    </button>
+                    <a href="f_dashboard.html" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-semibold text-xs rounded-xl transition shadow-sm cursor-pointer ml-auto md:ml-0">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stat Dashboard Matrices -->
+        <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+                    <div class="p-3 bg-slate-50 text-slate-700 rounded-lg"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+                    <div><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Entries</p><h3 id="stat-total" class="text-xl font-bold text-slate-900 mt-0.5">0</h3></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                    <div><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pending Attention</p><h3 id="stat-pending" class="text-xl font-bold text-slate-900 mt-0.5">0</h3></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
+                    <div><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Fully Authorized</p><h3 id="stat-approved" class="text-xl font-bold text-slate-900 mt-0.5">0</h3></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+                    <div class="p-3 bg-rose-50 text-rose-600 rounded-lg"><i data-lucide="x-circle" class="w-5 h-5"></i></div>
+                    <div><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Rejected Instances</p><h3 id="stat-rejected" class="text-xl font-bold text-slate-900 mt-0.5">0</h3></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Workspace Section Layout -->
+        <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Column left side form payload dispatch block -->
+            <section class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs h-fit">
+                <div class="mb-5 pb-3 border-b border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-1.5 h-4 bg-emerald-600 rounded-full"></div>
+                        <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider">File Absence Record</h2>
+                    </div>
+                </div>
+                
+                <form id="leave-despatch-form" onsubmit="dispatchLeavePayload(event)" class="space-y-5 text-xs">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Leave Allocation Architecture</label>
+                        <div class="relative">
+                            <select id="form-leave-type" onchange="toggleLeaveTypeView()" class="appearance-none border border-slate-200 p-3 rounded-xl font-semibold bg-slate-50 w-full text-xs focus:outline-none focus:border-indigo-500 cursor-pointer pr-10">
+                                <option value="individual">🎯 Single Individual Student Target</option>
+                                <option value="collected">👥 Group Application (Generates Unique Parent Links)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="wrapper-group-filters" class="grid grid-cols-2 gap-3 hidden bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                        <div class="flex flex-col gap-1">
+                            <label class="font-bold text-slate-500 text-[10px] uppercase tracking-wider">Target Class</label>
+                            <select id="form-filter-class" onchange="filterGroupDropdownByMeta()" class="border border-slate-200 bg-white p-2 rounded-lg font-medium text-xs focus:outline-none"></select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="font-bold text-slate-500 text-[10px] uppercase tracking-wider">Target Section</label>
+                            <select id="form-filter-section" onchange="filterGroupDropdownByMeta()" class="border border-slate-200 bg-white p-2 rounded-lg font-medium text-xs focus:outline-none"></select>
+                        </div>
+                    </div>
+
+                    <div id="wrapper-individual-select" class="flex flex-col gap-1.5">
+                        <label class="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Target Student Profile *</label>
+                        <select id="form-single-student" class="border border-slate-200 p-3 rounded-xl font-medium bg-white focus:outline-none w-full text-xs"></select>
+                    </div>
+
+                    <div id="wrapper-collected-select" class="flex flex-col gap-1.5 hidden">
+                        <label class="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Select Group Targets (Hold Ctrl / Cmd) *</label>
+                        <select id="form-multiple-students" multiple size="6" class="border border-slate-200 p-2.5 rounded-xl font-medium bg-white focus:outline-none w-full text-xs min-h-[130px] shadow-inner"></select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">From Date & Time *</label>
+                            <input type="datetime-local" id="form-from-date" required class="border border-slate-200 p-3 font-mono text-xs rounded-xl focus:outline-none w-full">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">To Date & Time *</label>
+                            <input type="datetime-local" id="form-to-date" required class="border border-slate-200 p-3 font-mono text-xs rounded-xl focus:outline-none w-full">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Statement of Rationale *</label>
+                        <textarea id="form-reason" rows="3" required placeholder="State leave details..." class="border border-slate-200 p-3 font-medium resize-none text-xs rounded-xl focus:outline-none w-full shadow-inner"></textarea>
+                    </div>
+                    
+                    <button type="submit" id="submit-btn" disabled class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold tracking-wider uppercase text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2 shadow-sm shadow-emerald-100">
+                        Dispatch Request & Generate Links
+                    </button>
+                </form>
+            </section>
+
+            <!-- Column Right Master Lists -->
+            <section class="lg:col-span-2 flex flex-col gap-6">
+                
+                <!-- Calendar Visual Timeline Search Heatmap -->
+                <div class="bg-white border border-slate-200/90 p-5 shadow-xs rounded-2xl">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-1.5 h-4 bg-indigo-600 rounded-full"></div>
+                            <span class="text-xs font-bold text-slate-900 uppercase tracking-wider">Master Attendance Search Board</span>
+                            <span id="active-date-badge" class="px-2 py-0.5 bg-slate-100 text-slate-700 font-mono text-[9px] font-bold rounded-md uppercase">All Active Logs</span>
+                        </div>
+                        <button onclick="clearGlobalDateFilter()" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-1.5 uppercase tracking-wider rounded-lg transition cursor-pointer">
+                            Clear Date Filter
+                        </button>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-4 px-1 bg-slate-50 p-2 rounded-xl border border-slate-200/40">
+                        <button onclick="shiftGlobalCalendarMonth(-1)" class="p-1.5 rounded-lg hover:bg-white text-slate-700 font-bold text-xs cursor-pointer">&larr; Prev</button>
+                        <div id="global-calendar-month-title" class="text-xs font-extrabold tracking-widest text-slate-800 font-mono uppercase">Month Tracker Matrix</div>
+                        <button onclick="shiftGlobalCalendarMonth(1)" class="p-1.5 rounded-lg hover:bg-white text-slate-700 font-bold text-xs cursor-pointer">Next &rarr;</button>
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-1.5 text-[10px] font-bold text-center text-slate-400 font-mono mb-2 uppercase tracking-wider">
+                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                    </div>
+                    <div id="global-calendar-days-grid" class="grid grid-cols-7 gap-1.5 text-center font-mono font-bold text-xs"></div>
+                </div>
+
+                <!-- Dynamic Stream Item Wrapper Block -->
+                <div class="bg-white border border-slate-200/90 shadow-xs flex flex-col rounded-2xl overflow-hidden">
+                    <div class="p-4 bg-slate-50/70 border-b border-slate-200/80 flex flex-col sm:flex-row gap-3 items-center justify-between text-xs">
+                        <input type="text" id="filter-name" oninput="applyInterfaceFilters()" placeholder="🔍 Search records via student name identifier..." class="bg-white border border-slate-200 px-3 py-2 text-xs rounded-xl w-full sm:flex-1 focus:outline-none">
+                        <select id="filter-node" onchange="applyInterfaceFilters()" class="bg-white border border-slate-200 px-3 py-2 text-xs rounded-xl w-full sm:w-auto font-semibold focus:outline-none cursor-pointer">
+                            <option value="">📋 All Pipeline Status States</option>
+                            <option value="PENDING">⏳ Awaiting Validation Approval</option>
+                            <option value="APPROVED">✅ Completely Authenticated</option>
+                        </select>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto max-h-[550px]">
+                        <div id="leaves-stream-container" class="divide-y divide-slate-100">
+                            <div class="p-8 text-center text-slate-400 font-mono text-xs font-bold animate-subtle-pulse flex flex-col items-center justify-center gap-3">
+                                <i data-lucide="loader-2" class="w-6 h-6 text-indigo-500 animate-spin"></i>
+                                <span>Establishing data handshake parameters...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Sent Pop-Up Next Option Modal (Group Forwarding Window) -->
+    <div id="whatsapp-sent-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden transition-all duration-300">
+        <div class="bg-white text-slate-900 w-full max-w-md p-6 shadow-2xl rounded-2xl relative flex flex-col items-center text-center border border-slate-100">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mb-4 font-bold">
+                📱
+            </div>
+            <h3 class="text-base font-extrabold text-slate-900 tracking-tight mb-1">Group Leave Records Created</h3>
+            <p id="modal-sent-subtitle" class="text-xs text-slate-500 mb-5">Each student has been assigned a distinct ID. Click below to share the WhatsApp message template containing individual approval links.</p>
+            
+            <a id="modal-wa-link" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition flex items-center justify-center gap-2 mb-3">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                Share Group Links via WhatsApp
+            </a>
+
+            <button onclick="closeWhatsAppModal()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer">
+                Done / Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Faculty Details Profile Overlay Modal -->
+    <div id="faculty-profile-modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden transition-all duration-300">
+        <div class="bg-white text-slate-900 w-full max-w-lg shadow-2xl rounded-2xl relative flex flex-col max-h-[90vh] overflow-hidden transform transition-all duration-300 scale-95 border border-slate-100">
+            <button onclick="closeFacultyProfileModal()" class="absolute top-4 right-4 w-7 h-7 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full font-mono text-sm transition cursor-pointer">&times;</button>
+            
+            <div class="p-6 overflow-y-auto flex flex-col items-center">
+                <div class="relative mt-2">
+                    <img id="modal-faculty-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Faculty Avatar" class="w-24 h-24 rounded-full object-cover border-4 border-slate-50 shadow-md">
+                    <div class="absolute bottom-0 right-1 bg-emerald-500 border-2 border-white rounded-full p-0.5 text-white">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                    </div>
+                </div>
+
+                <h3 id="modal-faculty-name" class="text-base font-extrabold text-slate-900 mt-3 tracking-tight">PROFESSOR NAME</h3>
+                <span id="modal-faculty-role" class="text-[10px] bg-indigo-50 text-indigo-700 px-2.5 py-0.5 font-bold uppercase rounded-full tracking-wider mt-1 border border-indigo-100">FACULTY ASSIGNMENT</span>
+                
+                <div class="w-full mt-6 border-t border-slate-100 text-xs font-medium text-slate-700 divide-y divide-slate-100/80">
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">User ID Identifier</span><span id="field-user-id" class="font-bold text-slate-900 font-mono">Loading...</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Email Address</span><span id="field-email" class="font-bold text-slate-900">Loading...</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Mobile Terminal</span><span id="field-mobile" class="font-bold text-slate-900 font-mono">Loading...</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Department Anchor</span><span id="field-dept" class="font-bold text-slate-900">Loading...</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Academic Qualification</span><span id="field-qual" class="font-bold text-slate-800">Loading...</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Blood Matrix Group</span><span id="field-blood" class="font-bold text-rose-600 font-mono">Loading...</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Date of Birth (Age)</span><span id="field-dob" class="font-bold text-slate-900">Loading...</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Aadhaar Validation Log</span><span id="field-aadhaar" class="font-bold text-slate-400 font-mono tracking-wider">[Aadhaar Redacted]</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Gender Mapping</span><span id="field-gender" class="font-bold text-slate-800 uppercase text-[10px]">Loading...</span></div>
+                    
+                    <div class="py-2.5 flex flex-col gap-1 text-left">
+                        <span class="text-slate-400">Residential Address Record</span>
+                        <span id="field-address" class="text-slate-800 italic font-normal bg-slate-50 p-2 rounded-lg border border-slate-100 mt-0.5 leading-relaxed">Loading residential tracking coordinates...</span>
+                    </div>
+
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Identity Mark Identification</span><span id="field-mark" class="font-normal text-slate-600 italic truncate max-w-[240px]">Loading...</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Medical Flag Condition</span><span id="field-medical" class="font-bold text-slate-900">None Documented</span></div>
+                    <div class="py-2.5 flex justify-between gap-4"><span class="text-slate-400">Hostel Structural Assignment</span><span id="field-hostel" class="font-bold text-slate-600">—</span></div>
+                </div>
+
+                <button onclick="closeFacultyProfileModal()" class="w-full mt-6 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl transition shadow-2xs tracking-wide cursor-pointer text-center">
+                    Close Profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approval Detail Sidebar Drawer Layer Overlay -->
+    <div id="approval-drawer-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-all duration-300">
+        <div class="bg-white text-slate-900 border border-slate-200 max-w-2xl w-full shadow-2xl p-6 rounded-t-2xl sm:rounded-2xl relative max-h-[92vh] flex flex-col overflow-y-auto transform transition-all duration-300">
+            <button onclick="closeApprovalDrawer()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full font-mono text-xs font-black transition cursor-pointer">&times;</button>
+            
+            <div class="mb-4 pr-8 border-b border-slate-100 pb-3">
+                <span class="text-[9px] bg-slate-100 text-slate-700 px-2 py-0.5 font-mono font-bold uppercase rounded-md">Consolidated Inspection Node</span>
+                <h3 id="drawer-student-title" class="text-base font-extrabold text-slate-900 mt-1">Target Account Name</h3>
+                <p id="drawer-meta-logs" class="text-[11px] text-slate-500 font-medium font-sans mt-0.5">Context tracking...</p>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 p-4 mb-4 rounded-xl">
+                <div id="calendar-month-header" class="text-[11px] font-bold tracking-widest uppercase text-slate-500 font-mono mb-2 text-center border-b border-slate-200/60 pb-1.5">Absence Range Visualization Matrix</div>
+                <div class="grid grid-cols-7 gap-1 text-[10px] font-bold text-center text-slate-400 font-mono mb-1.5 uppercase">
+                    <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                </div>
+                <div id="drawer-calendar-days-grid" class="grid grid-cols-7 gap-1 text-center font-mono font-bold text-xs"></div>
+            </div>
+
+            <div class="bg-amber-50/50 border border-amber-100 p-3.5 mb-5 text-xs space-y-2 rounded-xl shadow-inner">
+                <div class="text-slate-700 flex items-center gap-2"><strong class="text-slate-950 font-bold w-28 shrink-0">Timeline Window:</strong> <span id="drawer-duration" class="font-mono text-slate-900 font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200/60">...</span></div>
+                <div class="text-slate-700 flex items-start gap-2"><strong class="text-slate-950 font-bold w-28 shrink-0 pt-0.5">Reason Statement:</strong> <span id="drawer-reason" class="italic text-slate-800 font-medium bg-white px-2 py-1 rounded-md border border-slate-200/60 flex-1">...</span></div>
+            </div>
+
+            <input type="hidden" id="drawer-leave-id">
+            
+            <div class="space-y-3 my-2 text-xs">
+                <div class="bg-white p-3.5 border border-slate-200 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">1. Guardian Signature Route</div>
+                        <div id="b-parent" class="text-xs font-mono font-extrabold mt-0.5 tracking-wide">PENDING</div>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button onclick="mutateNodeState('parent_approval', 'APPROVED')" class="px-3 py-1.5 bg-emerald-600 text-white font-bold text-[10px] rounded-lg cursor-pointer uppercase">Sign</button>
+                        <button onclick="mutateNodeState('parent_approval', 'REJECTED')" class="px-3 py-1.5 bg-rose-600 text-white font-bold text-[10px] rounded-lg cursor-pointer uppercase">Deny</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3.5 border border-slate-200 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">2. Faculty Clearance Route</div>
+                        <div id="b-faculty" class="text-xs font-mono font-extrabold mt-0.5 tracking-wide">PENDING</div>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button onclick="mutateNodeState('faculty_approval', 'APPROVED')" class="px-3 py-1.5 bg-emerald-600 text-white font-bold text-[10px] rounded-lg cursor-pointer uppercase">Sign</button>
+                        <button onclick="mutateNodeState('faculty_approval', 'REJECTED')" class="px-3 py-1.5 bg-rose-600 text-white font-bold text-[10px] rounded-lg cursor-pointer uppercase">Deny</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3.5 border border-slate-200/60 rounded-xl flex items-center justify-between gap-3 opacity-65 pointer-events-none select-none">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">3. Administration Audit (Locked)</div>
+                        <div id="b-admin" class="text-xs font-mono font-extrabold mt-0.5 text-slate-400 tracking-wide">PENDING</div>
+                    </div>
+                    <span class="text-[9px] bg-slate-200 text-slate-500 px-2 py-1 font-mono font-bold uppercase rounded-md border border-slate-300/40">Admin Lock</span>
+                </div>
+
+                <div class="bg-slate-50 p-3.5 border border-slate-200/60 rounded-xl flex items-center justify-between gap-3 opacity-65 pointer-events-none select-none">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">4. Campus Warden Review (Locked)</div>
+                        <div id="b-warden" class="text-xs font-mono font-extrabold mt-0.5 text-slate-400 tracking-wide">PENDING</div>
+                    </div>
+                    <span class="text-[9px] bg-slate-200 text-slate-500 px-2 py-1 font-mono font-bold uppercase rounded-md border border-slate-300/40">Warden Lock</span>
+                </div>
+            </div>
+
+            <!-- WhatsApp Direct Share Container -->
+            <div id="whatsapp-action-container" class="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <!-- Share button dynamically inserted here -->
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                <button onclick="deleteLeaveRecord()" class="inline-flex items-center gap-2 px-3.5 py-2.5 bg-rose-50 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl cursor-pointer">Purge Transaction</button>
+                <button onclick="closeApprovalDrawer()" class="px-5 py-2.5 bg-slate-100 border border-slate-300/60 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">Exit Overlay</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const leavesStreamContainer = document.getElementById('leaves-stream-container');
+        const approvalDrawerOverlay = document.getElementById('approval-drawer-overlay');
+        const facultyProfileModalOverlay = document.getElementById('faculty-profile-modal-overlay');
+        const toastNotification = document.getElementById('toast-notification');
+        const toastText = document.getElementById('toast-text');
+        const toastIcon = document.getElementById('toast-icon');
+        const profileBadge = document.getElementById('profile-sync-badge');
+
+        let LINKED_FACULTY_MEMBER = null;
+        let MASTER_STUDENT_CACHE = [];
+        let MASTER_LEAVES_REPOS = [];
+
+        let currentGlobalYear = new Date().getFullYear();
+        let currentGlobalMonth = new Date().getMonth();
+        let selectedFilterTimestamp = null; 
+
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        async function triggerSystemLogout() {
+            try {
+                await _supabase.auth.signOut();
+                window.location.href = "login.html";
+            } catch (err) {
+                console.error("Logout error:", err);
+            }
+        }
+
+        function displayToastNotification(msg, icon = "📡", duration = 3500) {
+            toastText.innerText = msg;
+            toastIcon.innerText = icon;
+            toastNotification.classList.remove('translate-x-[120%]');
+            setTimeout(() => { toastNotification.classList.add('translate-x-[120%]'); }, duration);
+        }
+
+        async function runSecurityPipeline() {
+            try {
+                const { data: { session }, error: sessionErr } = await _supabase.auth.getSession();
+                if (sessionErr) throw sessionErr;
+
+                if (!session) {
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                const authUid = session.user.id;
+                const { data: faculty, error: facultyErr } = await _supabase
+                    .from('faculty_details')
+                    .select('*')
+                    .eq('auth_uid', authUid)
+                    .maybeSingle();
+
+                if (facultyErr) throw facultyErr;
+
+                if (!faculty) {
+                    profileBadge.className = "px-2 py-0.5 bg-rose-600 text-white font-mono text-[9px] font-bold rounded-md uppercase tracking-wider";
+                    profileBadge.innerText = "Blocked";
+                    leavesStreamContainer.innerHTML = `<div class="p-8 text-center text-rose-600 font-mono text-xs font-bold bg-rose-50 border border-rose-100 rounded-xl m-4">Security Context Intercepted. Mismatch.</div>`;
+                    return;
+                }
+
+                LINKED_FACULTY_MEMBER = faculty;
+                
+                document.getElementById('header-profile-name').innerText = faculty.full_name.toUpperCase();
+                document.getElementById('header-profile-role').innerText = `${faculty.role || 'Faculty'} Node`;
+                if(faculty.photo_url) {
+                    document.getElementById('header-avatar').src = faculty.photo_url;
+                    document.getElementById('modal-faculty-avatar').src = faculty.photo_url;
+                }
+                
+                document.getElementById('faculty-name-display').innerText = `Verified Profile Account: Professor ${faculty.full_name} [${faculty.department}]`;
+                profileBadge.className = "px-2 py-0.5 bg-emerald-600 text-white font-mono text-[9px] font-bold rounded-md uppercase tracking-wider shadow-xs";
+                profileBadge.innerText = `Verified`;
+                
+                document.getElementById('submit-btn').removeAttribute('disabled');
+                displayToastNotification("Handshake Complete. Authorized Session Active.", "🔐");
+
+                await populateStudentReferenceCache();
+                await fetchLeavesDatabase();
+                initializeRealtimeSync();
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const leaveIdParam = urlParams.get('leave_id');
+                if (leaveIdParam) {
+                    setTimeout(() => { launchApprovalDrawer(leaveIdParam); }, 500);
+                }
+
+            } catch (err) {
+                console.error(err);
+                displayToastNotification("Security Authentication Failure", "❌");
+            }
+        }
+
+        function openFacultyProfileModal() {
+            if (!LINKED_FACULTY_MEMBER) {
+                displayToastNotification("Profile records context currently absent.", "⚠️");
+                return;
+            }
+
+            const faculty = LINKED_FACULTY_MEMBER;
+            document.getElementById('modal-faculty-name').innerText = faculty.full_name.toUpperCase();
+            document.getElementById('modal-faculty-role').innerText = `${faculty.role || 'Faculty'} MAPPING UNIT`;
+            
+            document.getElementById('field-user-id').innerText = faculty.user_id || 'N/A';
+            document.getElementById('field-email').innerText = faculty.email || 'N/A';
+            document.getElementById('field-mobile').innerText = faculty.mobile || 'N/A';
+            document.getElementById('field-dept').innerText = faculty.department || 'N/A';
+            document.getElementById('field-qual').innerText = faculty.qualification || 'N/A';
+            document.getElementById('field-blood').innerText = faculty.blood_group || 'N/A';
+            document.getElementById('field-dob').innerText = `${faculty.dob} (${faculty.age || '—'} Yrs)`;
+            document.getElementById('field-aadhaar').innerText = "[Aadhaar Redacted]";
+            document.getElementById('field-gender').innerText = faculty.gender || 'N/A';
+            
+            const fullAddress = `${faculty.door_no ? faculty.door_no + ', ' : ''}${faculty.street_name}, ${faculty.place}, ${faculty.district}, ${faculty.state} - ${faculty.pincode}`;
+            document.getElementById('field-address').innerText = fullAddress;
+            
+            document.getElementById('field-mark').innerText = faculty.id_mark_1 + (faculty.id_mark_2 ? ` / ${faculty.id_mark_2}` : '');
+            document.getElementById('field-medical').innerText = faculty.medical_issues || 'None Documented';
+            document.getElementById('field-hostel').innerText = faculty.hostel_name || 'Day Scholar Status Log';
+
+            facultyProfileModalOverlay.classList.remove('hidden');
+            setTimeout(() => { facultyProfileModalOverlay.classList.remove('scale-95'); }, 10);
+        }
+
+        function closeFacultyProfileModal() {
+            facultyProfileModalOverlay.classList.add('hidden');
+            facultyProfileModalOverlay.classList.add('scale-95');
+        }
+
+        async function populateStudentReferenceCache() {
+            try {
+                const { data, error } = await _supabase.from('students').select('id, full_name, student_class, section, mobile').order('full_name');
+                if (error) throw error;
+                
+                MASTER_STUDENT_CACHE = data || [];
+                const classSet = new Set(['All Classes']);
+                const sectionSet = new Set(['All Sections']);
+                
+                MASTER_STUDENT_CACHE.forEach(s => {
+                    if (s.student_class) classSet.add(s.student_class);
+                    if (s.section) sectionSet.add(s.section);
+                });
+
+                document.getElementById('form-filter-class').innerHTML = Array.from(classSet).map(c => `<option value="${c==='All Classes'?'':c}">${c}</option>`).join('');
+                document.getElementById('form-filter-section').innerHTML = Array.from(sectionSet).map(s => `<option value="${s==='All Sections'?'':s}">${s}</option>`).join('');
+
+                repopulateDropdownElements(MASTER_STUDENT_CACHE);
+            } catch (err) {
+                console.error("Cache compilation fault: ", err);
+            }
+        }
+
+        function repopulateDropdownElements(list) {
+            const singleSelect = document.getElementById('form-single-student');
+            const multiSelect = document.getElementById('form-multiple-students');
+            const optionTemplate = s => `<option value="${s.id}">[Class ${s.student_class || '—'}-${s.section || '—'}] ${s.full_name}</option>`;
+            
+            const compiledMarkup = list.map(optionTemplate).join('');
+            singleSelect.innerHTML = compiledMarkup;
+            multiSelect.innerHTML = compiledMarkup;
+        }
+
+        function filterGroupDropdownByMeta() {
+            const chosenClass = document.getElementById('form-filter-class').value;
+            const chosenSection = document.getElementById('form-filter-section').value;
+
+            const filteredList = MASTER_STUDENT_CACHE.filter(s => {
+                const matchClass = !chosenClass || s.student_class === chosenClass;
+                const matchSection = !chosenSection || s.section === chosenSection;
+                return matchClass && matchSection;
+            });
+
+            repopulateDropdownElements(filteredList);
+        }
+
+        function toggleLeaveTypeView() {
+            const mode = document.getElementById('form-leave-type').value;
+            const indWrapper = document.getElementById('wrapper-individual-select');
+            const colWrapper = document.getElementById('wrapper-collected-select');
+            const filterWrapper = document.getElementById('wrapper-group-filters');
+
+            if(mode === 'individual') {
+                indWrapper.classList.remove('hidden');
+                colWrapper.classList.add('hidden');
+                filterWrapper.classList.add('hidden');
+            } else {
+                indWrapper.classList.add('hidden');
+                colWrapper.classList.remove('hidden');
+                filterWrapper.classList.remove('hidden');
+            }
+        }
+
+        function initializeRealtimeSync() {
+            _supabase
+                .channel('admin-leaves-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'student_leaves' }, () => {
+                    fetchLeavesDatabase();
+                })
+                .subscribe();
+        }
+
+        async function fetchLeavesDatabase() {
+            try {
+                const { data, error } = await _supabase.from('student_leaves').select('*').order('id', { ascending: false });
+                if (error) throw error;
+                MASTER_LEAVES_REPOS = data || [];
+                
+                computeLiveAnalyticsMetrics();
+                renderGlobalCalendar();
+                applyInterfaceFilters();
+            } catch (err) {
+                console.error("Repository acquisition fault: ", err);
+            }
+        }
+
+        function computeLiveAnalyticsMetrics() {
+            const total = MASTER_LEAVES_REPOS.length;
+            let pending = 0, approved = 0, rejected = 0;
+
+            MASTER_LEAVES_REPOS.forEach(row => {
+                const isApproved = (row.parent_approval === 'APPROVED' && row.faculty_approval === 'APPROVED' && row.admin_approval === 'APPROVED' && row.warden_approval === 'APPROVED');
+                const isRejected = (row.parent_approval === 'REJECTED' || row.faculty_approval === 'REJECTED' || row.admin_approval === 'REJECTED' || row.warden_approval === 'REJECTED');
+                
+                if (isApproved) approved++;
+                else if (isRejected) rejected++;
+                else pending++;
+            });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-pending').innerText = pending;
+            document.getElementById('stat-approved').innerText = approved;
+            document.getElementById('stat-rejected').innerText = rejected;
+        }
+
+        function renderGlobalCalendar() {
+            const daysGrid = document.getElementById('global-calendar-days-grid');
+            const titleEl = document.getElementById('global-calendar-month-title');
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            titleEl.innerText = `${monthNames[currentGlobalMonth]} ${currentGlobalYear}`;
+
+            const firstDayIndex = new Date(currentGlobalYear, currentGlobalMonth, 1).getDay();
+            const totalDaysInMonth = new Date(currentGlobalYear, currentGlobalMonth + 1, 0).getDate();
+
+            let gridHtml = '';
+            for (let i = 0; i < firstDayIndex; i++) {
+                gridHtml += `<div class="text-slate-200 py-3 border border-dashed border-slate-200/40 bg-slate-50/40 rounded-lg font-normal">&bull;</div>`;
+            }
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dayDate = new Date(currentGlobalYear, currentGlobalMonth, day);
+                const dayTimestamp = dayDate.getTime();
+
+                const leavesActiveCount = MASTER_LEAVES_REPOS.filter(leave => {
+                    const cleanStart = new Date(new Date(leave.from_date_time).setHours(0,0,0,0)).getTime();
+                    const cleanEnd = new Date(new Date(leave.to_date_time).setHours(23,59,59,999)).getTime();
+                    return dayTimestamp >= cleanStart && dayTimestamp <= cleanEnd;
+                }).length;
+
+                let customClasses = "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200/70 shadow-2xs";
+                let notificationPip = '';
+
+                if (leavesActiveCount > 0) {
+                    customClasses = "bg-emerald-50 text-emerald-950 font-bold hover:bg-emerald-100 border border-emerald-200/80 shadow-2xs";
+                    notificationPip = `<span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>`;
+                }
+
+                if (selectedFilterTimestamp && selectedFilterTimestamp === dayTimestamp) {
+                    customClasses = "bg-indigo-600 text-white font-extrabold scale-105 shadow-md z-10 hover:bg-indigo-700";
+                    if (leavesActiveCount > 0) notificationPip = `<span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full"></span>`;
+                }
+
+                gridHtml += `
+                <div onclick="selectGlobalCalendarDate(${currentGlobalYear}, ${currentGlobalMonth}, ${day})" class="py-3 relative cursor-pointer text-xs transition-all-300 rounded-xl flex flex-col items-center justify-center min-h-[42px] ${customClasses}">
+                    <span>${day}</span>
+                    ${notificationPip}
+                </div>`;
+            }
+            daysGrid.innerHTML = gridHtml;
+        }
+
+        function selectGlobalCalendarDate(y, m, d) {
+            selectedFilterTimestamp = new Date(y, m, d).getTime();
+            document.getElementById('active-date-badge').innerText = `Date: ${new Date(selectedFilterTimestamp).toLocaleDateString()}`;
+            renderGlobalCalendar();
+            applyInterfaceFilters();
+        }
+
+        function clearGlobalDateFilter() {
+            selectedFilterTimestamp = null;
+            document.getElementById('active-date-badge').innerText = "All Active Logs";
+            renderGlobalCalendar();
+            applyInterfaceFilters();
+        }
+
+        function shiftGlobalCalendarMonth(direction) {
+            currentGlobalMonth += direction;
+            if (currentGlobalMonth > 11) { currentGlobalMonth = 0; currentGlobalYear++; }
+            else if (currentGlobalMonth < 0) { currentGlobalMonth = 11; currentGlobalYear--; }
+            renderGlobalCalendar();
+        }
+
+        function renderLeavesLedger(list) {
+            if (list.length === 0) {
+                leavesStreamContainer.innerHTML = `
+                <div class="p-12 text-center text-slate-400 font-sans flex flex-col items-center justify-center gap-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Empty Matrix Match</span>
+                </div>`;
+                return;
+            }
+
+            leavesStreamContainer.innerHTML = list.map(leave => {
+                const computeBadgeStatusStyle = val => {
+                    if (val === 'APPROVED') return 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+                    if (val === 'REJECTED') return 'bg-rose-50 text-rose-700 border-rose-200/60';
+                    return 'bg-amber-50 text-amber-700 border-amber-200/60 font-bold';
+                };
+
+                return `
+                <div onclick="launchApprovalDrawer(${leave.id})" class="p-5 hover:bg-slate-50/80 transition-all duration-150 cursor-pointer flex flex-col gap-4 border-l-4 border-transparent hover:border-[#4f46e5]">
+                    <div class="flex flex-col sm:flex-row justify-between items-start gap-2">
+                        <div class="space-y-1 w-full sm:max-w-[78%]">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="font-extrabold text-slate-900 text-sm tracking-tight">${leave.student_names}</span>
+                                <span class="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 font-mono font-bold uppercase rounded-md">Leave Entry ID: #${leave.id}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400">
+                                Logged: ${new Date(leave.created_at).toLocaleString()}
+                            </div>
+                            <div class="text-xs text-slate-800 font-semibold pt-1">
+                                Duration: ${new Date(leave.from_date_time).toLocaleString()} to ${new Date(leave.to_date_time).toLocaleString()}
+                            </div>
+                            <div class="text-xs text-slate-500 font-medium italic truncate bg-slate-50 p-2 rounded-lg border border-slate-100 mt-2">&ldquo;${leave.reason}&rdquo;</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-dashed border-slate-200/60 font-mono text-[10px] text-center">
+                        <div class="p-2 flex flex-col border border-slate-100 bg-slate-50/40 rounded-xl">
+                            <span class="text-slate-400 text-[8px] font-sans font-bold mb-1">Parent Log</span>
+                            <span class="px-2 py-0.5 rounded-md border ${computeBadgeStatusStyle(leave.parent_approval)}">${leave.parent_approval}</span>
+                        </div>
+                        <div class="p-2 flex flex-col border border-slate-100 bg-slate-50/40 rounded-xl">
+                            <span class="text-slate-400 text-[8px] font-sans font-bold mb-1">Faculty Log</span>
+                            <span class="px-2 py-0.5 rounded-md border ${computeBadgeStatusStyle(leave.faculty_approval)}">${leave.faculty_approval}</span>
+                        </div>
+                        <div class="p-2 flex flex-col border border-slate-100 bg-slate-50/40 rounded-xl">
+                            <span class="text-slate-400 text-[8px] font-sans font-bold mb-1">Admin Log</span>
+                            <span class="px-2 py-0.5 rounded-md border ${computeBadgeStatusStyle(leave.admin_approval)}">${leave.admin_approval}</span>
+                        </div>
+                        <div class="p-2 flex flex-col border border-slate-100 bg-slate-50/40 rounded-xl">
+                            <span class="text-slate-400 text-[8px] font-sans font-bold mb-1">Warden Log</span>
+                            <span class="px-2 py-0.5 rounded-md border ${computeBadgeStatusStyle(leave.warden_approval)}">${leave.warden_approval}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function applyInterfaceFilters() {
+            const searchInputString = document.getElementById('filter-name').value.toLowerCase().trim();
+            const nodeSelectionState = document.getElementById('filter-node').value;
+
+            const matches = MASTER_LEAVES_REPOS.filter(row => {
+                const matchName = row.student_names.toLowerCase().includes(searchInputString);
+                let matchState = true;
+                if(nodeSelectionState === 'PENDING') {
+                    matchState = (row.parent_approval === 'PENDING' || row.faculty_approval === 'PENDING' || row.admin_approval === 'PENDING' || row.warden_approval === 'PENDING');
+                } else if(nodeSelectionState === 'APPROVED') {
+                    matchState = (row.parent_approval === 'APPROVED' && row.faculty_approval === 'APPROVED' && row.admin_approval === 'APPROVED' && row.warden_approval === 'APPROVED');
+                }
+
+                let matchDate = true;
+                if (selectedFilterTimestamp) {
+                    const startRange = new Date(new Date(row.from_date_time).setHours(0,0,0,0)).getTime();
+                    const endRange = new Date(new Date(row.to_date_time).setHours(23,59,59,999)).getTime();
+                    matchDate = selectedFilterTimestamp >= startRange && selectedFilterTimestamp <= endRange;
+                }
+
+                return matchName && matchState && matchDate;
+            });
+            renderLeavesLedger(matches);
+        }
+
+        async function dispatchLeavePayload(e) {
+            e.preventDefault();
+            if(!LINKED_FACULTY_MEMBER) return;
+
+            const mode = document.getElementById('form-leave-type').value;
+            let finalPayloadBatch = [];
+
+            const fromVal = new Date(document.getElementById('form-from-date').value).toISOString();
+            const toVal = new Date(document.getElementById('form-to-date').value).toISOString();
+            const reasonVal = document.getElementById('form-reason').value.trim();
+
+            let targetMobile = null;
+
+            if (mode === 'individual') {
+                const singleId = document.getElementById('form-single-student').value;
+                const match = MASTER_STUDENT_CACHE.find(s => Number(s.id) === Number(singleId));
+                if(match) {
+                    targetMobile = match.mobile;
+                    finalPayloadBatch.push({
+                        applied_by_role: 'faculty',
+                        applied_by_uid: LINKED_FACULTY_MEMBER.auth_uid,
+                        applied_by_name: LINKED_FACULTY_MEMBER.full_name || 'Faculty Member',
+                        student_ids: [match.id],
+                        student_names: match.full_name,
+                        student_class: match.student_class,
+                        section: match.section,
+                        from_date_time: fromVal,
+                        to_date_time: toVal,
+                        reason: reasonVal,
+                        faculty_approval: 'PENDING',
+                        parent_approval: 'PENDING',
+                        admin_approval: 'PENDING',
+                        warden_approval: 'PENDING'
+                    });
+                }
+            } else {
+                const selections = Array.from(document.getElementById('form-multiple-students').selectedOptions).map(o => parseInt(o.value));
+                const selectedStudents = selections.map(id => MASTER_STUDENT_CACHE.find(s => Number(s.id) === Number(id))).filter(Boolean);
+                
+                selectedStudents.forEach(stu => {
+                    finalPayloadBatch.push({
+                        applied_by_role: 'faculty',
+                        applied_by_uid: LINKED_FACULTY_MEMBER.auth_uid,
+                        applied_by_name: LINKED_FACULTY_MEMBER.full_name || 'Faculty Member',
+                        student_ids: [stu.id],
+                        student_names: stu.full_name,
+                        student_class: stu.student_class,
+                        section: stu.section,
+                        from_date_time: fromVal,
+                        to_date_time: toVal,
+                        reason: reasonVal,
+                        faculty_approval: 'PENDING',
+                        parent_approval: 'PENDING',
+                        admin_approval: 'PENDING',
+                        warden_approval: 'PENDING'
+                    });
+                });
+            }
+
+            if (finalPayloadBatch.length === 0) return alert("Please select at least one student.");
+
+            const { data, error } = await _supabase.from('student_leaves').insert(finalPayloadBatch).select();
+            if (error) return alert("Supabase Write Error: " + error.message);
+            
+            document.getElementById('form-reason').value = '';
+            displayToastNotification(`Created ${data.length} individual leave entries`, "🚀");
+            await fetchLeavesDatabase();
+
+            triggerWhatsAppForwarding(mode, data, targetMobile);
+        }
+
+        function getBaseUrl() {
+            return window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+        }
+
+        function triggerWhatsAppForwarding(mode, insertedRecords, targetMobile) {
+            const baseUrl = getBaseUrl();
+
+            if (mode === 'individual' && insertedRecords.length === 1) {
+                const record = insertedRecords[0];
+                const pageLink = `${baseUrl}/p_leave.html?leave_id=${record.id}`;
+                const fromDateStr = new Date(record.from_date_time).toLocaleString();
+                const toDateStr = new Date(record.to_date_time).toLocaleString();
+
+                const whatsappText = `*Leave Application Details*\n*Student:* ${record.student_names}\n*Date & Time:* ${fromDateStr} to ${toDateStr}\n*Reason:* ${record.reason}\n\n*Click Link to Approve:* ${pageLink}`;
+                
+                let cleanPhone = (targetMobile || '').replace(/[^0-9]/g, '');
+                if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+
+                const waDirectUrl = cleanPhone 
+                    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappText)}`
+                    : `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+
+                window.open(waDirectUrl, '_blank');
+            } else {
+                const sampleRecord = insertedRecords[0];
+                const fromDateStr = new Date(sampleRecord.from_date_time).toLocaleString();
+                const toDateStr = new Date(sampleRecord.to_date_time).toLocaleString();
+
+                const nameLinkList = insertedRecords.map(rec => {
+                    return `• *${rec.student_names}*: ${baseUrl}/p_leave.html?leave_id=${rec.id}`;
+                }).join('\n\n');
+
+                const whatsappText = `*Group Leave Application Details*\n*Date & Time:* ${fromDateStr} to ${toDateStr}\n*Reason:* ${sampleRecord.reason}\n\n*Parent Approval Links (Select your child):*\n\n${nameLinkList}`;
+                
+                const waUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+                
+                document.getElementById('modal-sent-subtitle').innerText = `Created ${insertedRecords.length} unique leave records. Share parent approval links via WhatsApp below:`;
+                document.getElementById('modal-wa-link').href = waUrl;
+                document.getElementById('whatsapp-sent-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeWhatsAppModal() {
+            document.getElementById('whatsapp-sent-modal').classList.add('hidden');
+        }
+
+        function generateVisualCalendarDates(startDateIso, endDateIso) {
+            const daysGrid = document.getElementById('drawer-calendar-days-grid');
+            const header = document.getElementById('calendar-month-header');
+            const start = new Date(startDateIso);
+            const end = new Date(endDateIso);
+            const targetYear = start.getFullYear();
+            const targetMonth = start.getMonth();
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            header.innerText = `Absence Range: ${monthNames[targetMonth]} ${targetYear}`;
+
+            const firstDayIndex = new Date(targetYear, targetMonth, 1).getDay();
+            const totalDaysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+            const cleanStart = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+            const cleanEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+
+            let gridHtml = '';
+            for (let i = 0; i < firstDayIndex; i++) gridHtml += `<div class="text-slate-200 py-1 font-normal">&bull;</div>`;
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const currentSlotTimestamp = new Date(targetYear, targetMonth, day).getTime();
+                const isWithinLeaveRange = currentSlotTimestamp >= cleanStart && currentSlotTimestamp <= cleanEnd;
+
+                if (isWithinLeaveRange) {
+                    gridHtml += `<div class="bg-amber-500 text-white font-bold py-1 rounded-md text-center">${day}</div>`;
+                } else {
+                    gridHtml += `<div class="text-slate-300 py-1 text-center">${day}</div>`;
+                }
+            }
+            daysGrid.innerHTML = gridHtml;
+        }
+
+        function launchApprovalDrawer(id) {
+            const row = MASTER_LEAVES_REPOS.find(l => Number(l.id) === Number(id));
+            if(!row) return;
+
+            document.getElementById('drawer-leave-id').value = row.id;
+            document.getElementById('drawer-student-title').innerText = row.student_names;
+            document.getElementById('drawer-duration').innerText = `${new Date(row.from_date_time).toLocaleString()} to ${new Date(row.to_date_time).toLocaleString()}`;
+            document.getElementById('drawer-reason').innerText = row.reason;
+            document.getElementById('drawer-meta-logs').innerText = `Class Level ${row.student_class || '—'} (${row.section || '—'})`;
+
+            const updateBadgeStyles = (elementId, val) => {
+                const el = document.getElementById(elementId); 
+                el.innerText = val || 'PENDING';
+                if (val === 'APPROVED') el.className = 'text-xs font-mono font-bold text-emerald-600';
+                else if (val === 'REJECTED') el.className = 'text-xs font-mono font-bold text-rose-600';
+                else el.className = 'text-xs font-mono font-bold text-amber-500 animate-pulse';
+            };
+
+            updateBadgeStyles('b-parent', row.parent_approval);
+            updateBadgeStyles('b-faculty', row.faculty_approval);
+            updateBadgeStyles('b-admin', row.admin_approval);
+            updateBadgeStyles('b-warden', row.warden_approval);
+
+            const waContainer = document.getElementById('whatsapp-action-container');
+            const pageLink = `${getBaseUrl()}/p_leave.html?leave_id=${row.id}`;
+            const fromDateStr = new Date(row.from_date_time).toLocaleString();
+            const toDateStr = new Date(row.to_date_time).toLocaleString();
+
+            const whatsappText = `*Leave Application Details*\n*Student:* ${row.student_names}\n*Date & Time:* ${fromDateStr} to ${toDateStr}\n*Reason:* ${row.reason}\n\n*Click Link to Approve:* ${pageLink}`;
+
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+
+            waContainer.innerHTML = `
+                <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                    Send via WhatsApp
+                </a>
+            `;
+
+            generateVisualCalendarDates(row.from_date_time, row.to_date_time);
+            approvalDrawerOverlay.classList.remove('hidden');
+        }
+
+        function closeApprovalDrawer() { approvalDrawerOverlay.classList.add('hidden'); }
+
+        async function mutateNodeState(column, state) {
+            const id = document.getElementById('drawer-leave-id').value;
+            const payload = {}; payload[column] = state;
+            
+            const { error } = await _supabase.from('student_leaves').update(payload).eq('id', id);
+            if (error) return alert("Node Modification Error: " + error.message);
+            
+            displayToastNotification(`Committed: ${state}`, "✏️");
+            fetchLeavesDatabase();
+            closeApprovalDrawer();
+        }
+
+        async function deleteLeaveRecord() {
+            if(!confirm("Are you certain you intend to permanently delete this record?")) return;
+            const id = document.getElementById('drawer-leave-id').value;
+            
+            const { error } = await _supabase.from('student_leaves').delete().eq('id', id);
+            if (error) return alert("Purge Fault: " + error.message);
+            
+            displayToastNotification("Deleted entry successfully", "🗑");
+            closeApprovalDrawer();
+            fetchLeavesDatabase();
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            runSecurityPipeline();
+        };
+    </script>
+</body>
+</html>

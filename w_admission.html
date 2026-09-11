@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Admission | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <!-- External Framework Deliverables -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ========================================================= -->
+<!-- KKDGMS LOADER REDIRECTOR (Place at top of <head>)          -->
+<!-- ========================================================= -->
+<script>
+    (function() {
+        const currentUrl = new URL(window.location.href);
+        const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
+
+        // Prevent infinite loops if we are already on redirect.html
+        if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded')) {
+            // Encode target URL so query params (like ?leave_id=123) are preserved
+            const targetUrl = encodeURIComponent(window.location.href);
+            window.location.replace(`redirect.html?target=${targetUrl}`);
+        }
+    })();
+</script>
+<!-- ========================================================= -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* TRAFFIC LIGHT TOAST NOTIFICATION STYLES */
+        #notification-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            min-width: 320px;
+            font-weight: 600;
+            border-left: 6px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .toast-green { background-color: #059669 !important; }   /* Success State */
+        .toast-yellow { background-color: #d97706 !important; }  /* Warning State */
+        .toast-red { background-color: #dc2626 !important; }     /* Error State */
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.fade-out {
+            animation: slideOut 0.5s ease-in forwards;
+        }
+
+        @keyframes slideOut {
+            to { transform: translateX(120%); opacity: 0; }
+        }
+
+        /* COMPONENT STATE TOGGLES */
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .sidebar-step.active {
+            background-color: black;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen antialiased text-gray-900">
+
+<div id="notification-container"></div>
+
+<div class="flex flex-col lg:flex-row min-h-screen">
+    <!-- Sidebar Navigation -->
+    <aside class="w-full lg:w-72 bg-white border-r p-6 space-y-3">
+        <div class="mb-8">
+            <h1 class="text-xl font-bold tracking-tight">KKDGMS</h1>
+            <p class="text-xs text-gray-500 uppercase tracking-widest leading-tight">KANYA KUMARI DISTRICT GOVERNMENT MODEL SCHOOL</p>
+        </div>
+        <nav id="sidebarNav" class="space-y-2">
+            <button type="button" class="sidebar-step active w-full text-left p-3 rounded-xl transition text-sm font-medium" data-step="0">1. Personal Details</button>
+            <button type="button" class="sidebar-step w-full text-left p-3 rounded-xl transition text-sm font-medium" data-step="1">2. Academic Details</button>
+            <button type="button" class="sidebar-step w-full text-left p-3 rounded-xl transition text-sm font-medium" data-step="2">3. Contact Details</button>
+            <button type="button" class="sidebar-step w-full text-left p-3 rounded-xl transition text-sm font-medium" data-step="3">4. Address Details</button>
+            <button type="button" class="sidebar-step w-full text-left p-3 rounded-xl transition text-sm font-medium" data-step="4">5. Medical Details</button>
+            <button type="button" class="sidebar-step w-full text-left p-3 rounded-xl transition text-sm font-medium" data-step="5">6. Certificates</button>
+            <button type="button" class="sidebar-step w-full text-left p-3 rounded-xl transition text-sm font-medium" data-step="6">7. Hostel Details</button>
+            <button type="button" class="sidebar-step w-full text-left p-3 rounded-xl transition text-sm font-medium" data-step="7">8. Photo Upload</button>
+        </nav>
+    </aside>
+
+    <!-- Main Content Form Box -->
+    <main class="flex-1 p-4 md:p-10">
+        <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-black text-white p-8 flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold uppercase tracking-tight">Warden Admission</h2>
+                    <p class="text-gray-400 text-sm">KKDGMS</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs uppercase text-gray-500 block">Step Progress</span>
+                    <span id="progressText" class="text-xl font-mono">1 / 8</span>
+                </div>
+            </div>
+
+            <form id="admissionForm" class="p-8">
+                <!-- Step 1: Personal -->
+                <div class="step active" data-step="0">
+                    <h3 class="text-lg font-bold mb-6 flex items-center"><span class="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center mr-3 text-xs">01</span> Personal Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="md:col-span-2">
+                            <label class="text-xs font-bold text-gray-500 uppercase">Full Name *</label>
+                            <input type="text" id="full_name" required class="w-full border-b-2 border-gray-200 focus:border-black outline-none py-3 uppercase">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Date of Birth *</label>
+                            <input type="date" id="dob" required class="w-full border-b-2 border-gray-200 focus:border-black outline-none py-3">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Calculated Age</label>
+                            <input type="text" id="age" readonly class="w-full border-b-2 border-gray-100 bg-gray-50 py-3 px-2">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Aadhaar (12 Digits) *</label>
+                            <input type="text" id="aadhaar" maxlength="12" pattern="\d{12}" placeholder="[Aadhaar Redacted]" required class="w-full border-b-2 border-gray-200 py-3">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Gender *</label>
+                            <select id="gender" required class="w-full border-b-2 border-gray-200 py-3">
+                                <option value="">Select Gender</option>
+                                <option>Male</option>
+                                <option>Female</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Email Address *</label>
+                            <input type="email" id="email" required class="w-full border-b-2 border-gray-200 py-3">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Password (Min 8) *</label>
+                            <input type="password" id="password" minlength="8" required class="w-full border-b-2 border-gray-200 py-3">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Academic -->
+                <div class="step" data-step="1">
+                    <h3 class="text-lg font-bold mb-6">Academic Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="text" id="department" required placeholder="DEPARTMENT *" class="border-b-2 py-3 uppercase focus:border-black outline-none md:col-span-2">
+                        <input type="text" id="user_id" required placeholder="USER ID *" class="border-b-2 py-3 font-mono focus:border-black outline-none">
+                        <input type="text" id="qualification" required placeholder="QUALIFICATION *" class="border-b-2 py-3 focus:border-black outline-none">
+                    </div>
+                </div>
+
+                <!-- Step 3: Contact -->
+                <div class="step" data-step="2">
+                    <h3 class="text-lg font-bold mb-6">Contact Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="text" id="mobile" placeholder="MOBILE NUMBER *" required class="border-b-2 py-3 focus:border-black outline-none">
+                    </div>
+                </div>
+
+                <!-- Step 4: Address -->
+                <div class="step" data-step="3">
+                    <h3 class="text-lg font-bold mb-6">Address Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="text" id="door_no" placeholder="DOOR NUMBER" class="border-b-2 py-3 w-full focus:border-black outline-none">
+                        <input type="text" id="street_name" placeholder="STREET NAME *" required class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                        <input type="text" id="place" placeholder="PLACE *" required class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                        <input type="text" id="district" placeholder="DISTRICT *" required class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                        <input type="text" id="state" placeholder="STATE *" required class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                        <input type="text" id="pincode" placeholder="PINCODE *" required class="border-b-2 py-3 w-full focus:border-black outline-none">
+                    </div>
+                </div>
+
+                <!-- Step 5: Medical -->
+                <div class="step" data-step="4">
+                    <h3 class="text-lg font-bold mb-6">Medical Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="text" id="blood_group" required placeholder="BLOOD GROUP *" class="border-b-2 py-3 w-full focus:border-black outline-none">
+                        <input type="text" id="id_mark_1" required placeholder="IDENTIFICATION MARK 1 *" class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                        <input type="text" id="id_mark_2" placeholder="IDENTIFICATION MARK 2" class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                        <input type="text" id="medical_issues" placeholder="MEDICAL ISSUES (IF ANY)" class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                    </div>
+                </div>
+
+                <!-- Step 6: Certificates -->
+                <div class="step" data-step="5">
+                    <h3 class="text-lg font-bold mb-6">Certificates</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="income_certificate" placeholder="INCOME CERTIFICATE NUMBER" class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                        <input type="text" id="nativity_certificate" placeholder="NATIVITY CERTIFICATE NUMBER" class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                    </div>
+                </div>
+
+                <!-- Step 7: Hostel -->
+                <div class="step" data-step="6">
+                    <h3 class="text-lg font-bold mb-6">Hostel Details</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="hostel_name" placeholder="HOSTEL NAME" default="N/A" class="border-b-2 py-3 w-full focus:border-black outline-none uppercase">
+                    </div>
+                </div>
+
+                <!-- Step 8: Photo Upload -->
+                <div class="step" data-step="7">
+                    <h3 class="text-lg font-bold mb-6">Photo Upload</h3>
+                    <div class="border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center">
+                        <input type="file" id="photo" class="hidden" accept="image/*" required>
+                        <label for="photo" class="cursor-pointer">
+                            <div id="uploadIconFrame" class="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <div id="previewContainer" class="hidden mb-4">
+                                <img id="photoPreview" src="" class="w-32 h-32 rounded-xl mx-auto object-cover border-2 border-black">
+                            </div>
+                            <span id="uploadText" class="text-gray-600 font-medium">Click to upload warden photo *</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Form Navigation Controls -->
+                <div class="flex justify-between items-center mt-12 pt-8 border-t">
+                    <button type="button" id="prevBtn" class="invisible text-gray-500 font-bold px-6 py-2 hover:text-black transition">Back</button>
+                    <div class="flex gap-4">
+                        <button type="button" id="nextBtn" class="bg-black text-white px-10 py-4 rounded-2xl font-bold hover:bg-gray-800 transition">Next Step</button>
+                        <button type="submit" id="submitBtn" class="hidden bg-green-600 text-white px-10 py-4 rounded-2xl font-bold hover:bg-green-700 transition">Submit Warden Details</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://kymsjrxjfmloibcbages.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentStep = 0;
+    const steps = document.querySelectorAll(".step");
+    const sidebarSteps = document.querySelectorAll(".sidebar-step");
+
+    // Adaptive Multi-Color Notification Layer
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('notification-container');
+        const toast = document.createElement('div');
+        
+        let colorClass = 'toast-green';
+        if (type === 'warning') colorClass = 'toast-yellow';
+        if (type === 'error') colorClass = 'toast-red';
+        
+        toast.className = `toast ${colorClass}`;
+        toast.innerText = message;
+        container.appendChild(toast);
+        
+        setTimeout(() => { 
+            toast.classList.add('fade-out'); 
+            setTimeout(() => toast.remove(), 500); 
+        }, 4000);
+    }
+
+    function updateForm() {
+        steps.forEach((s, i) => s.classList.toggle("active", i === currentStep));
+        sidebarSteps.forEach((s, i) => s.classList.toggle("active", i === currentStep));
+        document.getElementById("progressText").innerText = `${currentStep + 1} / ${steps.length}`;
+        document.getElementById("prevBtn").style.visibility = currentStep === 0 ? "hidden" : "visible";
+        
+        if (currentStep === steps.length - 1) {
+            document.getElementById("nextBtn").classList.add("hidden");
+            document.getElementById("submitBtn").classList.remove("hidden");
+        } else {
+            document.getElementById("nextBtn").classList.remove("hidden");
+            document.getElementById("submitBtn").classList.add("hidden");
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+        const inputs = steps[currentStep].querySelectorAll("input[required], select[required]");
+        let valid = true;
+        inputs.forEach(i => { 
+            if(!i.checkValidity()) { 
+                valid = false; 
+                i.reportValidity(); 
+            }
+        });
+        if(valid) { currentStep++; updateForm(); }
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", () => { 
+        if(currentStep > 0) { currentStep--; updateForm(); }
+    });
+
+    document.getElementById("dob").addEventListener("change", function() {
+        if (!this.value) return;
+        const age = new Date().getFullYear() - new Date(this.value).getFullYear();
+        document.getElementById("age").value = age;
+    });
+
+    // Photo Preview Mapping
+    document.getElementById("photo").addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById("photoPreview");
+        const container = document.getElementById("previewContainer");
+        const iconFrame = document.getElementById("uploadIconFrame");
+        const uploadText = document.getElementById("uploadText");
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                preview.src = event.target.result;
+                container.classList.remove("hidden");
+                iconFrame.classList.add("hidden");
+                uploadText.innerText = "Photo Selected: " + file.name;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Main Submission Thread targeting 'wardens'
+    document.getElementById("admissionForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("submitBtn");
+        const photoFile = document.getElementById("photo").files[0];
+        
+        btn.disabled = true;
+        btn.innerText = "Creating Auth Instance...";
+
+        try {
+            if (!photoFile) {
+                throw new Error("Please upload a passport image file before submission.");
+            }
+
+            const userEmail = document.getElementById("email").value;
+            const userPassword = document.getElementById("password").value;
+
+            // 1. Create User Authentication Profile
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                email: userEmail,
+                password: userPassword,
+            });
+            if (authError) throw authError;
+            const userUid = authData.user ? authData.user.id : crypto.randomUUID();
+
+            // 2. Upload Profile Image Asset to Storage Bucket
+            btn.innerText = "Saving Profile Asset Image...";
+            const fileExt = photoFile.name.split('.').pop();
+            const pathName = `passports/wdn_${userUid}_${Date.now()}.${fileExt}`;
+
+            const { error: uploadError } = await supabaseClient.storage
+                .from('student-photos')
+                .upload(pathName, photoFile);
+            if (uploadError) throw uploadError;
+
+            const { data: publicUrlData } = supabaseClient.storage
+                .from('student-photos')
+                .getPublicUrl(pathName);
+
+            // 3. Document Object Serialization Extraction Loop
+            btn.innerText = "Saving Warden Data...";
+            const formData = {};
+            const allInputs = e.target.querySelectorAll("input, select, textarea");
+            allInputs.forEach(input => {
+                if (input.id && input.type !== 'file' && input.id !== 'password') {
+                    formData[input.id] = input.value;
+                }
+            });
+
+            formData['role'] = 'warden';
+            formData['auth_uid'] = userUid;
+            formData['photo_url'] = publicUrlData.publicUrl;
+
+            // 4. Submit Record Array to exact 'wardens' Table
+            const { error: dbError } = await supabaseClient.from('wardens').insert([formData]);
+            if (dbError) throw dbError;
+
+            showToast("Warden Account Created Successfully!", "success");
+            setTimeout(() => { location.reload(); }, 1500);
+        } catch (err) {
+            console.error(err);
+            showToast(err.message, "error");
+            btn.disabled = false;
+            btn.innerText = "Submit Warden Details";
+        }
+    });
+</script>
+</body>
+</html>

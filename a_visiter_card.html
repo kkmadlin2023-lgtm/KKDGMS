@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Card | KKDGMS</title>
+    <link rel="icon" type="image/x-icon" href="kk.png">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- QRCode JS Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Lucide Icons Library -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Sidebar and Layout Transitions */
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+        .submenu-hidden {
+            display: none;
+        }
+
+        /* High-Performance Print Stylesheet */
+        @media print {
+            /* 1. Hide sidebar and main dashboard interface cleanly */
+            #sidebar-nav,
+            #main-dashboard-interface {
+                display: none !important;
+            }
+
+            /* 2. Unbind the cards container from its hidden parents and force it to show */
+            #printable-pass-container {
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: center !important;
+                gap: 20px !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10px !important;
+                
+                /* Force browser graphic engines to render background colors and profile photos */
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-scheme: light !important;
+            }
+
+            .printable-card {
+                width: 320px !important;
+                border: 1px solid #000000 !important;
+                box-shadow: none !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* Respect single/both selection when printing */
+            .printable-card.hidden {
+                display: none !important;
+            }
+
+            /* Boost image resolution contrast */
+            .pass-student-img {
+                image-rendering: -webkit-optimize-contrast !important;
+                image-rendering: crisp-edges !important;
+            }
+
+            /* Clear out default browser margin headers/footers */
+            @page {
+                size: auto;
+                margin: 5mm !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-700 font-sans antialiased relative min-h-screen flex flex-col">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 w-80 pointer-events-none"></div>
+
+    <!-- Enterprise Sidebar Navigation -->
+    <aside id="sidebar-nav" class="fixed inset-y-0 left-0 w-72 bg-white text-slate-700 z-50 sidebar-transition -translate-x-full lg:translate-x-0 border-r border-slate-200/80 flex flex-col justify-between shadow-sm" aria-label="Sidebar Navigation">
+        <div class="flex flex-col h-full overflow-hidden">
+            
+            <!-- Workspace Brand Header -->
+            <div class="h-16 px-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-200">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm text-slate-900 tracking-tight block leading-tight">KKDGMS Portal</span>
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">Head Master Hub</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebarMenu()" class="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg" aria-label="Close Navigation Menu">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Scroll Area -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-xs font-semibold">
+                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations & Controls</div>
+                
+                <!-- Admissions Submenu Parent Accordion -->
+                <div>
+                    <button onclick="toggleAdmissionsSubmenu()" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium cursor-pointer group">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition"></i>
+                            <span>ADMISSION FORMS</span>
+                        </span>
+                        <i id="submenu-arrow-indicator" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="admissions-submenu" class="submenu-hidden pl-7 pr-1 mt-1 space-y-1 bg-slate-50/80 rounded-xl border border-slate-100 py-1.5">
+                        <a href="a_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Admin Admission Form</span>
+                        </a>
+                        <a href="f_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Faculty Admission Form</span>
+                        </a>
+                        <a href="s_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Student Admission Form</span>
+                        </a>
+                        <a href="w_admission.html" class="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition text-[11px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            <span>Warden Admission Form</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Navigation Module Links -->
+                <a href="a_assign.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY ASSIGNING PAGE</span>
+                </a>
+                
+                <a href="a_attendance.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
+                    <span>ATTENDANCE VIEW</span>
+                </a>
+
+                <a href="a_sdetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT PROFILES</span>
+                </a>
+
+                <a href="a_bonafide.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="scroll" class="w-4 h-4 text-slate-400"></i>
+                    <span>BONAFIDE FORM</span>
+                </a>
+<a href="a_visiter_card.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+    <i data-lucide="id-card" class="w-4 h-4 text-slate-400"></i>
+    <span>VISITOR DETAILS</span>
+</a>
+                <a href="a_news.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-slate-400"></i>
+                    <span>ANNOUNCEMENT EDIT</span>
+                </a>
+
+                <a href="a_qb.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-slate-400"></i>
+                    <span>QUESTION BANK</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">System Records</div>
+
+                <a href="a_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>ADMIN DATABASE</span>
+                </a>
+
+                <a href="f_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>FACULTY DATABASE</span>
+                </a>
+
+                <a href="s_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>STUDENT DATABASE</span>
+                </a>
+
+                <a href="w_database.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400"></i>
+                    <span>WARDEN DATABASE</span>
+                </a>
+
+                <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Governance</div>
+
+                <a href="a_leave.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="door-open" class="w-4 h-4 text-slate-400"></i>
+                    <span>LEAVE CONFIRMING PAGE</span>
+                </a>
+
+                <a href="a_marksheet.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="award" class="w-4 h-4 text-slate-400"></i>
+                    <span>MARKSHEET VIEW</span>
+                </a>
+
+                <a href="a_user.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                    <span>USER UPDATES</span>
+                </a>
+
+                <a href="a_password.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
+                    <span>PASSWORD UPDATES</span>
+                </a>
+                <a href="a_ldetails.html" class="flex items-center gap-3 px-3.5 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition font-medium">
+                    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Login Audit Log
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer Action -->
+            <div class="p-4 border-t border-slate-100 flex-shrink-0">
+                <button onclick="triggerSystemLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50/80 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold tracking-wide rounded-xl transition-all border border-rose-100 hover:border-transparent cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Wrapper (Pushed right on large screens for sidebar) -->
+    <div class="flex-1 lg:pl-72 flex flex-col">
+        
+        <!-- Top Mobile Navigation Bar -->
+        <header class="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between lg:hidden sticky top-0 z-40">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebarMenu()" class="p-2 text-slate-600 hover:bg-slate-100 rounded-xl" aria-label="Open Sidebar">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <span class="font-bold text-sm text-slate-900">KKDGMS Portal</span>
+            </div>
+        </header>
+
+        <div id="main-dashboard-interface" class="flex-1 p-6 max-w-6xl w-full mx-auto space-y-6">
+            
+            <div class="bg-white border border-gray-200 rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <span>🪪</span> Parent Gate Pass & Visitor Desk
+                    </h1>
+                    <p class="text-xs text-gray-500 mt-1">Generate verified visitor badges with log-ready QR codes linked directly to student database entries.</p>
+                </div>
+                <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                    <button onclick="syncStudentDirectory()" class="text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2 rounded-md transition cursor-pointer">
+                        🔄 Sync Student Records
+                    </button>
+                    <a href="a_dashboard.html" class="px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 transition flex items-center gap-1">
+                        <span>‹</span> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-xs lg:col-span-4 space-y-4">
+                    <h2 class="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">
+                        1. Select Verified Student
+                    </h2>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Search/Select Student *</label>
+                        <select id="student-selector" onchange="processSelectedStudent(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-hidden focus:border-indigo-500">
+                            <option value="">Querying student directory...</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                        <h3 class="text-xs font-bold text-slate-700 uppercase">2. Select Parent Pass Mode</h3>
+                        <div class="space-y-1.5">
+                            <label class="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                                <input type="radio" name="pass-mode" value="both" checked onchange="handleModeChange(this.value)" class="text-indigo-600">
+                                <span>Both Parents (Father & Mother)</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                                <input type="radio" name="pass-mode" value="father" onchange="handleModeChange(this.value)" class="text-indigo-600">
+                                <span>Father Only</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                                <input type="radio" name="pass-mode" value="mother" onchange="handleModeChange(this.value)" class="text-indigo-600">
+                                <span>Mother Only</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button onclick="window.print()" id="print-action-btn" disabled class="w-full bg-slate-400 text-white font-bold py-2 rounded-md text-sm transition shadow-2xs cursor-not-allowed flex items-center justify-center gap-2">
+                        🖨️ Print / Save Pass
+                    </button>
+                </div>
+
+                <div class="lg:col-span-8 flex flex-col items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 min-h-[450px]">
+                    
+                    <div id="pass-placeholder" class="text-center space-y-2 max-w-xs">
+                        <div class="text-4xl text-gray-300">🎫</div>
+                        <h3 class="text-sm font-bold text-gray-700">No Target Active</h3>
+                        <p class="text-xs text-gray-400">Select a student row tracking item to populate verified printable tokens.</p>
+                    </div>
+
+                    <div id="pass-placement-node" class="w-full flex justify-center overflow-x-auto p-2"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dual Passes Container -->
+    <div id="printable-pass-container" class="hidden flex-col sm:flex-row gap-4 items-center justify-center">
+        
+        <!-- FATHER CARD -->
+        <div id="father-card-node" class="printable-card bg-white w-full max-w-[320px] border border-gray-300 rounded-2xl shadow-md overflow-hidden font-sans">
+            <div class="bg-slate-900 text-white p-3 text-center border-b-4 border-emerald-500">
+                <div class="text-[10px] uppercase font-extrabold tracking-widest text-emerald-400">KKDGMS</div>
+                <div class="text-sm font-bold tracking-tight">PARENT VISITOR CARD</div>
+            </div>
+
+            <div class="p-4 flex flex-col items-center text-center space-y-3">
+                <div class="relative">
+                    <img id="father-student-img" src="" alt="Student Profile" class="pass-student-img w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm">
+                    <span class="absolute bottom-0 right-0 bg-emerald-500 border-2 border-white w-3.5 h-3.5 rounded-full"></span>
+                </div>
+
+                <div class="space-y-0.5 w-full">
+                    <div class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Authorized Visitor</div>
+                    <div id="father-visitor-name" class="text-base font-black text-slate-900 tracking-tight uppercase">—</div>
+                    <div class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block border border-emerald-100">Father</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-x-2 gap-y-2 text-left w-full bg-slate-50 p-2.5 rounded-xl border border-gray-100">
+                    <div>
+                        <div class="text-[9px] uppercase font-bold text-gray-400">Student Name</div>
+                        <div id="father-student-name" class="text-xs font-bold text-slate-900 tracking-tight uppercase truncate">—</div>
+                    </div>
+                    <div>
+                        <div class="text-[9px] uppercase font-bold text-gray-400">Class & Sec</div>
+                        <div id="father-student-meta" class="text-xs font-bold text-gray-800 truncate">—</div>
+                    </div>
+                </div>
+
+                <!-- QR Code Block -->
+                <div class="flex flex-col items-center justify-center pt-1">
+                    <div id="father-qrcode" class="p-1.5 bg-white border border-gray-200 rounded-lg shadow-2xs"></div>
+                    <span class="text-[8px] font-mono font-bold text-gray-400 mt-1 uppercase">Scan for Gate Log Entry</span>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border-t border-gray-100 px-3 py-1.5 text-center text-[9px] text-gray-400 font-medium">
+                Valid for designated academic period only. Non-transferable.
+            </div>
+        </div>
+
+        <!-- MOTHER CARD -->
+        <div id="mother-card-node" class="printable-card bg-white w-full max-w-[320px] border border-gray-300 rounded-2xl shadow-md overflow-hidden font-sans">
+            <div class="bg-slate-900 text-white p-3 text-center border-b-4 border-indigo-500">
+                <div class="text-[10px] uppercase font-extrabold tracking-widest text-indigo-400">KKDGMS</div>
+                <div class="text-sm font-bold tracking-tight">PARENT VISITOR CARD</div>
+            </div>
+
+            <div class="p-4 flex flex-col items-center text-center space-y-3">
+                <div class="relative">
+                    <img id="mother-student-img" src="" alt="Student Profile" class="pass-student-img w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm">
+                    <span class="absolute bottom-0 right-0 bg-indigo-500 border-2 border-white w-3.5 h-3.5 rounded-full"></span>
+                </div>
+
+                <div class="space-y-0.5 w-full">
+                    <div class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Authorized Visitor</div>
+                    <div id="mother-visitor-name" class="text-base font-black text-slate-900 tracking-tight uppercase">—</div>
+                    <div class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-block border border-indigo-100">Mother</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-x-2 gap-y-2 text-left w-full bg-slate-50 p-2.5 rounded-xl border border-gray-100">
+                    <div>
+                        <div class="text-[9px] uppercase font-bold text-gray-400">Student Name</div>
+                        <div id="mother-student-name" class="text-xs font-bold text-slate-900 tracking-tight uppercase truncate">—</div>
+                    </div>
+                    <div>
+                        <div class="text-[9px] uppercase font-bold text-gray-400">Class & Sec</div>
+                        <div id="mother-student-meta" class="text-xs font-bold text-gray-800 truncate">—</div>
+                    </div>
+                </div>
+
+                <!-- QR Code Block -->
+                <div class="flex flex-col items-center justify-center pt-1">
+                    <div id="mother-qrcode" class="p-1.5 bg-white border border-gray-200 rounded-lg shadow-2xs"></div>
+                    <span class="text-[8px] font-mono font-bold text-gray-400 mt-1 uppercase">Scan for Gate Log Entry</span>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border-t border-gray-100 px-3 py-1.5 text-center text-[9px] text-gray-400 font-medium">
+                Valid for designated academic period only. Non-transferable.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let LOGGED_STUDENTS_ARRAY = [];
+        let ACTIVE_STUDENT_OBJECT = null;
+        let SELECTED_PASS_MODE = 'both'; // 'both', 'father', or 'mother'
+
+        const studentSelector = document.getElementById('student-selector');
+        const printableContainer = document.getElementById('printable-pass-container');
+        const passPlacementNode = document.getElementById('pass-placement-node');
+        const passPlaceholder = document.getElementById('pass-placeholder');
+        const printBtn = document.getElementById('print-action-btn');
+        const toastContainer = document.getElementById('toast-container');
+        
+        const fatherCardNode = document.getElementById('father-card-node');
+        const motherCardNode = document.getElementById('mother-card-node');
+
+        // Sidebar & Accordion Toggle Functions
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar-nav');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function toggleAdmissionsSubmenu() {
+            const submenu = document.getElementById('admissions-submenu');
+            const arrow = document.getElementById('submenu-arrow-indicator');
+            submenu.classList.toggle('submenu-hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        function triggerSystemLogout() {
+            if(confirm("Are you sure you want to log out of the portal?")) {
+                window.location.href = "index.html";
+            }
+        }
+
+        function triggerToast(message, variant = 'success') {
+            const toast = document.createElement('div');
+            toast.className = "p-4 rounded-lg shadow-xl text-white font-medium text-sm transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-start gap-3 border";
+            if (variant === 'success') toast.className += " bg-emerald-600 border-emerald-500";
+            else if (variant === 'warning') toast.className += " bg-amber-500 border-amber-400 text-amber-950";
+            else if (variant === 'error') toast.className += " bg-rose-600 border-rose-500";
+            
+            toast.innerHTML = `<span>⚡</span> <div class="flex-1">${message}</div>`;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        async function syncStudentDirectory() {
+            studentSelector.innerHTML = `<option value="">Reading data nodes...</option>`;
+            const { data, error } = await _supabase.from('students').select('*').order('full_name', { ascending: true });
+
+            if (error) {
+                triggerToast(`Directory Sync Aborted: ${error.message}`, 'error');
+                return;
+            }
+
+            LOGGED_STUDENTS_ARRAY = data;
+            studentSelector.innerHTML = `<option value="">-- Choose Existing Student --</option>`;
+            data.forEach(student => {
+                const opt = document.createElement('option');
+                opt.value = student.id;
+                opt.innerText = `${escapeHtml(student.full_name)} (${escapeHtml(student.student_class || 'N/A')}) [ID: ${escapeHtml(student.user_id || '—')}]`;
+                studentSelector.appendChild(opt);
+            });
+            triggerToast(`Cached ${data.length} student rows.`, 'success');
+        }
+
+        function processSelectedStudent(id) {
+            if (!id) {
+                passPlaceholder.classList.remove('hidden');
+                printableContainer.classList.add('hidden');
+                printableContainer.classList.remove('flex');
+                passPlacementNode.innerHTML = '';
+                printBtn.disabled = true;
+                printBtn.className = "w-full bg-slate-400 text-white font-bold py-2 rounded-md text-sm transition cursor-not-allowed flex items-center justify-center gap-2";
+                return;
+            }
+
+            ACTIVE_STUDENT_OBJECT = LOGGED_STUDENTS_ARRAY.find(s => String(s.id) === String(id));
+            if (ACTIVE_STUDENT_OBJECT) {
+                passPlaceholder.classList.add('hidden');
+                
+                passPlacementNode.appendChild(printableContainer);
+                printableContainer.classList.remove('hidden');
+                printableContainer.classList.add('flex');
+                
+                printBtn.disabled = false;
+                printBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-md text-sm transition shadow-2xs cursor-pointer flex items-center justify-center gap-2";
+                
+                compilePassCards();
+            }
+        }
+
+        function handleModeChange(mode) {
+            SELECTED_PASS_MODE = mode;
+            if (ACTIVE_STUDENT_OBJECT) {
+                compilePassCards();
+            }
+        }
+
+        function compilePassCards() {
+            if (!ACTIVE_STUDENT_OBJECT) return;
+
+            const studentImg = ACTIVE_STUDENT_OBJECT.photo_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+            const studentName = ACTIVE_STUDENT_OBJECT.full_name || 'N/A';
+            const classMapping = `${ACTIVE_STUDENT_OBJECT.student_class || '—'} / ${ACTIVE_STUDENT_OBJECT.section || '—'}`;
+            const fatherName = ACTIVE_STUDENT_OBJECT.father_name || 'Father Name Omitted';
+            const motherName = ACTIVE_STUDENT_OBJECT.mother_name || 'Mother Name Omitted';
+
+            // Show/Hide Cards Based on Selection
+            if (SELECTED_PASS_MODE === 'both') {
+                fatherCardNode.classList.remove('hidden');
+                motherCardNode.classList.remove('hidden');
+            } else if (SELECTED_PASS_MODE === 'father') {
+                fatherCardNode.classList.remove('hidden');
+                motherCardNode.classList.add('hidden');
+            } else if (SELECTED_PASS_MODE === 'mother') {
+                fatherCardNode.classList.add('hidden');
+                motherCardNode.classList.remove('hidden');
+            }
+
+            // Populate & Generate Father Card (if visible)
+            if (SELECTED_PASS_MODE === 'both' || SELECTED_PASS_MODE === 'father') {
+                document.getElementById('father-student-img').src = studentImg;
+                document.getElementById('father-visitor-name').innerText = fatherName;
+                document.getElementById('father-student-name').innerText = studentName;
+                document.getElementById('father-student-meta').innerText = classMapping;
+
+                const fatherPayload = JSON.stringify({
+                    student_title: studentName,
+                    class_mapping: classMapping,
+                    authorized_parent: fatherName,
+                    relation: 'Father'
+                });
+                generateQRCode('father-qrcode', fatherPayload);
+            }
+
+            // Populate & Generate Mother Card (if visible)
+            if (SELECTED_PASS_MODE === 'both' || SELECTED_PASS_MODE === 'mother') {
+                document.getElementById('mother-student-img').src = studentImg;
+                document.getElementById('mother-visitor-name').innerText = motherName;
+                document.getElementById('mother-student-name').innerText = studentName;
+                document.getElementById('mother-student-meta').innerText = classMapping;
+
+                const motherPayload = JSON.stringify({
+                    student_title: studentName,
+                    class_mapping: classMapping,
+                    authorized_parent: motherName,
+                    relation: 'Mother'
+                });
+                generateQRCode('mother-qrcode', motherPayload);
+            }
+
+            triggerToast(`Pass cards refreshed for mode: ${SELECTED_PASS_MODE.toUpperCase()}`, 'success');
+        }
+
+        function generateQRCode(elementId, textPayload) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = ''; // Clear previous QR
+
+            new QRCode(container, {
+                text: textPayload,
+                width: 85,
+                height: 85,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        // Before sending to print pipeline, move the card directly under <body> to bypass any hidden parents
+        window.onbeforeprint = () => {
+            if (ACTIVE_STUDENT_OBJECT) {
+                document.body.appendChild(printableContainer);
+            }
+        };
+
+        // Put it back into the preview box after printing completes
+        window.onafterprint = () => {
+            if (ACTIVE_STUDENT_OBJECT) {
+                passPlacementNode.appendChild(printableContainer);
+            }
+        };
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        window.onload = () => { 
+            syncStudentDirectory(); 
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        };
+    </script>
+</body>
+</html>

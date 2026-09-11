@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QB | KKDGMS</title>
+    <link type="image/x-icon" href="kk.png" rel="icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.0/dist/umd/supabase.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        portal: {
+                            bg: '#f4f7fe',
+                            accent: '#6366f1',
+                            accentHover: '#4f46e5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body, div, input, textarea, select, button { transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s; }
+        .auto-resize { resize: none; overflow: hidden; height: auto; min-height: 2.75rem; }
+        
+        @keyframes fullPageToCompactZoom {
+            0% {
+                transform: scale(3.2) translateZ(400px);
+                opacity: 0;
+                filter: blur(16px);
+            }
+            40% {
+                opacity: 1;
+                filter: blur(3px);
+            }
+            100% {
+                transform: scale(1) translateZ(0);
+                opacity: 1;
+                filter: blur(0px);
+            }
+        }
+        .animate-zoom-out-3d {
+            animation: fullPageToCompactZoom 1.35s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+            transform-style: preserve-3d;
+        }
+    </style>
+</head>
+<body class="bg-portal-bg dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen p-4 md:p-8 flex flex-col items-center space-y-6">
+
+    <!-- COMPACT THEME CONTROLLER & NAVIGATION -->
+    <div class="w-full max-w-7xl flex justify-between items-center px-2">
+        <div>
+            <a href="f_dashboard.html" class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-1 shadow-xs">
+                <span>‹</span> Back to Dashboard
+            </a>
+        </div>
+        <button type="button" onclick="toggleThemeSystem()" class="bg-white dark:bg-slate-900 text-slate-600 dark:text-indigo-400 border border-slate-200 dark:border-white/10 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs transition-all duration-200">
+            <i id="theme-toggle-icon" data-lucide="sun" class="w-5 h-5"></i>
+        </button>
+    </div>
+
+    <!-- MAIN ENTRY BUILDER -->
+    <div class="w-full max-w-7xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-5 md:p-8 space-y-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-100 dark:border-white/5 gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-xl text-indigo-600 dark:text-indigo-400"><i data-lucide="folder-plus" class="w-6 h-6"></i></div>
+                <div><h1 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Create Entries</h1></div>
+            </div>
+            <button type="button" onclick="appendQuestionRow()" class="inline-flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 font-semibold text-sm py-2.5 px-4 rounded-xl transition shadow-xs">
+                <i data-lucide="plus" class="w-4 h-4"></i><span>Add Entry Slot</span>
+            </button>
+        </div>
+
+        <form id="bulk-form" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Subject File Name</label>
+                    <input type="text" id="global-subject" required class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-xs" placeholder="e.g., Biology">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Topic Grouping</label>
+                    <input type="text" id="global-topic" required class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-xs" placeholder="e.g., Human Anatomy">
+                </div>
+            </div>
+            
+            <div id="bulk-container" class="space-y-4"></div>
+            
+            <div class="flex items-center justify-end pt-4 border-t border-slate-100 dark:border-white/5 space-x-3">
+                <button type="button" onclick="submitBulkData('DRAFT')" class="w-40 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider py-3 rounded-xl transition"><i data-lucide="save" class="w-4 h-4 inline mr-1.5"></i> Force As DRAFT</button>
+                <button type="button" onclick="submitBulkData('PUBLISH')" class="w-40 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs uppercase tracking-wider py-3 rounded-xl transition shadow-md shadow-indigo-600/10"><i data-lucide="globe" class="w-4 h-4 inline mr-1.5"></i> Force As PUBLISH</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- HIERARCHICAL SUBJECT REGISTRY -->
+    <div class="w-full max-w-7xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-5 md:p-8 space-y-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center border-b border-slate-100 dark:border-white/5 pb-4 gap-4">
+            <h2 class="text-base font-bold text-slate-800 dark:text-white flex items-center tracking-tight"><i data-lucide="library" class="w-5 h-5 mr-2 text-indigo-500"></i>Subject Registers</h2>
+            <input type="text" id="search-filter" oninput="loadData()" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-white w-full sm:w-72 shadow-xs" placeholder="Filter Repository...">
+        </div>
+        <div id="repository-container" class="space-y-6">
+            <div class="text-center py-12 text-slate-400 font-medium text-sm tracking-wide">Accessing workspace registers...</div>
+        </div>
+    </div>
+
+    <!-- EDIT MODAL OVERLAY -->
+    <div id="edit-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm hidden items-start justify-center p-4 z-50 overflow-y-auto">
+        <div class="w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 md:p-8 my-8 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+                <h2 class="text-base font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">Modify Entry Workspace</h2>
+                <button type="button" onclick="appendModalQuestionRow()" class="inline-flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-semibold text-xs py-2 px-3.5 rounded-xl transition shadow-xs">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Append Further Entry</span>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-100 dark:border-white/5 text-xs font-medium">
+                <div><span class="font-bold text-slate-400 uppercase tracking-wide">Subject Context:</span> <span id="modal-display-subject" class="font-mono ml-1 text-slate-700 dark:text-slate-300"></span></div>
+                <div><span class="font-bold text-slate-400 uppercase tracking-wide">Topic Context:</span> <span id="modal-display-topic" class="font-mono ml-1 text-slate-700 dark:text-slate-300"></span></div>
+            </div>
+
+            <input type="hidden" id="edit-primary-id">
+            <input type="hidden" id="edit-global-subject-fallback">
+            <input type="hidden" id="edit-global-topic-fallback">
+            
+            <div id="edit-modal-rows-container" class="space-y-5 max-h-[50vh] overflow-y-auto pr-1"></div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-white/5">
+                <button onclick="closeEditModal()" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-xs font-semibold rounded-xl uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition">Cancel</button>
+                <button onclick="saveUpdatedQuestion()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl uppercase tracking-wider transition shadow-md shadow-indigo-600/10">Save Configurations</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D DYNAMIC PUBLISH VERIFICATION FRAMING OVERLAY -->
+    <div id="verify-3d-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md hidden" style="perspective: 1200px;">
+        <div id="verify-3d-card" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-8 rounded-2xl shadow-2xl flex flex-col items-center justify-center space-y-4 max-w-sm text-center border-t-4 border-t-emerald-500 w-[90%] md:w-full">
+            <div class="w-20 h-20 flex items-center justify-center filter drop-shadow-xs">
+                <img src="verified.png" alt="Verified Asset Table Image" class="w-full h-full object-contain">
+            </div>
+            <div>
+                <p class="text-sm font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Successfully Published</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Live Workspace Repositories Synchronized</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://kymsjrxjfmloibcbages.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let rowCount = 0;
+        let cachedData = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            updateThemeIconUI();
+            verifyAdminAuthSession();
+        });
+
+        async function verifyAdminAuthSession() {
+            try {
+                const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
+                if (sessionErr) throw sessionErr;
+                if (!session) { window.location.href = "login.html"; return; }
+                appendQuestionRow(); 
+                loadData();
+            } catch (err) {
+                console.error(err);
+                window.location.href = "login.html";
+            }
+        }
+
+        function toggleThemeSystem() {
+            document.documentElement.classList.toggle('dark');
+            updateThemeIconUI();
+        }
+
+        function updateThemeIconUI() {
+            const iconEl = document.getElementById('theme-toggle-icon');
+            iconEl.setAttribute('data-lucide', document.documentElement.classList.contains('dark') ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
+
+        function adjustTextAreaHeight(element) {
+            element.style.height = 'auto';
+            element.style.height = element.scrollHeight + 'px';
+        }
+
+        function triggerPublish3DAnimation(actionCallback) {
+            const layoutOverlay = document.getElementById('verify-3d-overlay');
+            const structuralCard = document.getElementById('verify-3d-card');
+            
+            layoutOverlay.classList.remove('hidden');
+            structuralCard.classList.add('animate-zoom-out-3d');
+            
+            setTimeout(() => {
+                structuralCard.classList.remove('animate-zoom-out-3d');
+                layoutOverlay.classList.add('hidden');
+                if (actionCallback) actionCallback();
+            }, 2100);
+        }
+
+        function toggleModeFields(selectEl) {
+            const parent = selectEl.closest('.q-row, .modal-editable-row');
+            const mode = selectEl.value;
+            const qaBlock = parent.querySelector('.qa-block');
+            const driveBlock = parent.querySelector('.drive-block');
+            const formatContainer = parent.querySelector('.format-container');
+
+            if (mode === 'qa') {
+                qaBlock.classList.remove('hidden');
+                driveBlock.classList.add('hidden');
+                if (formatContainer) formatContainer.classList.remove('hidden');
+            } else {
+                qaBlock.classList.add('hidden');
+                driveBlock.classList.remove('hidden');
+                if (formatContainer) formatContainer.classList.add('hidden');
+            }
+        }
+
+        function appendQuestionRow() {
+            rowCount++;
+            const container = document.getElementById('bulk-container');
+            const row = document.createElement('div');
+            row.className = "q-row bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-white/5 p-4 md:p-5 rounded-2xl relative grid grid-cols-1 md:grid-cols-12 gap-4 items-start shadow-xs transition hover:border-slate-300 dark:hover:border-white/10";
+            row.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-3 right-3 text-slate-400 hover:text-rose-500 hover:scale-110 transition duration-150"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <div class="md:col-span-3 space-y-3 pt-3">
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Entry Mode</label>
+                        <select onchange="toggleModeFields(this)" class="r-type w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 focus:outline-none focus:border-indigo-500">
+                            <option value="qa" selected>Q&A Mode</option>
+                            <option value="drive">Drive Link Mode</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Marks</label>
+                            <input type="number" value="5" class="r-marks w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="Marks">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Difficulty</label>
+                            <select class="r-diff w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"><option>Easy</option><option selected>Medium</option><option>Hard</option></select>
+                        </div>
+                    </div>
+                    <div class="format-container">
+                        <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Answer Format</label>
+                        <select class="r-format w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"><option value="points">Points List</option><option value="passage">Passage Text</option></select>
+                    </div>
+                </div>
+                <div class="md:col-span-9 space-y-3">
+                    <!-- Mode 1: Question & Answer -->
+                    <div class="qa-block space-y-3">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Question Statement</label>
+                            <textarea oninput="adjustTextAreaHeight(this)" class="auto-resize r-question w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 leading-relaxed" placeholder="Question statement..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Answer Criteria</label>
+                            <textarea oninput="adjustTextAreaHeight(this)" class="auto-resize r-answer w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 leading-relaxed" placeholder="Answers content details..."></textarea>
+                        </div>
+                    </div>
+                    <!-- Mode 2: Title, Sub Title, Drive URL -->
+                    <div class="drive-block space-y-3 hidden">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Title</label>
+                            <input type="text" class="r-title w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="e.g., Chapter 1 Reference Guide">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Sub Title</label>
+                            <input type="text" class="r-subtitle w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="e.g., Detailed Notes PDF">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">Google Drive URL</label>
+                            <input type="url" class="r-drive-url w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="https://drive.google.com/file/d/...">
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+            lucide.createIcons();
+        }
+
+        function appendModalQuestionRow(targetData = null) {
+            const container = document.getElementById('edit-modal-rows-container');
+            const structureBlock = document.createElement('div');
+            structureBlock.className = "modal-editable-row bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-white/5 p-4 rounded-xl relative space-y-4";
+            
+            const rowId = targetData ? targetData.id : '';
+            const entryType = targetData ? (targetData.entry_type || 'qa') : 'qa';
+            const existingQuestionText = targetData ? (targetData.question_text || '') : '';
+            const existingTitle = targetData ? (targetData.title || '') : '';
+            const existingSubtitle = targetData ? (targetData.subtitle || '') : '';
+            const existingDriveUrl = targetData ? (targetData.drive_url || '') : '';
+            const existingMarks = targetData ? targetData.marks_weightage : '5';
+            const existingDifficulty = targetData ? targetData.difficulty_level : 'Medium';
+            const existingStatus = targetData ? targetData.status : 'Draft';
+            const existingFormat = targetData ? (targetData.answer_format || 'points') : 'points';
+            const existingRawAnswers = targetData ? (existingFormat === 'points' ? (targetData.answer_points ? targetData.answer_points.join('\n') : '') : (targetData.answer_passage || '')) : '';
+
+            structureBlock.innerHTML = `
+                <input type="hidden" class="m-row-id" value="${rowId}">
+                <div class="flex items-center justify-between border-b border-slate-200/60 dark:border-white/5 pb-2">
+                    <span class="text-xs font-bold text-indigo-500 uppercase flex items-center gap-1.5 tracking-wider">
+                        <i data-lucide="help-circle" class="w-4 h-4"></i> Entry Parameter Group
+                    </span>
+                    ${!targetData ? `<button type="button" onclick="this.parentElement.parentElement.remove()" class="text-rose-500 text-xs font-bold uppercase tracking-wider flex items-center gap-0.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remove</button>` : ''}
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Entry Mode</label>
+                        <select onchange="toggleModeFields(this)" class="m-type w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-indigo-600 dark:text-indigo-400 focus:outline-none focus:border-indigo-500">
+                            <option value="qa" ${entryType === 'qa' ? 'selected' : ''}>Q&A Mode</option>
+                            <option value="drive" ${entryType === 'drive' ? 'selected' : ''}>Drive Link Mode</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Marks</label>
+                        <input type="number" class="m-marks w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" value="${existingMarks}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Complexity</label>
+                        <select class="m-diff w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
+                            <option value="Easy" ${existingDifficulty === 'Easy' ? 'selected' : ''}>Easy</option>
+                            <option value="Medium" ${existingDifficulty === 'Medium' ? 'selected' : ''}>Medium</option>
+                            <option value="Hard" ${existingDifficulty === 'Hard' ? 'selected' : ''}>Hard</option>
+                        </select>
+                    </div>
+                    <div class="format-container ${entryType === 'drive' ? 'hidden' : ''}">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Format Allocation</label>
+                        <select class="m-format w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
+                            <option value="points" ${existingFormat === 'points' ? 'selected' : ''}>Points List</option>
+                            <option value="passage" ${existingFormat === 'passage' ? 'selected' : ''}>Passage Text</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Mode 1: Question & Answer -->
+                <div class="qa-block space-y-4 ${entryType === 'drive' ? 'hidden' : ''}">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Question Statement</label>
+                        <textarea oninput="adjustTextAreaHeight(this)" class="m-question auto-resize w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 leading-relaxed transition">${existingQuestionText}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Answer Content Mapping</label>
+                        <textarea oninput="adjustTextAreaHeight(this)" class="m-answer auto-resize w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 leading-relaxed transition">${existingRawAnswers}</textarea>
+                    </div>
+                </div>
+
+                <!-- Mode 2: Drive Link -->
+                <div class="drive-block space-y-4 ${entryType === 'qa' ? 'hidden' : ''}">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Title</label>
+                        <input type="text" class="m-title w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" value="${existingTitle}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Sub Title</label>
+                        <input type="text" class="m-subtitle w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" value="${existingSubtitle}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Google Drive URL</label>
+                        <input type="url" class="m-drive-url w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" value="${existingDriveUrl}">
+                    </div>
+                </div>
+
+                <input type="hidden" class="m-status" value="${existingStatus}">
+            `;
+            container.appendChild(structureBlock);
+            lucide.createIcons();
+            
+            const innerTextareas = structureBlock.querySelectorAll('textarea');
+            innerTextareas.forEach(el => adjustTextAreaHeight(el));
+        }
+
+        async function submitBulkData(status) {
+            const subject = document.getElementById('global-subject').value.trim();
+            const topic = document.getElementById('global-topic').value.trim();
+            if(!subject || !topic) return alert("Populate configuration headers.");
+
+            const rows = document.querySelectorAll('.q-row');
+            if(!rows.length) return;
+
+            const payload = Array.from(rows).map(row => {
+                const mode = row.querySelector('.r-type').value;
+                const format = row.querySelector('.r-format').value;
+                const rawAnswer = row.querySelector('.r-answer').value;
+
+                return {
+                    subject_name: subject,
+                    topic_name: topic,
+                    entry_type: mode,
+                    marks_weightage: parseInt(row.querySelector('.r-marks').value) || 2,
+                    difficulty_level: row.querySelector('.r-diff').value,
+                    status: status === 'PUBLISH' ? 'Published' : 'Draft',
+                    
+                    // Q&A Mapping
+                    question_text: mode === 'qa' ? row.querySelector('.r-question').value.trim() : null,
+                    answer_format: mode === 'qa' ? format : null,
+                    answer_points: (mode === 'qa' && format === 'points') ? rawAnswer.split('\n').map(p=>p.trim()).filter(Boolean) : null,
+                    answer_passage: (mode === 'qa' && format === 'passage') ? rawAnswer.trim() : null,
+                    
+                    // Drive Mapping
+                    title: mode === 'drive' ? row.querySelector('.r-title').value.trim() : null,
+                    subtitle: mode === 'drive' ? row.querySelector('.r-subtitle').value.trim() : null,
+                    drive_url: mode === 'drive' ? row.querySelector('.r-drive-url').value.trim() : null
+                };
+            });
+
+            const { error } = await supabase.from('question_bank').insert(payload);
+            if (!error) {
+                if (status === 'PUBLISH') {
+                    triggerPublish3DAnimation(() => {
+                        document.getElementById('bulk-container').innerHTML = '';
+                        appendQuestionRow();
+                        loadData();
+                    });
+                } else {
+                    document.getElementById('bulk-container').innerHTML = '';
+                    appendQuestionRow();
+                    loadData();
+                }
+            } else {
+                alert("Database submission error: " + error.message);
+            }
+        }
+
+        async function loadData() {
+            const container = document.getElementById('repository-container');
+            const filter = document.getElementById('search-filter').value.trim();
+            
+            let query = supabase.from('question_bank').select('*').order('created_at', { ascending: false });
+            if (filter) query = query.or(`subject_name.ilike.%${filter}%,topic_name.ilike.%${filter}%,question_text.ilike.%${filter}%,title.ilike.%${filter}%`);
+            
+            const { data, error } = await query;
+            if (error) return;
+
+            cachedData = data;
+            if (!data.length) {
+                container.innerHTML = `<div class="text-center text-slate-400 py-12 font-medium text-sm tracking-wide bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl">No records found.</div>`;
+                return;
+            }
+
+            const grouped = data.reduce((acc, curr) => {
+                if (!acc[curr.subject_name]) acc[curr.subject_name] = {};
+                if (!acc[curr.subject_name][curr.topic_name]) acc[curr.subject_name][curr.topic_name] = [];
+                acc[curr.subject_name][curr.topic_name].push(curr);
+                return acc;
+            }, {});
+
+            renderGroupedUI(grouped, container);
+        }
+
+        function renderGroupedUI(groupedData, container) {
+            let html = "";
+            for (const [subject, topics] of Object.entries(groupedData)) {
+                const flatQuestions = Object.values(topics).flat();
+                const allPublished = flatQuestions.every(q => q.status === 'Published');
+                
+                html += `
+                <div class="bg-slate-50 dark:bg-slate-950/40 border-l-4 border-indigo-500 border border-slate-200/60 dark:border-white/5 rounded-2xl p-5 md:p-6 shadow-xs">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60 dark:border-white/5">
+                        <h2 class="text-base font-bold text-slate-800 dark:text-white flex items-center tracking-tight">
+                            <i data-lucide="folder" class="w-5 h-5 mr-2 text-indigo-500"></i> ${subject}
+                        </h2>
+                        <button onclick="toggleSubjectPublish('${subject}', ${allPublished})" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900/40 transition">
+                            <i data-lucide="globe" class="w-3.5 h-3.5 inline mr-1"></i> STATUS: ${allPublished ? 'DRAFT ALL' : 'PUBLISH ALL'}
+                        </button>
+                    </div>
+                    <div class="space-y-4">`;
+
+                for (const [topic, questions] of Object.entries(topics)) {
+                    html += `
+                        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-4 md:p-5 shadow-xs">
+                            <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center"><i data-lucide="hash" class="w-4 h-4 mr-1"></i> ${topic}</h3>
+                            <div class="space-y-3">`;
+
+                    questions.forEach(q => {
+                        const isPub = q.status === 'Published';
+                        const currentStatusText = isPub ? 'PUBLISH' : 'DRAFT';
+                        const isDrive = q.entry_type === 'drive';
+
+                        html += `
+                            <div class="group flex flex-col sm:flex-row items-start justify-between p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-slate-950/30 gap-4 hover:border-slate-200 dark:hover:border-white/10 transition">
+                                <div class="w-full sm:w-[88%] space-y-2">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wide bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10 shadow-2xs">
+                                            ${currentStatusText}
+                                        </span>
+                                        <span class="text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-white dark:bg-slate-900">${q.difficulty_level}</span>
+                                        <span class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900">${q.marks_weightage}M</span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${isDrive ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300' : 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'}">
+                                            ${isDrive ? 'DRIVE RESOURCE' : 'Q&A ENTRY'}
+                                        </span>
+                                    </div>
+                                    
+                                    ${isDrive ? `
+                                        <div class="space-y-1">
+                                            <p class="text-sm font-bold text-slate-800 dark:text-white leading-relaxed break-words">Title: ${q.title || 'N/A'}</p>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">Subtitle: ${q.subtitle || 'N/A'}</p>
+                                            ${q.drive_url ? `<a href="${q.drive_url}" target="_blank" class="inline-flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-1"><i data-lucide="external-link" class="w-3.5 h-3.5 mr-1"></i> Open Drive Resource</a>` : ''}
+                                        </div>
+                                    ` : `
+                                        <p class="text-sm font-bold text-slate-800 dark:text-white leading-relaxed break-words">Q: ${q.question_text || ''}</p>
+                                        <div class="text-sm text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900/60 py-1.5 px-3 rounded-xl border border-slate-100 dark:border-white/5 whitespace-pre-wrap break-words leading-relaxed shadow-2xs h-auto min-h-0">
+                                            ${q.answer_format === 'points' ? `<ul class="list-disc pl-5 space-y-0.5">${(q.answer_points || []).map(p=>`<li>${p}</li>`).join('')}</ul>` : (q.answer_passage || '')}
+                                        </div>
+                                    `}
+                                </div>
+                                
+                                <div class="flex sm:flex-col gap-2 shrink-0 self-end sm:self-start pt-1">
+                                    <button onclick="openEditModal(${q.id})" class="inline-flex items-center justify-center font-bold text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-2 rounded-xl transition shadow-2xs" title="EDIT Configuration">EDIT</button>
+                                    <button onclick="deleteQuestion(${q.id})" class="inline-flex items-center justify-center font-bold text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl transition border border-rose-100" title="DELETE Entry">DELETE</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div></div>`;
+                }
+                html += `</div></div>`;
+            }
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function toggleSubjectPublish(subjectName, currentAllPublishedState) {
+            const targetStatus = currentAllPublishedState ? 'Draft' : 'Published';
+            const { error } = await supabase.from('question_bank').update({ status: targetStatus }).eq('subject_name', subjectName);
+            if (!error) {
+                if (targetStatus === 'Published') {
+                    triggerPublish3DAnimation(() => loadData());
+                } else {
+                    loadData();
+                }
+            }
+        }
+
+        function openEditModal(id) {
+            const q = cachedData.find(item => item.id === id);
+            if (!q) return;
+
+            document.getElementById('edit-primary-id').value = q.id;
+            document.getElementById('edit-global-subject-fallback').value = q.subject_name;
+            document.getElementById('edit-global-topic-fallback').value = q.topic_name;
+            
+            document.getElementById('modal-display-subject').innerText = q.subject_name;
+            document.getElementById('modal-display-topic').innerText = q.topic_name;
+
+            const modalContainer = document.getElementById('edit-modal-rows-container');
+            modalContainer.innerHTML = ''; 
+
+            appendModalQuestionRow(q);
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+        async function saveUpdatedQuestion() {
+            const subjectFallback = document.getElementById('edit-global-subject-fallback').value;
+            const topicFallback = document.getElementById('edit-global-topic-fallback').value;
+            
+            const editableRows = document.querySelectorAll('.modal-editable-row');
+            let anyPublished = false;
+            
+            for (let row of editableRows) {
+                const targetId = row.querySelector('.m-row-id').value;
+                const mode = row.querySelector('.m-type').value;
+                const formatValue = row.querySelector('.m-format').value;
+                const rawAnswersContent = row.querySelector('.m-answer').value;
+                const statusValue = row.querySelector('.m-status').value || 'Draft';
+
+                if (statusValue === 'Published') {
+                    anyPublished = true;
+                }
+
+                const rowPayload = {
+                    entry_type: mode,
+                    marks_weightage: parseInt(row.querySelector('.m-marks').value) || 5,
+                    difficulty_level: row.querySelector('.m-diff').value,
+                    status: statusValue,
+                    subject_name: subjectFallback,
+                    topic_name: topicFallback,
+                    
+                    // Q&A
+                    question_text: mode === 'qa' ? row.querySelector('.m-question').value.trim() : null,
+                    answer_format: mode === 'qa' ? formatValue : null,
+                    answer_points: (mode === 'qa' && formatValue === 'points') ? rawAnswersContent.split('\n').map(p=>p.trim()).filter(Boolean) : null,
+                    answer_passage: (mode === 'qa' && formatValue === 'passage') ? rawAnswersContent.trim() : null,
+                    
+                    // Drive
+                    title: mode === 'drive' ? row.querySelector('.m-title').value.trim() : null,
+                    subtitle: mode === 'drive' ? row.querySelector('.m-subtitle').value.trim() : null,
+                    drive_url: mode === 'drive' ? row.querySelector('.m-drive-url').value.trim() : null
+                };
+
+                if (targetId) {
+                    await supabase.from('question_bank').update(rowPayload).eq('id', targetId);
+                } else {
+                    await supabase.from('question_bank').insert([rowPayload]);
+                }
+            }
+
+            closeEditModal(); 
+            if (anyPublished) {
+                triggerPublish3DAnimation(() => loadData());
+            } else {
+                loadData();
+            }
+        }
+
+        async function deleteQuestion(id) {
+            if(confirm("DELETE entry?")) {
+                const { error } = await supabase.from('question_bank').delete().eq('id', id);
+                if(!error) loadData();
+            }
+        }
+    </script>
+</body>
+</html>
