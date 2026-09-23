@@ -1,0 +1,13 @@
+{
+  "name": "kkdgms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kanyakumari Dist Government Model School Management System",
+  "scripts": {
+    "build": "echo 'Static multi-page web application ready'",
+    "start": "npx serve . -p 3000"
+  },
+  "keywords": ["school", "management", "supabase", "pwa"],
+  "author": "KKDGMS",
+  "license": "MIT"
+}

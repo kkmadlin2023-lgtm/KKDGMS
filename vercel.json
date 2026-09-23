@@ -2,6 +2,15 @@
   "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/admin", "destination": "/admin/dashboard.html" },
+    { "source": "/faculty", "destination": "/faculty/dashboard.html" },
+    { "source": "/student", "destination": "/student/dashboard.html" },
+    { "source": "/warden", "destination": "/warden/dashboard.html" },
+    { "source": "/technician", "destination": "/technician/dashboard.html" }
+  ],
   "headers": [
     {
       "source": "/sw.js",
