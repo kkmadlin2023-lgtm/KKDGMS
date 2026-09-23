@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management - KKDGMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--primary)',
+                        'primary-light': 'var(--primary-light)',
+                        accent: 'var(--accent)',
+                        success: 'var(--success)',
+                        danger: 'var(--danger)',
+                        warning: 'var(--warning)',
+                        surface: 'var(--surface)',
+                        bg: 'var(--bg)',
+                        text: 'var(--text)',
+                        'text-secondary': 'var(--text-secondary)',
+                        border: 'var(--border)'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-bg text-text min-h-screen flex">
+    <div id="sidebar-container"></div>
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <div id="navbar-container"></div>
+        
+        <div class="flex-1 overflow-auto p-4 md:p-6 space-y-6">
+            <h1 class="text-2xl font-bold">Attendance Management</h1>
+            
+            <!-- Filters -->
+            <div class="bg-surface p-4 rounded-lg shadow-sm border border-border grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-xs text-text-secondary mb-1">Date</label>
+                    <input type="date" class="w-full p-2 border border-border rounded bg-bg">
+                </div>
+                <div>
+                    <label class="block text-xs text-text-secondary mb-1">Class</label>
+                    <select class="w-full p-2 border border-border rounded bg-bg">
+                        <option value="">All</option>
+                        <option value="9">Class 9</option>
+                        <option value="10">Class 10</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-text-secondary mb-1">Section</label>
+                    <select class="w-full p-2 border border-border rounded bg-bg">
+                        <option value="">All</option>
+                        <option value="A">A</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-text-secondary mb-1">Group</label>
+                    <select class="w-full p-2 border border-border rounded bg-bg">
+                        <option value="">N/A</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button class="w-full p-2 bg-primary text-white rounded hover:bg-primary-light">Load Data</button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border text-center">
+                    <div class="text-text-secondary text-sm">Attendance %</div>
+                    <div class="text-2xl font-bold mt-1 text-primary">94.2%</div>
+                </div>
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border text-center">
+                    <div class="text-text-secondary text-sm">Present</div>
+                    <div class="text-2xl font-bold mt-1 text-success">230</div>
+                </div>
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border text-center">
+                    <div class="text-text-secondary text-sm">Absent</div>
+                    <div class="text-2xl font-bold mt-1 text-danger">10</div>
+                </div>
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border text-center">
+                    <div class="text-text-secondary text-sm">On Leave</div>
+                    <div class="text-2xl font-bold mt-1 text-warning">5</div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Records Table -->
+                <div class="lg:col-span-2 bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
+                    <div class="p-4 border-b border-border flex justify-between items-center">
+                        <h2 class="font-semibold">Daily Records</h2>
+                        <button class="text-sm text-primary hover:underline">Edit Mode</button>
+                    </div>
+                    <div class="overflow-x-auto p-4">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-text-secondary text-sm border-b border-border">
+                                    <th class="pb-2">Roll No</th>
+                                    <th class="pb-2">Name</th>
+                                    <th class="pb-2">Class</th>
+                                    <th class="pb-2">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Example rows -->
+                                <tr class="border-b border-border">
+                                    <td class="py-3">101</td>
+                                    <td>Jane Smith</td>
+                                    <td>10-A</td>
+                                    <td>
+                                        <span class="px-2 py-1 rounded bg-success/20 text-success text-xs font-medium">Present</span>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-border">
+                                    <td class="py-3">102</td>
+                                    <td>Michael Brown</td>
+                                    <td>10-A</td>
+                                    <td>
+                                        <span class="px-2 py-1 rounded bg-danger/20 text-danger text-xs font-medium">Absent</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="space-y-6">
+                    <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                        <h2 class="font-semibold mb-4">Class-wise Overview</h2>
+                        <canvas id="attendance-pie-chart" class="w-full"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { Sidebar } from '../components/sidebar.js';
+        import { Navbar } from '../components/navbar.js';
+        import permissionService from '../js/services/permission.service.js';
+        import { createChart } from '../components/chart.js';
+
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const hasAccess = await permissionService.checkPageAccess('admin');
+            if (!hasAccess) return;
+
+            new Sidebar(document.getElementById('sidebar-container'));
+            new Navbar(document.getElementById('navbar-container'));
+
+            const ctx = document.getElementById('attendance-pie-chart');
+            if (ctx) {
+                createChart(ctx, 'doughnut', {
+                    labels: ['Present', 'Absent', 'Leave'],
+                    datasets: [{
+                        data: [230, 10, 5],
+                        backgroundColor: ['var(--success)', 'var(--danger)', 'var(--warning)']
+                    }]
+                });
+            }
+        });
+    </script>
+</body>
+</html>

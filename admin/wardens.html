@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="KKDGMS - Hostel Wardens">
+  <meta name="theme-color" content="#1e40af">
+  <title>Hostel Wardens — KKDGMS</title>
+  
+  <link rel="icon" type="image/png" href="../assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Poppins', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+              400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+              800: '#1e40af', 900: '#1e3a8a', 950: '#172554'
+            },
+            accent: {
+              500: '#f59e0b', 600: '#d97706', 700: '#b45309'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <link rel="stylesheet" href="../assets/css/theme.css">
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col md:flex-row antialiased">
+  
+  <!-- Sidebar Container -->
+  <aside id="sidebar-container" class="w-64 flex-shrink-0 z-30"></aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Navbar Container -->
+    <header id="navbar-container" class="sticky top-0 z-20"></header>
+
+    <!-- Page Body -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto space-y-6">
+      
+    <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+      <div>
+        <h1 class="text-2xl font-bold font-display text-gray-900 dark:text-white">Hostel Wardens</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage hostel supervision staff and hostel block assignments</p>
+      </div>
+      <a href="admissions.html" class="inline-flex items-center gap-2 bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md transition-all">
+        <i data-lucide="user-plus" class="w-4 h-4"></i> Add Warden
+      </a>
+    </div>
+    <div id="wardensTableContainer" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6"></div>
+  
+    </main>
+
+    <!-- Notification Panel Container -->
+    <div id="notification-panel-container"></div>
+  </div>
+
+  <!-- Toast & Modal Mount Points -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+  <div id="modalContainer"></div>
+
+  <!-- Application Logic -->
+  <script type="module">
+    import config from '../js/config.js';
+    import supabaseService from '../js/services/supabase.service.js';
+    import authService from '../js/services/auth.service.js';
+    import permissionService from '../js/services/permission.service.js';
+    import uiService from '../js/services/ui.service.js';
+    import auditService from '../js/services/audit.service.js';
+    import offlineService from '../js/services/offline.service.js';
+    import validationService from '../js/services/validation.service.js';
+    import Sidebar from '../components/sidebar.js';
+    import Navbar from '../components/navbar.js';
+    import ProfileMenu from '../components/profile-menu.js';
+    import NotificationPanel from '../components/notification-panel.js';
+    import DataTable from '../components/data-table.js';
+    import Modal from '../components/modal.js';
+    import ChartComponent from '../components/chart.js';
+    import FileUpload from '../components/file-upload.js';
+    import StoryViewer from '../components/story-viewer.js';
+    import { formatDate, calculateAge } from '../js/utils/date.utils.js';
+    import { exportToCSV, exportToPDF } from '../js/utils/export.utils.js';
+    import { generateQR, scanQR } from '../js/utils/qr.utils.js';
+
+    // RBAC & Session Check
+    const userRole = 'ADMIN';
+    const activePage = 'admin/wardens.html';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Theme sync
+      const savedTheme = localStorage.getItem('kkdgms-theme') || 'system';
+      const isDark = savedTheme === 'dark' || (savedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', isDark);
+
+      // 2. Render Layout Navigation
+      const sidebarMount = document.getElementById('sidebar-container');
+      const navbarMount = document.getElementById('navbar-container');
+      
+      if (sidebarMount) {
+        new Sidebar({
+          container: sidebarMount,
+          role: userRole,
+          currentPage: activePage
+        }).render();
+      }
+
+      if (navbarMount) {
+        new Navbar({
+          container: navbarMount,
+          title: 'Hostel Wardens',
+          breadcrumbs: [
+            { label: 'Portal', href: '#' },
+            { label: 'Hostel Wardens', active: true }
+          ]
+        }).render();
+      }
+
+      if (window.lucide) lucide.createIcons();
+
+      // Execute Page Script
+      
+    const tableContainer = document.getElementById('wardensTableContainer');
+    const { data } = await supabaseService.from('wardens').select('*');
+    new DataTable({
+      container: tableContainer,
+      columns: [
+        { key: 'full_name', label: 'Warden Name', sortable: true },
+        { key: 'assigned_hostel', label: 'Assigned Hostel', sortable: true },
+        { key: 'gender', label: 'Gender' },
+        { key: 'mobile', label: 'Mobile' },
+        { key: 'email', label: 'Email' }
+      ],
+      data: data || []
+    }).render();
+  
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Analysis - Faculty Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-[var(--bg)] text-[var(--text)] flex h-screen overflow-hidden">
+    <div id="sidebar-container"></div>
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+        <div id="navbar-container"></div>
+        <main class="flex-1 overflow-y-auto p-4 md:p-6">
+            <h1 class="text-2xl font-bold mb-6">Attendance Analysis</h1>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="bg-[var(--surface)] p-4 rounded-lg shadow-sm border border-[var(--border)]">
+                    <h3 class="font-bold mb-4">Class 10 A - Monthly Attendance</h3>
+                    <canvas id="attChart" height="200"></canvas>
+                </div>
+
+                <div class="bg-[var(--surface)] p-4 rounded-lg shadow-sm border border-[var(--border)]">
+                    <h3 class="font-bold mb-4 text-[var(--danger)] flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Low Attendance Alerts</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-[var(--bg)] rounded border border-red-200 dark:border-red-900">
+                            <div>
+                                <p class="font-semibold">Rahul Verma (Roll 115)</p>
+                                <p class="text-sm text-[var(--text-secondary)]">Current: 65%</p>
+                            </div>
+                            <button class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">Alert Parent</button>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-[var(--bg)] rounded border border-red-200 dark:border-red-900">
+                            <div>
+                                <p class="font-semibold">Sneha Patil (Roll 122)</p>
+                                <p class="text-sm text-[var(--text-secondary)]">Current: 68%</p>
+                            </div>
+                            <button class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">Alert Parent</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script type="module" src="../components/sidebar.js"></script>
+    <script type="module" src="../components/navbar.js"></script>
+    <script>
+        lucide.createIcons();
+        const ctx = document.getElementById('attChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+                datasets: [{
+                    label: 'Attendance %',
+                    data: [95, 92, 88, 91, 85],
+                    borderColor: '#3b82f6',
+                    tension: 0.1
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    </script>
+</body>
+</html>

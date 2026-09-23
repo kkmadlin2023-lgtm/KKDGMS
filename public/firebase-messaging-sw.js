@@ -1,9 +1,5 @@
-// =====================================================================
-// KKDGMS — Firebase Cloud Messaging Service Worker
-// =====================================================================
-
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
   apiKey: "AIzaSyBSyMx_ozuq0IBS0J6b22vx45HOyTvJfJw",
@@ -16,13 +12,13 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function(payload) {
-  const notificationTitle = payload.notification?.title || 'KKDGMS Circular Notice';
+messaging.onBackgroundMessage((payload) => {
+  const notificationTitle = payload.notification.title || 'KKDGMS Notification';
   const notificationOptions = {
-    body: payload.notification?.body || 'New notification published from Principal Office.',
-    icon: '/kk.png',
-    badge: '/kk.png',
-    tag: 'kkdgms-broadcast'
+    body: payload.notification.body || '',
+    icon: '/assets/images/logo.png',
+    badge: '/assets/images/logo.png',
+    data: payload.data
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

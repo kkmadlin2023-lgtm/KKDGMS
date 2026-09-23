@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Management - KKDGMS Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+</head>
+<body class="bg-[var(--bg)] text-[var(--text)] min-h-screen flex flex-col font-sans">
+    
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-7xl">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-[var(--primary)]">Visitor Management</h1>
+                <p class="text-[var(--text-secondary)]">Register and track campus visitors</p>
+            </div>
+            <a href="index.html" class="flex items-center text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>
+                Back to Dashboard
+            </a>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Registration Form -->
+            <div class="lg:col-span-1 bg-[var(--surface)] p-6 rounded-xl shadow-sm border border-[var(--border)]">
+                <h2 class="text-xl font-semibold mb-6 flex items-center">
+                    <i data-lucide="user-plus" class="w-5 h-5 mr-2 text-[var(--primary)]"></i>
+                    Register Visitor
+                </h2>
+                <form id="visitor-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Full Name</label>
+                        <input type="text" id="visitor-name" required class="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] focus:outline-none focus:border-[var(--primary)]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Mobile Number</label>
+                        <input type="tel" id="visitor-mobile" required class="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] focus:outline-none focus:border-[var(--primary)]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Purpose of Visit</label>
+                        <select id="visitor-purpose" required class="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] focus:outline-none focus:border-[var(--primary)]">
+                            <option value="parent_meeting">Parent-Teacher Meeting</option>
+                            <option value="admission">Admission Enquiry</option>
+                            <option value="vendor">Vendor / Delivery</option>
+                            <option value="official">Official Visit</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Person to Meet</label>
+                        <input type="text" id="person-to-meet" required class="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] focus:outline-none focus:border-[var(--primary)]">
+                    </div>
+                    <button type="submit" class="w-full bg-[var(--primary)] text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center font-medium">
+                        <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                        Register & Generate Pass
+                    </button>
+                </form>
+            </div>
+
+            <!-- Active Visitors Log -->
+            <div class="lg:col-span-2 bg-[var(--surface)] p-6 rounded-xl shadow-sm border border-[var(--border)]">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold flex items-center">
+                        <i data-lucide="users" class="w-5 h-5 mr-2 text-[var(--primary)]"></i>
+                        Active Visitors
+                    </h2>
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-[var(--text-secondary)]"></i>
+                        <input type="text" placeholder="Search..." class="pl-9 pr-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] focus:outline-none focus:border-[var(--primary)] text-sm">
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-[var(--border)] text-[var(--text-secondary)]">
+                                <th class="py-3 px-4 font-medium text-sm">Visitor</th>
+                                <th class="py-3 px-4 font-medium text-sm">Purpose</th>
+                                <th class="py-3 px-4 font-medium text-sm">Entry Time</th>
+                                <th class="py-3 px-4 font-medium text-sm">Status</th>
+                                <th class="py-3 px-4 font-medium text-sm text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitors-list">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Print Pass Modal -->
+    <div id="print-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-[var(--surface)] p-8 rounded-xl max-w-sm w-full relative">
+            <button id="close-modal" class="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text)]">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div id="print-area" class="text-center p-4 border-2 border-dashed border-[var(--border)] rounded-lg mb-6">
+                <h3 class="font-bold text-xl mb-1 text-[var(--primary)]">KKDGMS Visitor Pass</h3>
+                <p class="text-xs text-[var(--text-secondary)] mb-4">Valid for today only</p>
+                
+                <div id="qrcode" class="flex justify-center mb-4"></div>
+                
+                <h4 id="pass-name" class="font-bold text-lg"></h4>
+                <p id="pass-purpose" class="text-sm text-[var(--text-secondary)] mb-2"></p>
+                
+                <div class="grid grid-cols-2 gap-2 text-left text-xs bg-[var(--bg)] p-3 rounded-lg mt-4">
+                    <div>
+                        <span class="block text-[var(--text-secondary)]">To Meet:</span>
+                        <strong id="pass-meet"></strong>
+                    </div>
+                    <div>
+                        <span class="block text-[var(--text-secondary)]">Entry:</span>
+                        <strong id="pass-entry"></strong>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-print" class="w-full bg-[var(--primary)] text-white py-2 rounded-lg flex justify-center items-center">
+                <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print Pass
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        lucide.createIcons();
+        
+        // Mock State
+        let visitors = [
+            { id: 'V-101', name: 'Rahul Sharma', purpose: 'parent_meeting', meet: 'Mrs. Anita (Class 10)', entry: new Date(Date.now() - 3600000).toLocaleTimeString(), status: 'active' },
+            { id: 'V-102', name: 'Sneha Gupta', purpose: 'admission', meet: 'Admin Office', entry: new Date().toLocaleTimeString(), status: 'active' }
+        ];
+
+        function renderVisitors() {
+            const tbody = document.getElementById('visitors-list');
+            tbody.innerHTML = '';
+            
+            visitors.forEach(v => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-[var(--border)] hover:bg-[var(--bg)] transition-colors';
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-4">
+                        <div class="font-medium">${v.name}</div>
+                        <div class="text-xs text-[var(--text-secondary)]">${v.id}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="text-sm">${v.purpose.replace('_', ' ')}</div>
+                        <div class="text-xs text-[var(--text-secondary)]">To meet: ${v.meet}</div>
+                    </td>
+                    <td class="py-3 px-4 text-sm">${v.entry}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${v.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800'}">
+                            ${v.status.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        ${v.status === 'active' ? `
+                            <button onclick="checkoutVisitor('${v.id}')" class="text-sm text-[var(--danger)] hover:underline mr-3">Checkout</button>
+                            <button onclick="showPass('${v.id}')" class="text-sm text-[var(--primary)] hover:underline">Pass</button>
+                        ` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.checkoutVisitor = (id) => {
+            const visitor = visitors.find(v => v.id === id);
+            if(visitor) {
+                visitor.status = 'completed';
+                visitor.exit = new Date().toLocaleTimeString();
+                renderVisitors();
+            }
+        };
+
+        window.showPass = (id) => {
+            const visitor = visitors.find(v => v.id === id);
+            if(visitor) {
+                document.getElementById('pass-name').textContent = visitor.name;
+                document.getElementById('pass-purpose').textContent = visitor.purpose.replace('_', ' ').toUpperCase();
+                document.getElementById('pass-meet').textContent = visitor.meet;
+                document.getElementById('pass-entry').textContent = visitor.entry;
+                
+                const qr = qrcode(0, 'L');
+                qr.addData(visitor.id);
+                qr.make();
+                document.getElementById('qrcode').innerHTML = qr.createImgTag(4);
+                
+                document.getElementById('print-modal').classList.remove('hidden');
+            }
+        };
+
+        document.getElementById('visitor-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('visitor-name').value;
+            const mobile = document.getElementById('visitor-mobile').value;
+            const purpose = document.getElementById('visitor-purpose').value;
+            const meet = document.getElementById('person-to-meet').value;
+            
+            const newVisitor = {
+                id: 'V-' + Math.floor(Math.random() * 900 + 100),
+                name,
+                mobile,
+                purpose,
+                meet,
+                entry: new Date().toLocaleTimeString(),
+                status: 'active'
+            };
+            
+            visitors.unshift(newVisitor);
+            renderVisitors();
+            e.target.reset();
+            showPass(newVisitor.id);
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('print-modal').classList.add('hidden');
+        });
+
+        document.getElementById('btn-print').addEventListener('click', () => {
+            const printContent = document.getElementById('print-area').innerHTML;
+            const originalContent = document.body.innerHTML;
+            
+            document.body.innerHTML = printContent;
+            window.print();
+            document.body.innerHTML = originalContent;
+            location.reload();
+        });
+
+        // Initial render
+        renderVisitors();
+    </script>
+</body>
+</html>

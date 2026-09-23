@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admissions - KKDGMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--primary)',
+                        'primary-light': 'var(--primary-light)',
+                        accent: 'var(--accent)',
+                        success: 'var(--success)',
+                        danger: 'var(--danger)',
+                        warning: 'var(--warning)',
+                        surface: 'var(--surface)',
+                        bg: 'var(--bg)',
+                        text: 'var(--text)',
+                        'text-secondary': 'var(--text-secondary)',
+                        border: 'var(--border)'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-bg text-text min-h-screen flex">
+    <div id="sidebar-container"></div>
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <div id="navbar-container"></div>
+        <div class="flex-1 overflow-auto p-4 md:p-6">
+            <h1 class="text-2xl font-bold mb-6">Admissions & Onboarding</h1>
+            
+            <div class="bg-surface rounded-lg shadow-sm border border-border">
+                <!-- Tabs -->
+                <div class="flex overflow-x-auto border-b border-border" id="role-tabs">
+                    <button class="tab-btn active px-6 py-3 font-medium text-primary border-b-2 border-primary" data-target="student-form">STUDENT</button>
+                    <button class="tab-btn px-6 py-3 font-medium text-text-secondary border-b-2 border-transparent hover:text-text" data-target="faculty-form">FACULTY</button>
+                    <button class="tab-btn px-6 py-3 font-medium text-text-secondary border-b-2 border-transparent hover:text-text" data-target="warden-form">WARDEN</button>
+                    <button class="tab-btn px-6 py-3 font-medium text-text-secondary border-b-2 border-transparent hover:text-text" data-target="technician-form">TECHNICIAN</button>
+                    <button class="tab-btn px-6 py-3 font-medium text-text-secondary border-b-2 border-transparent hover:text-text" data-target="admin-form">ADMIN</button>
+                </div>
+
+                <div class="p-6">
+                    <!-- Student Form -->
+                    <form id="student-form" class="role-form space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">First Name *</label>
+                                <input type="text" required class="w-full p-2 border border-border rounded bg-bg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Last Name</label>
+                                <input type="text" class="w-full p-2 border border-border rounded bg-bg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Initial</label>
+                                <input type="text" class="w-full p-2 border border-border rounded bg-bg">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">DOB *</label>
+                                <input type="date" required id="student-dob" class="w-full p-2 border border-border rounded bg-bg">
+                                <div class="text-xs text-text-secondary mt-1" id="age-display">Age: --</div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Aadhaar (12 digits) *</label>
+                                <input type="text" pattern="\d{12}" required class="w-full p-2 border border-border rounded bg-bg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Mobile (10 digits) *</label>
+                                <input type="text" pattern="\d{10}" required class="w-full p-2 border border-border rounded bg-bg">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Class *</label>
+                                <select required id="student-class" class="w-full p-2 border border-border rounded bg-bg">
+                                    <option value="">Select Class</option>
+                                    <option value="9">Class 9</option>
+                                    <option value="10">Class 10</option>
+                                    <option value="11">Class 11</option>
+                                    <option value="12">Class 12</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Section *</label>
+                                <select required class="w-full p-2 border border-border rounded bg-bg">
+                                    <option value="">Select Section</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                </select>
+                            </div>
+                            <div id="group-container" class="hidden">
+                                <label class="block text-sm font-medium mb-1">Group *</label>
+                                <select class="w-full p-2 border border-border rounded bg-bg">
+                                    <option value="">Select Group</option>
+                                    <option value="Maths-Biology">Maths-Biology</option>
+                                    <option value="Computer-Science">Computer Science</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end gap-4 border-t border-border pt-4">
+                            <button type="button" class="px-4 py-2 border border-border rounded hover:bg-bg">Save Draft</button>
+                            <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-light">Admit Student</button>
+                        </div>
+                    </form>
+
+                    <!-- Faculty Form (Hidden initially) -->
+                    <form id="faculty-form" class="role-form hidden space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Full Name *</label>
+                                <input type="text" required class="w-full p-2 border border-border rounded bg-bg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Department *</label>
+                                <select required class="w-full p-2 border border-border rounded bg-bg">
+                                    <option value="">Select Dept</option>
+                                    <option value="English">English</option>
+                                    <option value="Maths">Maths</option>
+                                    <option value="Science">Science</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-4 border-t border-border pt-4">
+                            <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-light">Add Faculty</button>
+                        </div>
+                    </form>
+                    
+                    <!-- Similar structures for WARDEN, TECHNICIAN, ADMIN omitted for brevity in template, can be expanded via JS or further HTML -->
+                    <div id="warden-form" class="role-form hidden p-4 text-center">Warden Form Fields Here</div>
+                    <div id="technician-form" class="role-form hidden p-4 text-center">Technician Form Fields Here</div>
+                    <div id="admin-form" class="role-form hidden p-4 text-center">Admin Form Fields Here</div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { Sidebar } from '../components/sidebar.js';
+        import { Navbar } from '../components/navbar.js';
+        import permissionService from '../js/services/permission.service.js';
+        import offlineService from '../js/services/offline.service.js';
+
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const hasAccess = await permissionService.checkPageAccess('admin');
+            if (!hasAccess) return;
+
+            new Sidebar(document.getElementById('sidebar-container'));
+            new Navbar(document.getElementById('navbar-container'));
+
+            // Tab logic
+            const tabs = document.querySelectorAll('.tab-btn');
+            const forms = document.querySelectorAll('.role-form');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        t.classList.remove('text-primary', 'border-primary', 'active');
+                        t.classList.add('text-text-secondary', 'border-transparent');
+                    });
+                    tab.classList.remove('text-text-secondary', 'border-transparent');
+                    tab.classList.add('text-primary', 'border-primary', 'active');
+
+                    forms.forEach(f => f.classList.add('hidden'));
+                    document.getElementById(tab.dataset.target).classList.remove('hidden');
+                });
+            });
+
+            // Student Form Logic
+            const dobInput = document.getElementById('student-dob');
+            if(dobInput) {
+                dobInput.addEventListener('change', (e) => {
+                    const dob = new Date(e.target.value);
+                    const diff = Date.now() - dob.getTime();
+                    const age = new Date(diff).getUTCFullYear() - 1970;
+                    document.getElementById('age-display').textContent = `Age: ${Math.abs(age)}`;
+                });
+            }
+
+            const classSelect = document.getElementById('student-class');
+            if(classSelect) {
+                classSelect.addEventListener('change', (e) => {
+                    const groupContainer = document.getElementById('group-container');
+                    if(e.target.value === '11' || e.target.value === '12') {
+                        groupContainer.classList.remove('hidden');
+                    } else {
+                        groupContainer.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Implement Auto-save logic with offlineService here...
+        });
+    </script>
+</body>
+</html>

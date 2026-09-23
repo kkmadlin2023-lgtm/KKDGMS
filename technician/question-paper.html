@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="KKDGMS - Question Paper Builder">
+  <meta name="theme-color" content="#1e40af">
+  <title>Question Paper Builder — KKDGMS</title>
+  
+  <link rel="icon" type="image/png" href="../assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Poppins', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+              400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+              800: '#1e40af', 900: '#1e3a8a', 950: '#172554'
+            },
+            accent: {
+              500: '#f59e0b', 600: '#d97706', 700: '#b45309'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <link rel="stylesheet" href="../assets/css/theme.css">
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col md:flex-row antialiased">
+  
+  <aside id="sidebar-container" class="w-64 flex-shrink-0 z-30"></aside>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <header id="navbar-container" class="sticky top-0 z-20"></header>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto space-y-6">
+      
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-6 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold font-display text-gray-900 dark:text-white">Question Paper Builder</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Create professional question papers with school emblem and section breaks</p>
+      </div>
+      <button class="btn btn-primary" onclick="window.print()">
+        <i data-lucide="printer" class="w-4 h-4"></i> Print Paper
+      </button>
+    </div>
+    <div class="bg-white p-8 rounded-2xl border border-gray-200 text-gray-900 shadow-md max-w-4xl mx-auto space-y-6">
+      <div class="text-center border-b pb-4">
+        <h2 class="text-xl font-bold">KANYAKUMARI DIST GOVERNMENT MODEL SCHOOL</h2>
+        <p class="text-sm text-gray-600">Mid-Term Examination — 2024</p>
+        <div class="flex justify-between text-xs text-gray-600 mt-3">
+          <span>Class: XII</span>
+          <span>Subject: Mathematics</span>
+          <span>Time: 2.30 Hrs</span>
+          <span>Max. Marks: 90</span>
+        </div>
+      </div>
+      <div class="space-y-4 text-sm">
+        <h3 class="font-bold uppercase tracking-wider">Part - A (Answer all questions) 10 x 1 = 10</h3>
+        <p>1. If A is a non-singular matrix of order 3, then |adj A| is equal to...</p>
+        <p>2. The value of the complex number i^2024 is...</p>
+      </div>
+    </div>
+  
+    </main>
+
+    <div id="notification-panel-container"></div>
+  </div>
+
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+  <div id="modalContainer"></div>
+
+  <script type="module">
+    import config from '../js/config.js';
+    import supabaseService from '../js/services/supabase.service.js';
+    import authService from '../js/services/auth.service.js';
+    import permissionService from '../js/services/permission.service.js';
+    import uiService from '../js/services/ui.service.js';
+    import Sidebar from '../components/sidebar.js';
+    import Navbar from '../components/navbar.js';
+    import DataTable from '../components/data-table.js';
+    import { formatDate } from '../js/utils/date.utils.js';
+
+    const userRole = 'TECHNICIAN';
+    const activePage = 'technician/question-paper.html';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const savedTheme = localStorage.getItem('kkdgms-theme') || 'system';
+      const isDark = savedTheme === 'dark' || (savedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', isDark);
+
+      const sidebarMount = document.getElementById('sidebar-container');
+      const navbarMount = document.getElementById('navbar-container');
+      
+      if (sidebarMount) {
+        new Sidebar({
+          container: sidebarMount,
+          role: userRole,
+          currentPage: activePage
+        }).render();
+      }
+
+      if (navbarMount) {
+        new Navbar({
+          container: navbarMount,
+          title: 'Question Paper Builder',
+          breadcrumbs: [
+            { label: 'Portal', href: '#' },
+            { label: 'Question Paper Builder', active: true }
+          ]
+        }).render();
+      }
+
+      if (window.lucide) lucide.createIcons();
+
+      // Paper generator ready
+    });
+  </script>
+</body>
+</html>

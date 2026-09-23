@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students - KKDGMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--primary)',
+                        'primary-light': 'var(--primary-light)',
+                        accent: 'var(--accent)',
+                        success: 'var(--success)',
+                        danger: 'var(--danger)',
+                        warning: 'var(--warning)',
+                        surface: 'var(--surface)',
+                        bg: 'var(--bg)',
+                        text: 'var(--text)',
+                        'text-secondary': 'var(--text-secondary)',
+                        border: 'var(--border)'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-bg text-text min-h-screen flex">
+    <div id="sidebar-container"></div>
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <div id="navbar-container"></div>
+        
+        <div class="flex-1 overflow-auto p-4 md:p-6 space-y-4">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <h1 class="text-2xl font-bold">Students Directory</h1>
+                <div class="flex flex-wrap gap-2">
+                    <button class="px-4 py-2 bg-surface border border-border rounded flex items-center gap-2 hover:bg-bg">
+                        <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+                    </button>
+                    <a href="admissions.html" class="px-4 py-2 bg-primary text-white rounded flex items-center gap-2 hover:bg-primary-light">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Student
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-surface p-4 rounded-lg shadow-sm border border-border grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                    <input type="text" placeholder="Search by name, EMIS..." class="w-full p-2 border border-border rounded bg-bg">
+                </div>
+                <div>
+                    <select class="w-full p-2 border border-border rounded bg-bg">
+                        <option value="">All Classes</option>
+                        <option value="9">Class 9</option>
+                        <option value="10">Class 10</option>
+                        <option value="11">Class 11</option>
+                        <option value="12">Class 12</option>
+                    </select>
+                </div>
+                <div>
+                    <select class="w-full p-2 border border-border rounded bg-bg">
+                        <option value="">All Sections</option>
+                        <option value="A">Section A</option>
+                        <option value="B">Section B</option>
+                    </select>
+                </div>
+                <div>
+                    <select class="w-full p-2 border border-border rounded bg-bg">
+                        <option value="">All Hostels</option>
+                        <option value="H1">Boys Hostel 1</option>
+                        <option value="H2">Girls Hostel 1</option>
+                    </select>
+                </div>
+                <div>
+                    <button class="w-full p-2 bg-primary text-white rounded hover:bg-primary-light">Apply Filters</button>
+                </div>
+            </div>
+
+            <!-- Data Table Container -->
+            <div class="bg-surface rounded-lg shadow-sm border border-border overflow-hidden" id="students-table-container">
+                <div class="p-8 text-center text-text-secondary">Loading students data...</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { Sidebar } from '../components/sidebar.js';
+        import { Navbar } from '../components/navbar.js';
+        import permissionService from '../js/services/permission.service.js';
+        // import { DataTable } from '../components/data-table.js'; // Assuming it will be available
+
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const hasAccess = await permissionService.checkPageAccess('admin');
+            if (!hasAccess) return;
+
+            new Sidebar(document.getElementById('sidebar-container'));
+            new Navbar(document.getElementById('navbar-container'));
+            
+            // Render table placeholder logic
+            const tableContainer = document.getElementById('students-table-container');
+            tableContainer.innerHTML = `
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-bg text-text-secondary">
+                        <tr>
+                            <th class="p-3 border-b border-border">Name</th>
+                            <th class="p-3 border-b border-border">EMIS No</th>
+                            <th class="p-3 border-b border-border">Class & Sec</th>
+                            <th class="p-3 border-b border-border">Status</th>
+                            <th class="p-3 border-b border-border">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Placeholder rows -->
+                        <tr class="border-b border-border hover:bg-bg">
+                            <td class="p-3">John Doe</td>
+                            <td class="p-3">1234567890</td>
+                            <td class="p-3">10 - A</td>
+                            <td class="p-3"><span class="bg-success/20 text-success px-2 py-1 rounded text-xs">Active</span></td>
+                            <td class="p-3 flex gap-2">
+                                <button class="p-1 hover:text-primary"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                                <button class="p-1 hover:text-accent"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                                <button class="p-1 hover:text-danger"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - KKDGMS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--primary)',
+                        'primary-light': 'var(--primary-light)',
+                        accent: 'var(--accent)',
+                        success: 'var(--success)',
+                        danger: 'var(--danger)',
+                        warning: 'var(--warning)',
+                        surface: 'var(--surface)',
+                        bg: 'var(--bg)',
+                        text: 'var(--text)',
+                        'text-secondary': 'var(--text-secondary)',
+                        border: 'var(--border)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-bg text-text min-h-screen flex">
+    <!-- Sidebar Container -->
+    <div id="sidebar-container"></div>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Navbar Container -->
+        <div id="navbar-container"></div>
+
+        <div class="flex-1 overflow-auto p-4 md:p-6 space-y-6">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Dashboard Overview</h1>
+                <div class="flex space-x-2">
+                    <button class="bg-primary text-white px-4 py-2 rounded shadow flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Quick Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" id="metrics-grid">
+                <!-- Populated by JS -->
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                    <div class="text-text-secondary text-sm font-medium">Total Students</div>
+                    <div class="text-2xl font-bold mt-1" id="metric-students">...</div>
+                </div>
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                    <div class="text-text-secondary text-sm font-medium">Total Faculty</div>
+                    <div class="text-2xl font-bold mt-1" id="metric-faculty">...</div>
+                </div>
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                    <div class="text-text-secondary text-sm font-medium">Today's Attendance</div>
+                    <div class="text-2xl font-bold mt-1 text-success" id="metric-attendance-pct">...</div>
+                </div>
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                    <div class="text-text-secondary text-sm font-medium">Pending Leaves</div>
+                    <div class="text-2xl font-bold mt-1 text-warning flex items-center gap-2">
+                        <span id="metric-leaves">...</span>
+                        <span class="bg-danger text-white text-xs px-2 py-0.5 rounded-full" id="leave-badge">New</span>
+                    </div>
+                </div>
+                <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                    <div class="text-text-secondary text-sm font-medium">Total Admins</div>
+                    <div class="text-2xl font-bold mt-1" id="metric-admins">...</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Charts Area -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                        <h2 class="text-lg font-semibold mb-4">Attendance Trends</h2>
+                        <div class="h-72">
+                            <canvas id="attendance-trend-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                        <h2 class="text-lg font-semibold mb-4">Class-wise Attendance</h2>
+                        <div class="h-64">
+                            <canvas id="class-attendance-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar -->
+                <div class="space-y-6">
+                    <!-- Quick Actions -->
+                    <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                        <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+                        <div class="space-y-2">
+                            <a href="admissions.html" class="flex items-center gap-3 p-3 rounded hover:bg-bg transition-colors border border-transparent hover:border-border">
+                                <div class="bg-primary-light text-primary p-2 rounded-full">
+                                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">New Admission</div>
+                                    <div class="text-xs text-text-secondary">Enroll student or staff</div>
+                                </div>
+                            </a>
+                            <a href="attendance.html" class="flex items-center gap-3 p-3 rounded hover:bg-bg transition-colors border border-transparent hover:border-border">
+                                <div class="bg-success/20 text-success p-2 rounded-full">
+                                    <i data-lucide="check-square" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Mark Attendance</div>
+                                    <div class="text-xs text-text-secondary">Daily attendance entry</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Recent Announcements -->
+                    <div class="bg-surface p-4 rounded-lg shadow-sm border border-border">
+                        <h2 class="text-lg font-semibold mb-4">Recent Announcements</h2>
+                        <div class="space-y-4" id="announcements-list">
+                            <!-- Populated by JS -->
+                            <div class="text-sm text-text-secondary text-center py-4">Loading announcements...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Application Logic -->
+    <script type="module">
+        import { Sidebar } from '../components/sidebar.js';
+        import { Navbar } from '../components/navbar.js';
+        import { ProfileMenu } from '../components/profile-menu.js';
+        import { createChart } from '../components/chart.js';
+        import permissionService from '../js/services/permission.service.js';
+        import authService from '../js/services/auth.service.js';
+
+        // Initialize icons
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check access
+            const hasAccess = await permissionService.checkPageAccess('admin');
+            if (!hasAccess) return; // checkPageAccess handles redirect
+
+            // Render components
+            new Sidebar(document.getElementById('sidebar-container'));
+            new Navbar(document.getElementById('navbar-container'));
+            
+            // Wait for navbar to render before attaching profile menu
+            setTimeout(() => {
+                const profileContainer = document.getElementById('profile-menu-container');
+                if (profileContainer) {
+                    new ProfileMenu(profileContainer);
+                }
+            }, 100);
+
+            // Initialize Charts
+            initCharts();
+            
+            // Load Data
+            loadDashboardData();
+        });
+
+        function initCharts() {
+            const trendCtx = document.getElementById('attendance-trend-chart');
+            if (trendCtx) {
+                createChart(trendCtx, 'line', {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                    datasets: [{
+                        label: 'Attendance %',
+                        data: [92, 95, 89, 94, 91],
+                        borderColor: 'var(--primary)',
+                        tension: 0.4
+                    }]
+                });
+            }
+
+            const classCtx = document.getElementById('class-attendance-chart');
+            if (classCtx) {
+                createChart(classCtx, 'bar', {
+                    labels: ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
+                    datasets: [{
+                        label: 'Present',
+                        data: [45, 50, 48, 42],
+                        backgroundColor: 'var(--success)'
+                    }]
+                });
+            }
+        }
+
+        async function loadDashboardData() {
+            // Placeholder for data fetching logic
+            document.getElementById('metric-students').textContent = '245';
+            document.getElementById('metric-faculty').textContent = '18';
+            document.getElementById('metric-attendance-pct').textContent = '94%';
+            document.getElementById('metric-leaves').textContent = '3';
+            document.getElementById('metric-admins').textContent = '2';
+        }
+    </script>
+</body>
+</html>

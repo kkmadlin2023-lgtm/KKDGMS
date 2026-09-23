@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Permissions - KKDGMS Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
+</head>
+<body class="bg-[var(--bg)] text-[var(--text)] min-h-screen flex flex-col font-sans">
+    
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-7xl">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-[var(--primary)]">Role Permissions</h1>
+                <p class="text-[var(--text-secondary)]">Manage access control matrix across the platform</p>
+            </div>
+            <div class="flex gap-4">
+                <button class="bg-[var(--surface)] border border-[var(--border)] px-4 py-2 rounded-lg hover:bg-[var(--bg)] transition-colors">
+                    Reset
+                </button>
+                <button class="bg-[var(--primary)] text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <i data-lucide="save" class="w-4 h-4 mr-2"></i> Save Changes
+                </button>
+            </div>
+        </header>
+
+        <div class="bg-[var(--surface)] rounded-xl shadow-sm border border-[var(--border)] overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-[var(--bg)] border-b border-[var(--border)]">
+                            <th class="py-4 px-6 font-semibold w-1/4">Module / Page</th>
+                            <th class="py-4 px-6 font-semibold text-center">ADMIN</th>
+                            <th class="py-4 px-6 font-semibold text-center">FACULTY</th>
+                            <th class="py-4 px-6 font-semibold text-center">STUDENT</th>
+                            <th class="py-4 px-6 font-semibold text-center">WARDEN</th>
+                            <th class="py-4 px-6 font-semibold text-center">GUEST</th>
+                        </tr>
+                    </thead>
+                    <tbody id="permissions-matrix">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        lucide.createIcons();
+        
+        const modules = [
+            { id: 'dash', name: 'Dashboard' },
+            { id: 'users', name: 'User Management' },
+            { id: 'acad', name: 'Academics (Marks/Exams)' },
+            { id: 'att', name: 'Attendance' },
+            { id: 'hostel', name: 'Hostel Management' },
+            { id: 'comm', name: 'Announcements & Stories' },
+            { id: 'fin', name: 'Expenses & Fees' }
+        ];
+
+        const roles = ['ADMIN', 'FACULTY', 'STUDENT', 'WARDEN', 'GUEST'];
+        const actions = ['View', 'Create', 'Edit', 'Delete'];
+
+        // Mock initial state
+        const state = {
+            'dash': { ADMIN: [1,1,1,1], FACULTY: [1,0,0,0], STUDENT: [1,0,0,0], WARDEN: [1,0,0,0], GUEST: [0,0,0,0] },
+            'users': { ADMIN: [1,1,1,1], FACULTY: [1,0,0,0], STUDENT: [0,0,0,0], WARDEN: [0,0,0,0], GUEST: [0,0,0,0] },
+            'acad': { ADMIN: [1,1,1,1], FACULTY: [1,1,1,0], STUDENT: [1,0,0,0], WARDEN: [0,0,0,0], GUEST: [0,0,0,0] },
+            'att': { ADMIN: [1,1,1,1], FACULTY: [1,1,1,0], STUDENT: [1,0,0,0], WARDEN: [0,0,0,0], GUEST: [0,0,0,0] },
+            'hostel': { ADMIN: [1,1,1,1], FACULTY: [0,0,0,0], STUDENT: [1,0,0,0], WARDEN: [1,1,1,0], GUEST: [0,0,0,0] },
+            'comm': { ADMIN: [1,1,1,1], FACULTY: [1,1,0,0], STUDENT: [1,0,0,0], WARDEN: [1,1,0,0], GUEST: [1,0,0,0] },
+            'fin': { ADMIN: [1,1,1,1], FACULTY: [0,0,0,0], STUDENT: [1,0,0,0], WARDEN: [0,0,0,0], GUEST: [0,0,0,0] }
+        };
+
+        const tbody = document.getElementById('permissions-matrix');
+
+        modules.forEach(mod => {
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-[var(--border)] hover:bg-[var(--bg)] transition-colors';
+            
+            let html = `<td class="py-4 px-6 font-medium">${mod.name}</td>`;
+            
+            roles.forEach(role => {
+                const perms = state[mod.id][role];
+                html += `<td class="py-4 px-2 text-center">
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="flex flex-wrap justify-center gap-2 text-xs">
+                            ${actions.map((act, i) => `
+                                <label class="flex items-center gap-1 cursor-pointer" title="${act}">
+                                    <input type="checkbox" ${perms[i] ? 'checked' : ''} ${role === 'ADMIN' ? 'disabled' : ''} 
+                                        class="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)]">
+                                    <span class="text-[var(--text-secondary)]">${act[0]}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                </td>`;
+            });
+            
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+    </script>
+</body>
+</html>

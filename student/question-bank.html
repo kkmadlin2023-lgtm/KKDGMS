@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="KKDGMS - Question Bank Vault">
+  <meta name="theme-color" content="#1e40af">
+  <title>Question Bank Vault — KKDGMS</title>
+  
+  <link rel="icon" type="image/png" href="../assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Poppins', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+              400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+              800: '#1e40af', 900: '#1e3a8a', 950: '#172554'
+            },
+            accent: {
+              500: '#f59e0b', 600: '#d97706', 700: '#b45309'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="../assets/css/theme.css">
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col md:flex-row antialiased">
+  
+  <aside id="sidebar-container" class="w-64 flex-shrink-0 z-30"></aside>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <header id="navbar-container" class="sticky top-0 z-20"></header>
+
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto space-y-6">
+      
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-6">
+      <h1 class="text-2xl font-bold font-display text-gray-900 dark:text-white">Question Bank Study Vault</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Syllabus revision questions, solutions, and downloadable model papers</p>
+    </div>
+    <div id="qbContainer" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6"></div>
+  
+    </main>
+
+    <div id="notification-panel-container"></div>
+  </div>
+
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+  <div id="modalContainer"></div>
+
+  <script type="module">
+    import config from '../js/config.js';
+    import supabaseService from '../js/services/supabase.service.js';
+    import authService from '../js/services/auth.service.js';
+    import permissionService from '../js/services/permission.service.js';
+    import uiService from '../js/services/ui.service.js';
+    import Sidebar from '../components/sidebar.js';
+    import Navbar from '../components/navbar.js';
+    import ProfileMenu from '../components/profile-menu.js';
+    import NotificationPanel from '../components/notification-panel.js';
+    import DataTable from '../components/data-table.js';
+    import Modal from '../components/modal.js';
+    import ChartComponent from '../components/chart.js';
+    import { formatDate } from '../js/utils/date.utils.js';
+    import { exportToPDF } from '../js/utils/export.utils.js';
+
+    const userRole = 'STUDENT';
+    const activePage = 'student/question-bank.html';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const savedTheme = localStorage.getItem('kkdgms-theme') || 'system';
+      const isDark = savedTheme === 'dark' || (savedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', isDark);
+
+      const sidebarMount = document.getElementById('sidebar-container');
+      const navbarMount = document.getElementById('navbar-container');
+      
+      if (sidebarMount) {
+        new Sidebar({
+          container: sidebarMount,
+          role: userRole,
+          currentPage: activePage
+        }).render();
+      }
+
+      if (navbarMount) {
+        new Navbar({
+          container: navbarMount,
+          title: 'Question Bank Vault',
+          breadcrumbs: [
+            { label: 'Student Portal', href: 'dashboard.html' },
+            { label: 'Question Bank Vault', active: true }
+          ]
+        }).render();
+      }
+
+      if (window.lucide) lucide.createIcons();
+
+      
+    const container = document.getElementById('qbContainer');
+    const { data } = await supabaseService.from('question_bank').select('*').eq('is_published', true);
+    new DataTable({
+      container,
+      columns: [
+        { key: 'subject', label: 'Subject' },
+        { key: 'unit_chapter', label: 'Chapter' },
+        { key: 'question', label: 'Question' },
+        { key: 'difficulty', label: 'Difficulty', render: (r) => '<span class="badge badge-info">' + r.difficulty + '</span>' }
+      ],
+      data: data || []
+    }).render();
+  
+    });
+  </script>
+</body>
+</html>

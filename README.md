@@ -1,345 +1,145 @@
-# KKDGMS CORE
-
-**Kanyakumari District Government Model School - Complete School Management System**
-
-A production-ready, comprehensive school management platform built with modern web technologies and Supabase backend.
-
-## 🏫 Project Overview
-
-KKDGMS CORE is a full-featured school management system designed for Kanyakumari District Government Model School. It provides role-based access control, academic management, attendance tracking, examination systems, and much more.
-
-### 🌐 Public Website
-- **Production URL**: https://kkdgms.vercel.app
-- **Repository**: https://github.com/kkmadlin2023-lgtm/KKDGMS
-
-## ✨ Features
-
-### Phase 1 (Current)
-- ✅ React + TypeScript + Vite architecture
-- ✅ Tailwind CSS professional design system
-- ✅ Supabase authentication with OAuth
-- ✅ Role-based access control (RBAC)
-- ✅ Protected routes with React Router
-- ✅ Super Admin dashboard
-- ✅ Database schema with migrations
-- ✅ Row Level Security (RLS) policies
-- ✅ Google OAuth integration structure
-
-### Planned Features (Subsequent Phases)
-- 📋 Student registry with photo management
-- 👨‍🏫 Faculty management and assignments
-- 📊 Attendance tracking system
-- 📝 Leave management workflow
-- 🎓 Examination platform with OTP
-- 📈 Results and marksheet generation
-- 🏠 Hostel and gate management
-- 👤 Visitor management system
-- 🔧 Technician portal and asset tracking
-- 📢 Announcements and notifications
-- 📄 Certificate generation (Bonafide, ID cards)
-- 📊 Reports and data exports
-- 🔔 WhatsApp integration for parents
-- 📱 Mobile-responsive design
-
-## 🛠️ Technology Stack
-
-### Frontend
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Styling
-- **React Router** - Client-side routing
-- **Zustand** - State management
-- **React Hook Form** - Form handling
-- **Zod** - Schema validation
-- **Lucide React** - Icons
-- **jsPDF** - PDF generation
-- **QRCode** - QR code generation
-
-### Backend
-- **Supabase** - Backend-as-a-Service
-  - PostgreSQL Database
-  - Authentication (Email/Password, OAuth)
-  - Row Level Security (RLS)
-  - Storage (File uploads)
-  - Realtime (Live updates)
-  - Edge Functions (Server-side logic)
-
-### Development Tools
-- **ESLint** - Code linting
-- **TypeScript Compiler** - Type checking
-- **PostCSS** - CSS processing
-- **Autoprefixer** - CSS vendor prefixes
-
-## 🏗️ Project Structure
-
-```
-KKDGMS/
-├── src/
-│   ├── components/       # Reusable UI components
-│   ├── pages/           # Page components
-│   ├── layouts/         # Layout components
-│   ├── hooks/           # Custom React hooks
-│   ├── services/        # API services and state management
-│   ├── lib/             # External library configurations
-│   ├── types/           # TypeScript type definitions
-│   ├── utils/           # Utility functions
-│   └── features/        # Feature-based modules
-│       ├── auth/        # Authentication feature
-│       ├── admin/       # Admin feature
-│       ├── super-admin/ # Super Admin feature
-│       ├── students/    # Student management
-│       ├── faculty/     # Faculty management
-│       ├── attendance/  # Attendance system
-│       ├── leave/       # Leave management
-│       ├── examinations/# Examination system
-│       ├── results/     # Results and marksheets
-│       ├── hostel/      # Hostel management
-│       ├── gate/        # Gate management
-│       ├── visitors/    # Visitor management
-│       ├── technician/  # Technician portal
-│       ├── announcements/# Announcements
-│       ├── notifications/# Notifications
-│       ├── certificates/# Certificate generation
-│       └── reports/     # Reports and exports
-├── supabase/
-│   ├── migrations/      # Database migration files
-│   └── functions/       # Supabase Edge Functions
-├── public/              # Static assets
-├── index.html           # HTML entry point
-├── package.json         # Dependencies
-├── vite.config.ts       # Vite configuration
-├── tailwind.config.js   # Tailwind configuration
-├── tsconfig.json        # TypeScript configuration
-└── README.md            # This file
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm/yarn/pnpm
-- A Supabase project (free tier works)
-- Git for version control
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/kkmadlin2023-lgtm/KKDGMS.git
-   cd KKDGMS
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` and add your Supabase credentials:
-   ```env
-   VITE_SUPABASE_URL=your-supabase-project-url
-   VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
-
-4. **Set up Supabase database**
-   - Go to your Supabase project dashboard
-   - Navigate to SQL Editor
-   - Run the migration files in order:
-     - `supabase/migrations/001_initial_schema.sql`
-     - `supabase/migrations/002_rls_policies.sql`
-
-5. **Configure Google OAuth**
-   - In Supabase dashboard, go to Authentication > Providers
-   - Enable Google provider
-   - Add your Google OAuth credentials
-   - Set redirect URL to: `https://your-domain.com/auth/callback`
-
-6. **Run development server**
-   ```bash
-   npm run dev
-   ```
-
-7. **Build for production**
-   ```bash
-   npm run build
-   ```
-
-## 🔐 Security Architecture
-
-### Authentication
-- Supabase Auth with Email/Password and Google OAuth
-- JWT-based session management
-- Automatic token refresh
-- Secure password handling
-
-### Authorization
-- Role-Based Access Control (RBAC)
-- Row Level Security (RLS) policies
-- Database-enforced permissions
-- No frontend-only security checks
-
-### Roles
-- **SUPER_ADMIN** - Full system control
-- **ADMIN** - School administration
-- **FACULTY** - Teaching operations
-- **STUDENT** - Personal academic operations
-- **WARDEN** - Hostel and gate operations
-- **TECHNICIAN** - Technical support
-- **GUEST** - Limited access
-
-### Security Best Practices
-- Environment variables for secrets
-- No service-role keys in frontend
-- Secure file upload policies
-- Audit logging for sensitive operations
-- Input validation on both client and server
-
-## 📊 Database Schema
-
-### Core Tables
-- `profiles` - User profiles and roles
-- `students` - Student records
-- `faculty` - Faculty records
-- `admins` - Administrator records
-- `wardens` - Warden records
-- `technicians` - Technician records
-
-### Academic Tables
-- `academic_years` - Academic year management
-- `classes` - Class definitions
-- `sections` - Section definitions
-- `subjects` - Subject definitions
-
-### Security Tables
-- RLS policies on all tables
-- Helper functions for role checks
-- Audit logging capabilities
-
-## 🎨 Design System
-
-### Color Palette
-- **Brand Primary**: Indigo (#4F46E5)
-- **Brand Secondary**: Amber (#F59E0B)
-- **Semantic Colors**: Success, Warning, Error, Info
-
-### Typography
-- **Font Family**: Inter
-- **Scale**: Responsive text sizes
-
-### Components
-- Pre-built card, button, input, badge components
-- Consistent spacing and borders
-- Responsive breakpoints
-- Accessible color contrasts
-
-## 📱 Responsive Design
-
-- **Mobile**: < 768px - Touch-optimized
-- **Tablet**: 768px - 1024px - Balanced layout
-- **Desktop**: > 1024px - Full-featured with sidebar
-
-## 🔧 Development
-
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-
-### Code Style
-
-- TypeScript strict mode enabled
-- ESLint for code quality
-- Consistent naming conventions
-- Component-based architecture
-
-## 🚢 Deployment
-
-### Vercel Deployment
-
-1. **Connect GitHub repository**
-2. **Configure environment variables** in Vercel dashboard
-3. **Deploy** - Vercel will automatically build and deploy
-4. **Configure Supabase redirect URLs** to match Vercel domain
-
-### Environment Variables for Production
-
-```env
-VITE_SUPABASE_URL=your-production-supabase-url
-VITE_SUPABASE_ANON_KEY=your-production-supabase-anon-key
-```
-
-## 📝 Phase Development Plan
-
-### ✅ Phase 1 (Complete)
-- Project architecture
-- Supabase connection
-- Authentication system
-- Google OAuth structure
-- Profiles and roles
-- Protected routes
-- Super Admin dashboard
-- Database migrations
-- RLS policies
-
-### 🔄 Phase 2 (Next)
-- Student registry
-- Student photos
-- Student documents
-- Faculty registry
-- Faculty assignments
-
-### 📋 Phase 3-9
-- Attendance system
-- Leave management
-- Examination platform
-- Hostel management
-- Visitor management
-- Technician portal
-- Announcements
-- Certificate generation
-- Reports and exports
-
-## 🤝 Contributing
-
-This is a proprietary school management system. For modifications and extensions, please contact the administration.
-
-## 📞 Support
-
-For support and inquiries:
-
-- **Email**: kkmadlin2023@gmail.com
-- **Phone**: +91 8015188967
-- **YouTube**: https://www.youtube.com/@kanniyagms
-- **Instagram**: https://www.instagram.com/_.kkdgms._
-
-## 📄 License
-
-© 2025 Kanyakumari District Government Model School. All rights reserved.
-
-## ⚠️ Important Notes
-
-- Never commit `.env` files or secrets to the repository
-- Always use RLS policies for data security
-- Test thoroughly before deploying to production
-- Keep dependencies updated for security
-- Follow the phase-based development approach
-- Document any database schema changes in migrations
-
-## 🎯 Goals
-
-- Provide a complete, production-ready school management system
-- Ensure security and data privacy
-- Maintain clean, maintainable code
-- Follow modern web development best practices
-- Deliver excellent user experience across all devices
+# KANYAKUMARI DIST GOVERNMENT MODEL SCHOOL (KKDGMS)
+### Complete School Management System & Web Portal
+
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Supabase](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com)
+[![Firebase](https://img.shields.io/badge/Push%20Notifications-Firebase%20FCM-FFCA28?logo=firebase)](https://firebase.google.com)
+[![TailwindCSS](https://img.shields.io/badge/CSS-Tailwind%20CSS-38B2AC?logo=tailwind-css)](https://tailwindcss.com)
+
+A comprehensive, production-ready, mobile-first School Management System and Progressive Web App (PWA) tailored for **Kanyakumari Dist Government Model School (KKDGMS)**.
 
 ---
 
-**Built with ❤️ for Kanyakumari District Government Model School**
+## 🏛 Architecture Overview
+
+KKDGMS is engineered with a clean, modular multi-page vanilla ES6 architecture with centralized services, reusable DOM components, and strict Zero-Trust database security:
+
+- **Public Portal (`index.html`)**: Viewable by everyone without authentication. Features real-time dynamic stats, school announcements, events calendar, stories, faculty directory, and Kanyakumari branding with Tamil inscription.
+- **Authentication (`login.html`)**: Multi-role login with 3-attempt brute-force protection (5-minute countdown lockout), Google Workspace OAuth, and automatic role-based routing.
+- **Admin Management Suite (`admin/`)**: 20+ comprehensive dashboards and consoles for admissions, students, faculty allocations, attendance analytics, marksheet verification, bonafide generator, visitors QR pass, audit trail, and database management.
+- **Faculty Portal (`faculty/`)**: Attendance marking with bulk options and offline draft auto-save, question bank creator, online exam scheduler with 10-second start OTPs, timetable, and student leave workflows.
+- **Student Portal (`student/`)**: EMIS progress cards, monthly attendance calendar, question bank study vault, online examination hall with real-time timers and auto-save, and leave applications.
+- **Warden Portal (`warden/`)**: Hostel resident management, camera-based QR code gate terminal for instant student Gate-Out and Gate-In movement tracking.
+- **Technician & Guest Portals (`technician/`, `guest/`)**: Question paper builder with official school header, master timetable, and restricted guest previews.
+- **Parent Outpass Approval (`public/parent-approval.html`)**: Token-secured parent approval portal integrated with SMS/WhatsApp outpass links.
+
+---
+
+## 📂 Project Structure
+
+```
+KKDGMS/
+├── index.html                    # Public homepage (accessible to all)
+├── login.html                    # Unified login portal (3-attempt lockout)
+├── manifest.json                 # PWA manifest
+├── sw.js                         # Service worker (offline cache & background sync)
+├── .env.example                  # Environment configuration template
+│
+├── admin/                        # Super Admin & Headmaster Suite (20+ pages)
+│   ├── dashboard.html            # School-wide metrics & Chart.js analytics
+│   ├── admissions.html           # 5-in-1 tabbed admission forms
+│   ├── students.html             # Student roster & CSV/PDF exporter
+│   ├── faculty.html              # Teaching staff directory
+│   ├── wardens.html              # Hostel supervision staff
+│   ├── technicians.html          # IT & lab assistants
+│   ├── attendance.html           # Attendance analytics (holiday-adjusted formula)
+│   ├── leave.html                # Multi-tier leave approvals
+│   ├── question-bank.html        # Question bank curation
+│   ├── marksheet.html            # Marksheet matrix & verification
+│   ├── online-exams.html         # Online exams monitor
+│   ├── database.html             # Controlled entity manager
+│   ├── login-activity.html       # Session audit & brute-force monitor
+│   ├── faculty-allocation.html   # Subject & class teacher allocations
+│   ├── bonafide.html             # Dynamic Bonafide Certificate Generator
+│   ├── visitors.html             # Visitor registration & QR pass
+│   ├── announcements.html        # Notice broadcaster
+│   ├── events.html               # School events calendar
+│   ├── stories.html              # 24-hour campus stories
+│   ├── role-permissions.html     # Visual RBAC matrix
+│   ├── feedback.html             # Feedback review & replies
+│   ├── notifications.html        # Push notification center
+│   ├── timetable.html            # Master timetable planner
+│   ├── documents.html            # Document repository
+│   ├── expenses.html             # Expense tracker & accounting
+│   ├── audit-logs.html           # Immutable system audit trail
+│   └── settings.html             # Academic year & calendar settings
+│
+├── faculty/                      # Faculty & Teacher Portal
+│   ├── dashboard.html, attendance.html, marksheet.html, online-exams.html...
+│
+├── student/                      # Student Learning Portal
+│   ├── dashboard.html, attendance.html, marksheet.html, online-exams.html...
+│
+├── warden/                       # Hostel & Gate Pass Terminal
+│   ├── dashboard.html, gate-management.html, hostel-students.html...
+│
+├── technician/                   # Tech & Question Paper Builder
+│   ├── dashboard.html, question-paper.html, documents.html, timetable.html...
+│
+├── guest/                        # Restricted Guest Portal
+│   └── dashboard.html
+│
+├── public/                       # Public & Worker Assets
+│   ├── parent-approval.html      # Secure parent outpass token portal
+│   └── firebase-messaging-sw.js  # FCM background push service worker
+│
+├── js/
+│   ├── config.js                 # Centralized configuration (anon key only)
+│   ├── app.js                    # App startup, system theme & PWA sync
+│   ├── services/                 # 11 Modular ES6 Singleton Services
+│   │   ├── supabase.service.js   # Supabase client singleton
+│   │   ├── auth.service.js       # Auth, role detection, lockout logic
+│   │   ├── permission.service.js # Centralized RBAC guard
+│   │   ├── notification.service.js # In-app alerts
+│   │   ├── fcm.service.js        # Firebase Cloud Messaging
+│   │   ├── audit.service.js      # Audit log recording
+│   │   ├── storage.service.js    # Bucket uploads & photo compression
+│   │   ├── realtime.service.js   # Supabase Realtime channels
+│   │   ├── offline.service.js    # IndexedDB drafts & sync queue
+│   │   ├── validation.service.js # Aadhaar, Mobile, Age & Form checks
+│   │   └── ui.service.js         # Toasts, dialogs & skeleton loaders
+│   └── utils/
+│       ├── date.utils.js         # Date formatting & age calculation
+│       ├── export.utils.js       # PDF & CSV generation
+│       └── qr.utils.js           # QR code generation & scanning
+│
+├── components/                   # Reusable UI Components (Vanilla JS)
+│   ├── sidebar.js, navbar.js, profile-menu.js, notification-panel.js
+│   ├── data-table.js, modal.js, chart.js, file-upload.js, story-viewer.js
+│
+├── supabase/                     # Database Definition & Security
+│   ├── schema.sql                # 35 Normalized tables with constraints & indexes
+│   ├── rls-policies.sql          # Zero-Trust Row Level Security policies
+│   ├── functions.sql             # Triggers, auto-timestamps & audit functions
+│   └── seed-data.sql             # Test accounts and records
+│
+└── assets/                       # Static Assets & Styling
+    ├── css/theme.css             # Unified CSS custom properties & design tokens
+    └── images/                   # High-resolution branding & Kanyakumari imagery
+```
+
+---
+
+## 🔒 Security Architecture
+
+1. **Zero-Trust RLS**: Every database table is protected by granular Row Level Security in PostgreSQL. Students can only access their own grades and records, faculty can only access their assigned classes, and wardens can only access authorized hostel movements.
+2. **No Exposed Service Keys**: Frontend scripts only utilize the public Supabase `anon` key. Administrative password overwrites and server operations are strictly routed through server-side Supabase Edge Functions.
+3. **Brute-Force Defense**: Automatic 3-failed-attempts security lockout enforces a 5-minute cooldown with live timer synchronization.
+4. **Audit Trail**: Every significant administrative and operational modification (create, edit, delete, approve, gate in/out) is automatically written to `audit_logs` via database triggers.
+
+---
+
+## 🚀 Setup & Deployment
+
+1. **Database Setup**:
+   - Open your Supabase Project Dashboard.
+   - Go to the **SQL Editor**.
+   - Execute `supabase/schema.sql`, then `supabase/rls-policies.sql`, followed by `supabase/functions.sql` and `supabase/seed-data.sql`.
+
+2. **Frontend Deployment**:
+   - Deploy directly to **Vercel**, **Netlify**, or **GitHub Pages** — no build step or node server required.
+   - Set environment configuration in `js/config.js` or deployment environment variables.
+
+---
+
+&copy; 2023–Present Kanyakumari Dist Government Model School. All Rights Reserved.

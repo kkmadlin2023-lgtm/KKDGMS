@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Leave - Faculty Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[var(--bg)] text-[var(--text)] flex h-screen overflow-hidden">
+    <div id="sidebar-container"></div>
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+        <div id="navbar-container"></div>
+        <main class="flex-1 overflow-y-auto p-4 md:p-6">
+            <h1 class="text-2xl font-bold mb-6">Student Leave Approvals</h1>
+            
+            <div class="bg-[var(--surface)] p-6 rounded-lg shadow-sm border border-[var(--border)] max-w-2xl">
+                <h3 class="font-bold text-lg mb-4">Generate Leave Link for Parent</h3>
+                <form class="space-y-4">
+                    <div>
+                        <label class="block text-sm mb-1">Student</label>
+                        <select class="w-full p-2 border border-[var(--border)] rounded bg-[var(--bg)]">
+                            <option>Arun Kumar (10 A)</option>
+                            <option>Priya Sharma (10 A)</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm mb-1">From Date</label>
+                            <input type="date" class="w-full p-2 border border-[var(--border)] rounded bg-[var(--bg)]">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1">To Date</label>
+                            <input type="date" class="w-full p-2 border border-[var(--border)] rounded bg-[var(--bg)]">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">Reason</label>
+                        <textarea class="w-full p-2 border border-[var(--border)] rounded bg-[var(--bg)]" rows="2"></textarea>
+                    </div>
+                    <button type="button" class="w-full py-2 bg-[var(--success)] text-white rounded font-semibold hover:bg-green-700 flex items-center justify-center gap-2">
+                        <i data-lucide="message-circle" class="w-5 h-5"></i> Generate WhatsApp Request Link
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script type="module" src="../components/sidebar.js"></script>
+    <script type="module" src="../components/navbar.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

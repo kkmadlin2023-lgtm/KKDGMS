@@ -1,17 +1,1153 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/kkdgms-icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="KKDGMS CORE - Complete School Management System for Kanyakumari District Government Model School" />
-    <title>KKDGMS CORE - School Management System</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Kanyakumari Dist Government Model School - Complete School Management System. Established 2023.">
+  <meta name="theme-color" content="#1e40af">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KKDGMS">
+  
+  <title>KKDGMS - Kanyakumari Dist Government Model School</title>
+  
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="apple-touch-icon" href="assets/images/logo.png">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            display: ['Poppins', 'Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+              400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+              800: '#1e40af', 900: '#1e3a8a', 950: '#172554'
+            },
+            accent: {
+              50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d',
+              400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  
+  <!-- Theme CSS -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  
+  <style>
+    /* Hero Section */
+    .hero-section {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('assets/images/hero.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(30, 64, 175, 0.85) 0%, rgba(23, 37, 84, 0.92) 50%, rgba(30, 64, 175, 0.80) 100%);
+    }
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 2rem;
+      max-width: 900px;
+    }
+    
+    /* Logo animation */
+    .logo-container {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 2rem;
+      border-radius: 50%;
+      padding: 4px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706, #fbbf24);
+      animation: logoGlow 3s ease-in-out infinite;
+      box-shadow: 0 0 40px rgba(251, 191, 36, 0.3);
+    }
+    .logo-container img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    @keyframes logoGlow {
+      0%, 100% { box-shadow: 0 0 40px rgba(251, 191, 36, 0.3); }
+      50% { box-shadow: 0 0 60px rgba(251, 191, 36, 0.5), 0 0 80px rgba(251, 191, 36, 0.2); }
+    }
+
+    /* Stats counter animation */
+    .stat-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Section divider */
+    .section-divider {
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #1e40af, #f59e0b);
+      border-radius: 2px;
+      margin: 1rem auto;
+    }
+
+    /* Story circles */
+    .story-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      padding: 3px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6, #3b82f6);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .story-circle:hover { transform: scale(1.08); }
+    .story-circle img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid white;
+    }
+
+    /* Announcement card */
+    .announcement-card {
+      border-left: 4px solid;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .announcement-card:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .announcement-card.priority-high { border-left-color: #dc2626; }
+    .announcement-card.priority-medium { border-left-color: #f59e0b; }
+    .announcement-card.priority-low { border-left-color: #3b82f6; }
+
+    /* Faculty card */
+    .faculty-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .faculty-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+    }
+
+    /* Smooth scrolling */
+    html { scroll-behavior: smooth; }
+
+    /* Floating particles (decorative) */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.15;
+      animation: float 15s infinite ease-in-out;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      33% { transform: translateY(-30px) rotate(120deg); }
+      66% { transform: translateY(20px) rotate(240deg); }
+    }
+
+    /* Navigation */
+    .nav-fixed {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .nav-scrolled {
+      background-color: rgba(30, 64, 175, 0.95) !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    /* Tamil text */
+    .tamil-text {
+      font-family: 'Noto Sans Tamil', 'Inter', sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    /* Dark mode adjustments */
+    .dark .hero-overlay {
+      background: linear-gradient(135deg, rgba(17, 24, 39, 0.90) 0%, rgba(17, 24, 39, 0.95) 50%, rgba(30, 64, 175, 0.70) 100%);
+    }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans antialiased">
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- NAVIGATION BAR -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <nav id="mainNav" class="fixed top-0 left-0 right-0 z-50 nav-fixed bg-transparent">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        <!-- Logo + School Name -->
+        <a href="#" class="flex items-center gap-3 group">
+          <img src="assets/images/logo.png" alt="KKDGMS Logo" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg group-hover:scale-105 transition-transform">
+          <div>
+            <span class="text-white font-display font-bold text-lg sm:text-xl tracking-tight">KKDGMS</span>
+            <span class="hidden md:block text-blue-200 text-xs">Government Model School</span>
+          </div>
+        </a>
+
+        <!-- Desktop Nav Links -->
+        <div class="hidden md:flex items-center gap-1">
+          <a href="#home" class="text-white/90 hover:text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">Home</a>
+          <a href="#about" class="text-white/90 hover:text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">About</a>
+          <a href="#faculty" class="text-white/90 hover:text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">Faculty</a>
+          <a href="#announcements" class="text-white/90 hover:text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">News</a>
+          <a href="#events" class="text-white/90 hover:text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">Events</a>
+          <a href="#contact" class="text-white/90 hover:text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">Contact</a>
+        </div>
+
+        <!-- Login + Theme + Mobile Menu -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Theme Toggle -->
+          <button id="themeToggle" class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all" aria-label="Toggle theme">
+            <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+            <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+          </button>
+
+          <!-- Login Button -->
+          <a href="login.html" class="inline-flex items-center gap-2 bg-white text-brand-800 hover:bg-blue-50 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>Login</span>
+          </a>
+
+          <!-- Mobile Menu Button -->
+          <button id="mobileMenuBtn" class="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-all" aria-label="Open menu">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Menu Dropdown -->
+    <div id="mobileMenu" class="hidden md:hidden bg-brand-900/95 backdrop-blur-lg border-t border-white/10">
+      <div class="px-4 py-3 space-y-1">
+        <a href="#home" class="block text-white/90 hover:text-white px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">Home</a>
+        <a href="#about" class="block text-white/90 hover:text-white px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">About</a>
+        <a href="#faculty" class="block text-white/90 hover:text-white px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">Faculty</a>
+        <a href="#announcements" class="block text-white/90 hover:text-white px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">News</a>
+        <a href="#events" class="block text-white/90 hover:text-white px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">Events</a>
+        <a href="#contact" class="block text-white/90 hover:text-white px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-all">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- HERO SECTION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section id="home" class="hero-section">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+
+    <!-- Decorative particles -->
+    <div class="particle w-32 h-32 bg-blue-400 top-20 left-10" style="animation-delay: 0s;"></div>
+    <div class="particle w-20 h-20 bg-amber-400 top-40 right-20" style="animation-delay: 3s;"></div>
+    <div class="particle w-16 h-16 bg-blue-300 bottom-32 left-1/4" style="animation-delay: 7s;"></div>
+    <div class="particle w-24 h-24 bg-amber-300 bottom-20 right-1/3" style="animation-delay: 10s;"></div>
+
+    <div class="hero-content">
+      <!-- School Logo -->
+      <div class="logo-container">
+        <img src="assets/images/logo.png" alt="KKDGMS - Kanyakumari Dist Government Model School">
+      </div>
+
+      <!-- Tamil Inscription -->
+      <p class="tamil-text text-amber-300/90 text-sm sm:text-base mb-4 tracking-wider">
+        அகர முதல எழுத்தெல்லாம் ஆதி பகவன் முதற்றே உலகு
+      </p>
+
+      <!-- School Name -->
+      <h1 class="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 tracking-tight leading-tight">
+        KANYAKUMARI DIST<br>
+        <span class="text-amber-400">GOVERNMENT MODEL SCHOOL</span>
+      </h1>
+
+      <!-- Tagline -->
+      <p class="text-blue-200 text-base sm:text-lg md:text-xl mb-8 font-light max-w-2xl mx-auto">
+        Shaping Tomorrow's Leaders Through Excellence in Education
+      </p>
+
+      <!-- Quick Stats -->
+      <div class="flex flex-wrap justify-center gap-4 sm:gap-6 mb-10">
+        <div class="text-center">
+          <div id="heroStudentCount" class="text-3xl sm:text-4xl font-bold text-white">—</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Students</div>
+        </div>
+        <div class="w-px bg-white/20 hidden sm:block"></div>
+        <div class="text-center">
+          <div id="heroFacultyCount" class="text-3xl sm:text-4xl font-bold text-white">—</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Faculty</div>
+        </div>
+        <div class="w-px bg-white/20 hidden sm:block"></div>
+        <div class="text-center">
+          <div class="text-3xl sm:text-4xl font-bold text-white">2023</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Established</div>
+        </div>
+        <div class="w-px bg-white/20 hidden sm:block"></div>
+        <div class="text-center">
+          <div class="text-3xl sm:text-4xl font-bold text-white">4</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Classes (9-12)</div>
+        </div>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="login.html" class="inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 px-8 py-3.5 rounded-full text-base font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-105">
+          <i data-lucide="log-in" class="w-5 h-5"></i>
+          Login to Portal
+        </a>
+        <a href="#about" class="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-3.5 rounded-full text-base font-semibold transition-all hover:scale-105 backdrop-blur-sm">
+          <i data-lucide="info" class="w-5 h-5"></i>
+          Learn More
+        </a>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+      <i data-lucide="chevron-down" class="w-8 h-8 text-white/50"></i>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- STORIES SECTION (if any active stories exist) -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section id="stories-section" class="py-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div id="storiesContainer" class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+        <!-- Stories will be dynamically inserted here -->
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- ABOUT SECTION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section id="about" class="py-16 sm:py-24 bg-white dark:bg-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16 reveal">
+        <span class="inline-block bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">About Our School</span>
+        <h2 class="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white mb-3">Empowering Minds, Building Futures</h2>
+        <div class="section-divider"></div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Image -->
+        <div class="reveal">
+          <div class="relative rounded-2xl overflow-hidden shadow-2xl">
+            <img src="assets/images/hero.jpg" alt="Kanyakumari - Thiruvalluvar Statue" class="w-full h-64 sm:h-80 object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-brand-900/60 to-transparent"></div>
+            <div class="absolute bottom-4 left-4 right-4 text-white">
+              <p class="font-semibold text-lg">Kanyakumari, Tamil Nadu</p>
+              <p class="text-blue-200 text-sm">Where land meets the ocean</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="space-y-6 reveal">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="target" class="w-6 h-6 text-brand-600 dark:text-brand-400"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-1">Our Vision</h3>
+              <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+                To be a beacon of excellence in government education, nurturing students with knowledge, values, and skills to become responsible global citizens from the sacred land of Kanyakumari.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-accent-100 dark:bg-accent-900/50 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="compass" class="w-6 h-6 text-accent-600 dark:text-accent-400"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-1">Our Mission</h3>
+              <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+                To provide high-quality education through innovative teaching methods, modern technology, and a supportive environment that fosters academic excellence, character development, and holistic growth.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="award" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-1">Our Values</h3>
+              <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+                Integrity, discipline, innovation, inclusivity, and commitment to academic excellence. We believe every student has the potential to achieve greatness.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- STATISTICS SECTION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section class="py-16 bg-gradient-to-br from-brand-800 to-brand-950 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+      <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><circle cx=%2230%22 cy=%2230%22 r=%221%22 fill=%22white%22/></svg>');"></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+        <div class="stat-card bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/10">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-blue-500/20 flex items-center justify-center">
+            <i data-lucide="graduation-cap" class="w-6 h-6 text-blue-300"></i>
+          </div>
+          <div id="statStudents" class="text-2xl sm:text-3xl font-bold text-white mb-1">—</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Students</div>
+        </div>
+
+        <div class="stat-card bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/10">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-500/20 flex items-center justify-center">
+            <i data-lucide="users" class="w-6 h-6 text-amber-300"></i>
+          </div>
+          <div id="statFaculty" class="text-2xl sm:text-3xl font-bold text-white mb-1">—</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Faculty</div>
+        </div>
+
+        <div class="stat-card bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/10">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-green-500/20 flex items-center justify-center">
+            <i data-lucide="home" class="w-6 h-6 text-green-300"></i>
+          </div>
+          <div id="statWardens" class="text-2xl sm:text-3xl font-bold text-white mb-1">—</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Wardens</div>
+        </div>
+
+        <div class="stat-card bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/10">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-purple-500/20 flex items-center justify-center">
+            <i data-lucide="book-open" class="w-6 h-6 text-purple-300"></i>
+          </div>
+          <div class="text-2xl sm:text-3xl font-bold text-white mb-1">4</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Classes</div>
+        </div>
+
+        <div class="stat-card bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/10">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-red-500/20 flex items-center justify-center">
+            <i data-lucide="layout-grid" class="w-6 h-6 text-red-300"></i>
+          </div>
+          <div class="text-2xl sm:text-3xl font-bold text-white mb-1">8</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Sections</div>
+        </div>
+
+        <div class="stat-card bg-white/10 backdrop-blur-sm rounded-2xl p-5 text-center border border-white/10">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-teal-500/20 flex items-center justify-center">
+            <i data-lucide="calendar" class="w-6 h-6 text-teal-300"></i>
+          </div>
+          <div class="text-2xl sm:text-3xl font-bold text-white mb-1">2023</div>
+          <div class="text-blue-300 text-xs sm:text-sm font-medium">Established</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- ANNOUNCEMENTS SECTION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section id="announcements" class="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12 reveal">
+        <span class="inline-block bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">Latest Updates</span>
+        <h2 class="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white mb-3">Announcements</h2>
+        <div class="section-divider"></div>
+      </div>
+
+      <div id="announcementsContainer" class="max-w-3xl mx-auto space-y-4">
+        <!-- Loading skeleton -->
+        <div class="announcement-skeleton space-y-4">
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-5 animate-pulse">
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-5 animate-pulse">
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-3"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+          </div>
+        </div>
+
+        <!-- Empty state (shown when no announcements) -->
+        <div id="noAnnouncements" class="hidden text-center py-12">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <i data-lucide="megaphone" class="w-8 h-8 text-gray-400"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-1">No Announcements</h3>
+          <p class="text-gray-400 dark:text-gray-500 text-sm">Check back later for updates</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- EVENTS SECTION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section id="events" class="py-16 sm:py-24 bg-white dark:bg-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12 reveal">
+        <span class="inline-block bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">What's Happening</span>
+        <h2 class="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white mb-3">Events</h2>
+        <div class="section-divider"></div>
+      </div>
+
+      <div id="eventsContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Loading skeleton -->
+        <div class="event-skeleton sm:col-span-2 lg:col-span-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-2xl overflow-hidden animate-pulse">
+            <div class="h-40 bg-gray-200 dark:bg-gray-600"></div>
+            <div class="p-5">
+              <div class="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-3"></div>
+              <div class="h-3 bg-gray-200 dark:bg-gray-600 rounded w-full mb-2"></div>
+              <div class="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div id="noEvents" class="hidden sm:col-span-2 lg:col-span-3 text-center py-12">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+            <i data-lucide="calendar-days" class="w-8 h-8 text-gray-400"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-1">No Upcoming Events</h3>
+          <p class="text-gray-400 dark:text-gray-500 text-sm">Stay tuned for exciting events!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- FACULTY SECTION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section id="faculty" class="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12 reveal">
+        <span class="inline-block bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">Our Team</span>
+        <h2 class="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white mb-3">Faculty Directory</h2>
+        <div class="section-divider"></div>
+        <p class="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mt-4">Meet our dedicated team of educators committed to academic excellence</p>
+      </div>
+
+      <div id="facultyContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Loading skeleton -->
+        <div class="faculty-skeleton sm:col-span-2 lg:col-span-3 xl:col-span-4 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 animate-pulse text-center">
+            <div class="w-24 h-24 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-2"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 animate-pulse text-center hidden sm:block">
+            <div class="w-24 h-24 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-2"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 animate-pulse text-center hidden lg:block">
+            <div class="w-24 h-24 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-2"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 animate-pulse text-center hidden xl:block">
+            <div class="w-24 h-24 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-2"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- CONTACT / IMPORTANT LINKS SECTION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section id="contact" class="py-16 sm:py-24 bg-white dark:bg-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12 reveal">
+        <span class="inline-block bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">Get In Touch</span>
+        <h2 class="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white mb-3">Contact Us</h2>
+        <div class="section-divider"></div>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6 text-center reveal">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center">
+            <i data-lucide="map-pin" class="w-7 h-7 text-brand-600 dark:text-brand-400"></i>
+          </div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Address</h3>
+          <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+            Kanyakumari Dist Government Model School<br>
+            Kanyakumari, Tamil Nadu, India
+          </p>
+        </div>
+
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6 text-center reveal">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+            <i data-lucide="mail" class="w-7 h-7 text-green-600 dark:text-green-400"></i>
+          </div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Email</h3>
+          <p class="text-gray-600 dark:text-gray-300 text-sm">
+            <a href="mailto:contact@kkdgms.edu.in" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">contact@kkdgms.edu.in</a>
+          </p>
+        </div>
+
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6 text-center md:col-span-2 lg:col-span-1 reveal">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-accent-100 dark:bg-accent-900/50 flex items-center justify-center">
+            <i data-lucide="globe" class="w-7 h-7 text-accent-600 dark:text-accent-400"></i>
+          </div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Important Links</h3>
+          <div class="space-y-1.5 text-sm">
+            <a href="https://www.tn.gov.in/" target="_blank" class="block text-brand-600 dark:text-brand-400 hover:underline">TN Government</a>
+            <a href="https://www.dge.tn.gov.in/" target="_blank" class="block text-brand-600 dark:text-brand-400 hover:underline">Directorate of Govt Examinations</a>
+            <a href="#" class="block text-brand-600 dark:text-brand-400 hover:underline">School Portal Login</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- FOOTER -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <footer class="bg-gray-900 dark:bg-gray-950 text-gray-400 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-3 gap-8 mb-8">
+        <!-- Brand -->
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <img src="assets/images/logo.png" alt="KKDGMS" class="w-12 h-12 rounded-full">
+            <div>
+              <h3 class="text-white font-display font-bold text-lg">KKDGMS</h3>
+              <p class="text-gray-500 text-xs">Government Model School</p>
+            </div>
+          </div>
+          <p class="text-sm leading-relaxed">
+            Kanyakumari Dist Government Model School — empowering students through quality education since 2023.
+          </p>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h4 class="text-white font-semibold mb-4">Quick Links</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="#home" class="hover:text-white transition-colors">Home</a></li>
+            <li><a href="#about" class="hover:text-white transition-colors">About</a></li>
+            <li><a href="#faculty" class="hover:text-white transition-colors">Faculty</a></li>
+            <li><a href="#announcements" class="hover:text-white transition-colors">Announcements</a></li>
+            <li><a href="login.html" class="hover:text-white transition-colors">Login Portal</a></li>
+          </ul>
+        </div>
+
+        <!-- Portal Links -->
+        <div>
+          <h4 class="text-white font-semibold mb-4">Student Portal</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="login.html" class="hover:text-white transition-colors">Student Login</a></li>
+            <li><a href="login.html" class="hover:text-white transition-colors">Faculty Login</a></li>
+            <li><a href="login.html" class="hover:text-white transition-colors">Admin Login</a></li>
+            <li><a href="login.html" class="hover:text-white transition-colors">Warden Login</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p class="text-sm text-center sm:text-left">
+          &copy; 2023&ndash;<span id="currentYear"></span> Kanyakumari Dist Government Model School. All rights reserved.
+        </p>
+        <div class="flex items-center gap-4">
+          <span class="text-xs text-gray-600">Powered by KKDGMS</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- BACK TO TOP BUTTON -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <button id="backToTop" class="fixed bottom-6 right-6 z-40 w-12 h-12 bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all opacity-0 pointer-events-none flex items-center justify-center" aria-label="Back to top">
+    <i data-lucide="arrow-up" class="w-5 h-5"></i>
+  </button>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- SUPABASE SDK -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- PAGE SCRIPT -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <script>
+    /**
+     * KKDGMS Public Homepage Script
+     * This page is viewable by everyone without login.
+     * It fetches public data (counts, announcements, events, faculty, stories)
+     * from Supabase using the anon key.
+     */
+
+    // ── Supabase Configuration ──
+    const SUPABASE_URL = 'https://kymsjrxjfmloibcbages.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bXNqcnhqZm1sb2liY2JhZ2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTg5NzcsImV4cCI6MjA5NDU5NDk3N30.yXqibP86VDsJ0gW48cJ0yjixgYGpljesLsiqe93K4OA';
+
+    let supabase;
+    try {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (e) {
+      console.warn('Supabase initialization failed:', e);
+    }
+
+    // ── Dynamic Year ──
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    // ── Theme Management ──
+    const themeToggle = document.getElementById('themeToggle');
+    
+    function getPreferredTheme() {
+      const saved = localStorage.getItem('kkdgms-theme');
+      if (saved) return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function setTheme(theme) {
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      localStorage.setItem('kkdgms-theme', theme);
+    }
+
+    setTheme(getPreferredTheme());
+
+    themeToggle?.addEventListener('click', () => {
+      const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      setTheme(current === 'dark' ? 'light' : 'dark');
+      // Re-initialize Lucide icons after theme change
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('kkdgms-theme')) {
+        setTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+
+    // ── Navigation Scroll Effect ──
+    const mainNav = document.getElementById('mainNav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        mainNav.classList.add('nav-scrolled');
+      } else {
+        mainNav.classList.remove('nav-scrolled');
+      }
+    });
+
+    // ── Mobile Menu ──
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    mobileMenuBtn?.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    // Close mobile menu when clicking a link
+    mobileMenu?.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+      });
+    });
+
+    // ── Back to Top Button ──
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 500) {
+        backToTop.classList.remove('opacity-0', 'pointer-events-none');
+        backToTop.classList.add('opacity-100');
+      } else {
+        backToTop.classList.add('opacity-0', 'pointer-events-none');
+        backToTop.classList.remove('opacity-100');
+      }
+    });
+    backToTop?.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ── Scroll Reveal Animation ──
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+
+    // ── Helper: Escape HTML for XSS prevention ──
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ── Helper: Relative time ──
+    function timeAgo(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMin = Math.floor(diffMs / 60000);
+      const diffHr = Math.floor(diffMs / 3600000);
+      const diffDay = Math.floor(diffMs / 86400000);
+
+      if (diffMin < 1) return 'Just now';
+      if (diffMin < 60) return `${diffMin} min ago`;
+      if (diffHr < 24) return `${diffHr} hr ago`;
+      if (diffDay < 7) return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
+      return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // ── Helper: Format date ──
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // ══════════════════════════════════════════════
+    // DATA FETCHING (Public — no auth required)
+    // ══════════════════════════════════════════════
+
+    /** Fetch and display counts */
+    async function loadCounts() {
+      if (!supabase) return;
+      try {
+        const [students, faculty, wardens] = await Promise.allSettled([
+          supabase.from('students').select('id', { count: 'exact', head: true }),
+          supabase.from('faculty_details').select('id', { count: 'exact', head: true }),
+          supabase.from('wardens').select('id', { count: 'exact', head: true })
+        ]);
+
+        const studentCount = students.status === 'fulfilled' ? (students.value.count || 0) : 0;
+        const facultyCount = faculty.status === 'fulfilled' ? (faculty.value.count || 0) : 0;
+        const wardenCount = wardens.status === 'fulfilled' ? (wardens.value.count || 0) : 0;
+
+        animateCounter('heroStudentCount', studentCount);
+        animateCounter('heroFacultyCount', facultyCount);
+        animateCounter('statStudents', studentCount);
+        animateCounter('statFaculty', facultyCount);
+        animateCounter('statWardens', wardenCount);
+      } catch (err) {
+        console.warn('Failed to load counts:', err);
+      }
+    }
+
+    /** Animate a number counting up */
+    function animateCounter(elementId, target) {
+      const el = document.getElementById(elementId);
+      if (!el || target === 0) {
+        if (el) el.textContent = target.toString();
+        return;
+      }
+
+      let current = 0;
+      const duration = 1500;
+      const step = Math.max(1, Math.floor(target / (duration / 16)));
+      
+      const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = current.toLocaleString();
+        if (current >= target) clearInterval(timer);
+      }, 16);
+    }
+
+    /** Fetch and display active announcements */
+    async function loadAnnouncements() {
+      if (!supabase) return;
+      const container = document.getElementById('announcementsContainer');
+      
+      try {
+        const now = new Date().toISOString();
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .lte('publish_date', now)
+          .or(`expiry_date.is.null,expiry_date.gte.${now}`)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        // Remove skeleton
+        container.querySelector('.announcement-skeleton')?.remove();
+
+        if (error || !data || data.length === 0) {
+          document.getElementById('noAnnouncements').classList.remove('hidden');
+          return;
+        }
+
+        data.forEach((item) => {
+          const priority = item.priority || 'low';
+          const card = document.createElement('div');
+          card.className = `announcement-card priority-${priority} bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm reveal visible`;
+          card.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
+                  <h3 class="font-semibold text-gray-900 dark:text-white text-base">${escapeHtml(item.title)}</h3>
+                  ${priority === 'high' ? '<span class="inline-flex items-center gap-1 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-semibold px-2 py-0.5 rounded-full"><i data-lucide="alert-circle" class="w-3 h-3"></i>Important</span>' : ''}
+                </div>
+                <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-2">${escapeHtml(item.message || item.description || '')}</p>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">${timeAgo(item.created_at)}</span>
+              </div>
+            </div>
+            ${item.expiry_date ? `<div class="mt-2 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>Expires: ${formatDate(item.expiry_date)}</div>` : ''}
+          `;
+          container.appendChild(card);
+        });
+
+        // Re-initialize Lucide icons for dynamically added content
+        if (window.lucide) lucide.createIcons();
+      } catch (err) {
+        console.warn('Failed to load announcements:', err);
+        container.querySelector('.announcement-skeleton')?.remove();
+        document.getElementById('noAnnouncements').classList.remove('hidden');
+      }
+    }
+
+    /** Fetch and display events */
+    async function loadEvents() {
+      if (!supabase) return;
+      const container = document.getElementById('eventsContainer');
+
+      try {
+        const now = new Date().toISOString();
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .gte('end_date', now)
+          .order('start_date', { ascending: true })
+          .limit(3);
+
+        container.querySelector('.event-skeleton')?.remove();
+
+        if (error || !data || data.length === 0) {
+          document.getElementById('noEvents').classList.remove('hidden');
+          return;
+        }
+
+        data.forEach((event) => {
+          const card = document.createElement('div');
+          card.className = 'bg-gray-50 dark:bg-gray-700 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all reveal visible';
+          
+          const startDate = new Date(event.start_date);
+          const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+          card.innerHTML = `
+            <div class="relative h-40 bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center">
+              ${event.image_url ? `<img src="${escapeHtml(event.image_url)}" alt="${escapeHtml(event.name)}" class="absolute inset-0 w-full h-full object-cover">` : ''}
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+              <div class="absolute top-3 right-3 bg-white/90 dark:bg-gray-800/90 rounded-lg px-3 py-1.5 text-center shadow-sm">
+                <div class="text-brand-600 dark:text-brand-400 font-bold text-lg leading-none">${startDate.getDate()}</div>
+                <div class="text-gray-500 text-xs font-medium">${monthNames[startDate.getMonth()]}</div>
+              </div>
+            </div>
+            <div class="p-5">
+              <h3 class="font-bold text-gray-900 dark:text-white mb-2 line-clamp-1">${escapeHtml(event.name)}</h3>
+              <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-2 mb-3">${escapeHtml(event.description || '')}</p>
+              <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                ${event.venue ? `<span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i>${escapeHtml(event.venue)}</span>` : ''}
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+
+        if (window.lucide) lucide.createIcons();
+      } catch (err) {
+        console.warn('Failed to load events:', err);
+        container.querySelector('.event-skeleton')?.remove();
+        document.getElementById('noEvents').classList.remove('hidden');
+      }
+    }
+
+    /** Fetch and display faculty */
+    async function loadFaculty() {
+      if (!supabase) return;
+      const container = document.getElementById('facultyContainer');
+
+      try {
+        const { data, error } = await supabase
+          .from('faculty_details')
+          .select('id, first_name, last_name, department, qualification, degree, photo_url')
+          .order('first_name', { ascending: true })
+          .limit(8);
+
+        container.querySelector('.faculty-skeleton')?.remove();
+
+        if (error || !data || data.length === 0) {
+          container.innerHTML = `
+            <div class="sm:col-span-2 lg:col-span-3 xl:col-span-4 text-center py-12">
+              <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <i data-lucide="users" class="w-8 h-8 text-gray-400"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-500 dark:text-gray-400">Faculty directory coming soon</h3>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+
+        data.forEach((faculty) => {
+          const name = `${escapeHtml(faculty.first_name || '')} ${escapeHtml(faculty.last_name || '')}`.trim();
+          const initials = `${(faculty.first_name || '?')[0]}${(faculty.last_name || '?')[0]}`.toUpperCase();
+          
+          const card = document.createElement('div');
+          card.className = 'faculty-card bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm reveal visible';
+          card.innerHTML = `
+            <div class="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg">
+              ${faculty.photo_url 
+                ? `<img src="${escapeHtml(faculty.photo_url)}" alt="${name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                   <span class="text-white font-bold text-xl hidden items-center justify-center w-full h-full">${initials}</span>`
+                : `<span class="text-white font-bold text-xl">${initials}</span>`
+              }
+            </div>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-1">${name}</h3>
+            <p class="text-brand-600 dark:text-brand-400 text-sm font-medium mb-1">${escapeHtml(faculty.department || 'Faculty')}</p>
+            <p class="text-gray-400 dark:text-gray-500 text-xs">${escapeHtml(faculty.qualification || faculty.degree || '')}</p>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.warn('Failed to load faculty:', err);
+        container.querySelector('.faculty-skeleton')?.remove();
+      }
+    }
+
+    /** Fetch and display active stories */
+    async function loadStories() {
+      if (!supabase) return;
+      
+      try {
+        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data, error } = await supabase
+          .from('stories')
+          .select('*')
+          .gte('created_at', cutoff)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error || !data || data.length === 0) return;
+
+        const section = document.getElementById('stories-section');
+        const container = document.getElementById('storiesContainer');
+        section.classList.remove('hidden');
+
+        data.forEach((story) => {
+          const circle = document.createElement('div');
+          circle.className = 'text-center flex-shrink-0';
+          circle.innerHTML = `
+            <div class="story-circle mx-auto mb-1.5">
+              <img src="${escapeHtml(story.media_url || story.thumbnail_url || 'assets/images/logo.png')}" 
+                   alt="${escapeHtml(story.creator_name || 'Story')}"
+                   onerror="this.src='assets/images/logo.png'">
+            </div>
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 truncate block max-w-[72px]">
+              ${escapeHtml(story.creator_name || 'KKDGMS')}
+            </span>
+          `;
+          container.appendChild(circle);
+        });
+      } catch (err) {
+        console.warn('Failed to load stories:', err);
+      }
+    }
+
+    // ══════════════════════════════════════════════
+    // PWA REGISTRATION
+    // ══════════════════════════════════════════════
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then((reg) => console.log('Service Worker registered:', reg.scope))
+          .catch((err) => console.warn('Service Worker registration failed:', err));
+      });
+    }
+
+    // ══════════════════════════════════════════════
+    // INITIALIZE PAGE
+    // ══════════════════════════════════════════════
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Lucide icons
+      if (window.lucide) lucide.createIcons();
+
+      // Load all public data
+      loadCounts();
+      loadAnnouncements();
+      loadEvents();
+      loadFaculty();
+      loadStories();
+    });
+  </script>
+
+</body>
 </html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="KKDGMS - Push Notification Hub">
+  <meta name="theme-color" content="#1e40af">
+  <title>Push Notification Hub — KKDGMS</title>
+  
+  <link rel="icon" type="image/png" href="../assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Poppins', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+              400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+              800: '#1e40af', 900: '#1e3a8a', 950: '#172554'
+            },
+            accent: {
+              500: '#f59e0b', 600: '#d97706', 700: '#b45309'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <link rel="stylesheet" href="../assets/css/theme.css">
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col md:flex-row antialiased">
+  
+  <!-- Sidebar Container -->
+  <aside id="sidebar-container" class="w-64 flex-shrink-0 z-30"></aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Navbar Container -->
+    <header id="navbar-container" class="sticky top-0 z-20"></header>
+
+    <!-- Page Body -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto space-y-6">
+      
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-6">
+      <h1 class="text-2xl font-bold font-display text-gray-900 dark:text-white">FCM Push Notification Hub</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Send immediate push notifications to registered Android, iPhone, and desktop devices</p>
+    </div>
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-base font-bold">Compose Push Message</h2>
+        <input type="text" id="notifTitle" placeholder="Notification Title" class="input w-full">
+        <textarea id="notifBody" placeholder="Message content..." class="textarea w-full" rows="4"></textarea>
+        <button class="btn btn-primary w-full" onclick="alert('Notification queued for dispatch via Edge Function')">Broadcast Push</button>
+      </div>
+      <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm" id="tokensListContainer">
+        <h2 class="text-base font-bold mb-4">Active Device Tokens</h2>
+      </div>
+    </div>
+  
+    </main>
+
+    <!-- Notification Panel Container -->
+    <div id="notification-panel-container"></div>
+  </div>
+
+  <!-- Toast & Modal Mount Points -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+  <div id="modalContainer"></div>
+
+  <!-- Application Logic -->
+  <script type="module">
+    import config from '../js/config.js';
+    import supabaseService from '../js/services/supabase.service.js';
+    import authService from '../js/services/auth.service.js';
+    import permissionService from '../js/services/permission.service.js';
+    import uiService from '../js/services/ui.service.js';
+    import auditService from '../js/services/audit.service.js';
+    import offlineService from '../js/services/offline.service.js';
+    import validationService from '../js/services/validation.service.js';
+    import Sidebar from '../components/sidebar.js';
+    import Navbar from '../components/navbar.js';
+    import ProfileMenu from '../components/profile-menu.js';
+    import NotificationPanel from '../components/notification-panel.js';
+    import DataTable from '../components/data-table.js';
+    import Modal from '../components/modal.js';
+    import ChartComponent from '../components/chart.js';
+    import FileUpload from '../components/file-upload.js';
+    import StoryViewer from '../components/story-viewer.js';
+    import { formatDate, calculateAge } from '../js/utils/date.utils.js';
+    import { exportToCSV, exportToPDF } from '../js/utils/export.utils.js';
+    import { generateQR, scanQR } from '../js/utils/qr.utils.js';
+
+    // RBAC & Session Check
+    const userRole = 'ADMIN';
+    const activePage = 'admin/notifications.html';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Theme sync
+      const savedTheme = localStorage.getItem('kkdgms-theme') || 'system';
+      const isDark = savedTheme === 'dark' || (savedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', isDark);
+
+      // 2. Render Layout Navigation
+      const sidebarMount = document.getElementById('sidebar-container');
+      const navbarMount = document.getElementById('navbar-container');
+      
+      if (sidebarMount) {
+        new Sidebar({
+          container: sidebarMount,
+          role: userRole,
+          currentPage: activePage
+        }).render();
+      }
+
+      if (navbarMount) {
+        new Navbar({
+          container: navbarMount,
+          title: 'Push Notification Hub',
+          breadcrumbs: [
+            { label: 'Portal', href: '#' },
+            { label: 'Push Notification Hub', active: true }
+          ]
+        }).render();
+      }
+
+      if (window.lucide) lucide.createIcons();
+
+      // Execute Page Script
+      
+    const container = document.getElementById('tokensListContainer');
+    const { data } = await supabaseService.from('device_tokens').select('*');
+    new DataTable({
+      container,
+      columns: [
+        { key: 'browser', label: 'Browser' },
+        { key: 'platform', label: 'Platform' },
+        { key: 'last_used_at', label: 'Last Active', render: (r) => formatDate(r.last_used_at) },
+        { key: 'is_active', label: 'Active', render: (r) => r.is_active ? 'Yes' : 'No' }
+      ],
+      data: data || []
+    }).render();
+  
+    });
+  </script>
+</body>
+</html>

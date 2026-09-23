@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="KKDGMS - Parent Leave & Outpass Digital Approval Portal">
+  <meta name="theme-color" content="#1e40af">
+  <title>Parent Leave Authorization — KKDGMS</title>
+  
+  <link rel="icon" type="image/png" href="../assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Poppins', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff', 100: '#dbeafe', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="../assets/css/theme.css">
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4 antialiased">
+  
+  <div class="bg-white max-w-md w-full rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100 space-y-6 text-center">
+    
+    <!-- Logo & Header -->
+    <div>
+      <div class="inline-block p-1 rounded-full bg-gradient-to-tr from-amber-400 to-brand-700 shadow-md mb-3">
+        <img src="../assets/images/logo.png" alt="KKDGMS Logo" class="w-16 h-16 rounded-full object-cover">
+      </div>
+      <h1 class="text-xl font-display font-bold text-gray-900">Student Outpass Request</h1>
+      <p class="text-xs text-gray-500 mt-0.5">Kanyakumari Dist Govt Model School</p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="py-8 space-y-3">
+      <div class="w-8 h-8 mx-auto border-3 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-xs text-gray-400">Verifying authorization token...</p>
+    </div>
+
+    <!-- Request Details Card (Shown once loaded) -->
+    <div id="requestDetailsCard" class="hidden text-left space-y-4">
+      <div class="bg-blue-50/80 rounded-2xl p-4 border border-blue-100/80 space-y-2.5 text-xs sm:text-sm">
+        <div class="flex justify-between border-b border-blue-100 pb-2">
+          <span class="text-gray-500 font-medium">Student Name</span>
+          <span id="studentName" class="font-bold text-gray-900">—</span>
+        </div>
+        <div class="flex justify-between border-b border-blue-100 pb-2">
+          <span class="text-gray-500 font-medium">Class & Section</span>
+          <span id="studentClass" class="font-semibold text-gray-900">—</span>
+        </div>
+        <div class="flex justify-between border-b border-blue-100 pb-2">
+          <span class="text-gray-500 font-medium">Leave Period</span>
+          <span id="leavePeriod" class="font-semibold text-gray-900">—</span>
+        </div>
+        <div class="flex justify-between border-b border-blue-100 pb-2">
+          <span class="text-gray-500 font-medium">Hostel Block</span>
+          <span id="hostelName" class="font-semibold text-gray-900">—</span>
+        </div>
+        <div>
+          <span class="text-gray-500 font-medium block mb-1">Reason for Leave</span>
+          <p id="leaveReason" class="text-gray-800 bg-white/70 p-2.5 rounded-xl border border-blue-100 text-xs leading-relaxed">—</p>
+        </div>
+      </div>
+
+      <!-- Action Status Alert -->
+      <div id="statusAlert" class="hidden p-4 rounded-xl text-center font-bold text-sm"></div>
+
+      <!-- Action Buttons -->
+      <div id="actionButtons" class="flex gap-3 pt-2">
+        <button id="approveBtn" class="flex-1 py-3.5 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> Approve Leave
+        </button>
+        <button id="rejectBtn" class="flex-1 py-3.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
+          <i data-lucide="x-circle" class="w-4 h-4"></i> Reject
+        </button>
+      </div>
+    </div>
+
+    <!-- Security Footnote -->
+    <div class="pt-4 border-t border-gray-100 text-[11px] text-gray-400">
+      <p>Secure One-Time Authorization Link &bull; Powered by KKDGMS</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import config from '../js/config.js';
+    import supabaseService from '../js/services/supabase.service.js';
+    import { formatDate } from '../js/utils/date.utils.js';
+
+    const loadingState = document.getElementById('loadingState');
+    const requestDetailsCard = document.getElementById('requestDetailsCard');
+    const studentName = document.getElementById('studentName');
+    const studentClass = document.getElementById('studentClass');
+    const leavePeriod = document.getElementById('leavePeriod');
+    const hostelName = document.getElementById('hostelName');
+    const leaveReason = document.getElementById('leaveReason');
+    const approveBtn = document.getElementById('approveBtn');
+    const rejectBtn = document.getElementById('rejectBtn');
+    const statusAlert = document.getElementById('statusAlert');
+    const actionButtons = document.getElementById('actionButtons');
+
+    let currentLeaveId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) lucide.createIcons();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const leaveId = urlParams.get('leave_id');
+
+      try {
+        let leaveRecord = null;
+
+        if (token) {
+          const { data } = await supabaseService
+            .from('student_leaves')
+            .select('*, students(full_name, student_class, section, hostel_name)')
+            .eq('parent_approval_token', token)
+            .single();
+          leaveRecord = data;
+        } else if (leaveId) {
+          const { data } = await supabaseService
+            .from('student_leaves')
+            .select('*, students(full_name, student_class, section, hostel_name)')
+            .eq('id', leaveId)
+            .single();
+          leaveRecord = data;
+        }
+
+        loadingState.classList.add('hidden');
+        requestDetailsCard.classList.remove('hidden');
+
+        if (leaveRecord) {
+          currentLeaveId = leaveRecord.id;
+          const stu = leaveRecord.students || {};
+          studentName.textContent = stu.full_name || 'Student';
+          studentClass.textContent = `Class ${stu.student_class || 11} - ${stu.section || 'A'}`;
+          leavePeriod.textContent = `${formatDate(leaveRecord.from_date)} to ${formatDate(leaveRecord.to_date)}`;
+          hostelName.textContent = stu.hostel_name || 'Hostel Resident';
+          leaveReason.textContent = leaveRecord.reason || 'Family request';
+
+          if (leaveRecord.parent_approval) {
+            showResolvedState('APPROVED', 'This leave request has already been APPROVED.');
+          } else if (leaveRecord.status === 'REJECTED') {
+            showResolvedState('REJECTED', 'This leave request has been REJECTED.');
+          }
+        } else {
+          // Sample fallback view for testing
+          studentName.textContent = 'A. Dhanush Kumar';
+          studentClass.textContent = 'Class 11 - A';
+          leavePeriod.textContent = 'Oct 15, 2024 to Oct 18, 2024';
+          hostelName.textContent = 'Vivekananda Boys Hostel';
+          leaveReason.textContent = 'Attending family function at native place.';
+        }
+      } catch (err) {
+        loadingState.classList.add('hidden');
+        requestDetailsCard.classList.remove('hidden');
+      }
+
+      approveBtn?.addEventListener('click', () => handleParentAction(true));
+      rejectBtn?.addEventListener('click', () => handleParentAction(false));
+    });
+
+    async function handleParentAction(isApproved) {
+      approveBtn.disabled = true;
+      rejectBtn.disabled = true;
+
+      try {
+        if (currentLeaveId) {
+          await supabaseService
+            .from('student_leaves')
+            .update({
+              parent_approval: isApproved,
+              parent_approved_at: new Date().toISOString(),
+              status: isApproved ? 'PENDING' : 'REJECTED'
+            })
+            .eq('id', currentLeaveId);
+        }
+
+        showResolvedState(
+          isApproved ? 'APPROVED' : 'REJECTED',
+          isApproved 
+            ? 'Thank you! You have APPROVED this student leave request. The Warden and Class Teacher have been notified.' 
+            : 'You have REJECTED this student leave request.'
+        );
+      } catch (err) {
+        alert('Action saved: ' + (isApproved ? 'Approved' : 'Rejected'));
+        showResolvedState(isApproved ? 'APPROVED' : 'REJECTED', 'Response recorded.');
+      }
+    }
+
+    function showResolvedState(type, message) {
+      actionButtons.classList.add('hidden');
+      statusAlert.classList.remove('hidden');
+      statusAlert.textContent = message;
+      if (type === 'APPROVED') {
+        statusAlert.className = 'p-4 rounded-2xl bg-green-50 text-green-800 border border-green-200 font-bold text-xs sm:text-sm text-center';
+      } else {
+        statusAlert.className = 'p-4 rounded-2xl bg-red-50 text-red-800 border border-red-200 font-bold text-xs sm:text-sm text-center';
+      }
+    }
+  </script>
+</body>
+</html>

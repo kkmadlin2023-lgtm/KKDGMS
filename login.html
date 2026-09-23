@@ -1,377 +1,412 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="system">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | KKDGMS</title>
-    <link rel="icon" type="image/x-icon" href="kk.png">
-    
-    <!-- Professional Theme System -->
-    <link rel="stylesheet" href="assets/css/theme.css">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- KKDGMS Common Configuration -->
-    <script src="assets/js/supabase-config.js"></script>
-    
-    <!-- Preventive Back-Button Trap Script -->
-    <script>
-        history.pushState(null, null, location.href);
-        window.onpopstate = function () {
-            history.pushState(null, null, location.href);
-        };
-    </script>
-
-    <!-- ========================================================= -->
-    <!-- KKDGMS LOADER REDIRECTOR (OAuth Safe)                      -->
-    <!-- ========================================================= -->
-    <script>
-        (function() {
-            const currentUrl = new URL(window.location.href);
-            const pageName = currentUrl.pathname.split('/').pop() || 'index.html';
-            const isOAuthCallback = currentUrl.searchParams.has('error') || 
-                                    window.location.hash.includes('access_token') || 
-                                    window.location.hash.includes('code=');
-
-            if (pageName !== 'redirect.html' && !currentUrl.searchParams.has('loaded') && !isOAuthCallback) {
-                const targetUrl = encodeURIComponent(window.location.href);
-                window.location.replace(`redirect.html?target=${targetUrl}`);
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="KKDGMS - Secure Portal Login for Students, Faculty, Wardens, Technicians and Administrators.">
+  <meta name="theme-color" content="#1e40af">
+  
+  <title>Login — KKDGMS Portal</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="apple-touch-icon" href="assets/images/logo.png">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Poppins', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+              400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+              800: '#1e40af', 900: '#1e3a8a', 950: '#172554'
+            },
+            accent: {
+              500: '#f59e0b', 600: '#d97706', 700: '#b45309'
             }
-        })();
-    </script>
-    <!-- ========================================================= -->
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-image: url('kanyakumari.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            overflow: hidden;
+          }
         }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="assets/css/theme.css">
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(30px) saturate(160%);
-            -webkit-backdrop-filter: blur(30px) saturate(160%);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-
-        .input-field {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .input-field:focus {
-            background: rgba(0, 0, 0, 0.5);
-            border-color: #818cf8;
-            box-shadow: 0 0 20px rgba(129, 140, 248, 0.2);
-            outline: none;
-        }
-
-        #toast-container { perspective: 1000px; }
-        .toast-animate { animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes slideIn {
-            from { transform: translateX(100%) rotateY(-30deg); opacity: 0; }
-            to { transform: translateX(0) rotateY(0); opacity: 1; }
-        }
-    </style>
+  <style>
+    .login-bg {
+      position: relative;
+      min-height: 100vh;
+      background: radial-gradient(circle at 10% 20%, rgba(30, 64, 175, 0.95) 0%, rgba(15, 23, 42, 0.98) 90%), url('assets/images/hero.jpg');
+      background-size: cover;
+      background-position: center;
+      background-blend-mode: overlay;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .dark .glass-card {
+      background: rgba(30, 41, 59, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="login-bg text-gray-900 dark:text-gray-100 flex items-center justify-center p-4 sm:p-6 min-h-screen">
 
-    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 w-80"></div>
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
-    <main class="glass-panel w-full max-w-[440px] rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
-        <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 blur-[80px] rounded-full"></div>
+  <!-- Main Card -->
+  <div class="glass-card w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-8 relative overflow-hidden transition-all">
+    
+    <!-- Top Theme Toggle & Back Button -->
+    <div class="flex items-center justify-between mb-4">
+      <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 hover:text-brand-900 dark:hover:text-white transition-colors">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Back to Home</span>
+      </a>
+      <button id="themeToggle" class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors" aria-label="Toggle theme">
+        <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+        <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+      </button>
+    </div>
 
-        <div class="relative z-10 text-center">
-            <div class="mb-8">
-                <div class="inline-flex p-4 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 mb-4">
-                    <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.312-2.84.873-4.085M6.757 11.643l.053-.09"></path>
-                    </svg>
-                </div>
-                <h1 class="text-white text-3xl font-extrabold tracking-tight italic">KKDGMS</h1>
-                <p class="text-indigo-200/50 text-[10px] uppercase font-bold tracking-[0.4em] mt-1">Login Portal</p>
-            </div>
+    <!-- Header & Logo -->
+    <div class="text-center mb-6">
+      <div class="inline-block p-1 rounded-full bg-gradient-to-tr from-amber-400 to-brand-600 shadow-md mb-3">
+        <img src="assets/images/logo.png" alt="KKDGMS Logo" class="w-16 h-16 rounded-full object-cover">
+      </div>
+      <h1 class="text-xl sm:text-2xl font-display font-bold text-gray-900 dark:text-white">Portal Sign In</h1>
+      <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Kanyakumari Dist Govt Model School</p>
+    </div>
 
-            <form id="loginForm" class="space-y-5">
-                <input type="email" id="email" required class="input-field w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 text-sm" placeholder="Email Address">
-                <input type="password" id="password" required class="input-field w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 text-sm" placeholder="Password">
-                <button type="submit" id="submitBtn" class="w-full py-4 bg-white text-indigo-950 rounded-2xl font-bold text-sm hover:bg-indigo-400 hover:text-white transition-all transform active:scale-95 shadow-xl">
-                    SIGN IN TO SYSTEM
-                </button>
-            </form>
+    <!-- Lockout Alert Container -->
+    <div id="lockoutAlert" class="hidden mb-5 p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 text-xs sm:text-sm">
+      <div class="flex items-center gap-2 font-bold mb-1">
+        <i data-lucide="shield-alert" class="w-4 h-4 flex-shrink-0"></i>
+        <span>Account Locked Due to Failed Attempts</span>
+      </div>
+      <p class="text-xs text-red-600 dark:text-red-400">
+        Please wait <span id="lockoutCountdown" class="font-bold underline">5:00</span> before trying again.
+      </p>
+    </div>
 
-            <!-- DIVIDER -->
-            <div class="relative my-6 flex items-center justify-center">
-                <div class="border-t border-white/10 w-full"></div>
-                <span class="bg-transparent px-3 text-[10px] text-white/40 uppercase font-bold tracking-widest absolute">OR</span>
-            </div>
-
-            <!-- ENHANCED GOOGLE LOGIN BUTTON -->
-            <button type="button" id="googleBtn" class="w-full py-4 bg-white/10 border border-white/20 text-white rounded-2xl font-semibold text-sm hover:bg-white/20 transition-all flex items-center justify-center gap-3 transform active:scale-95 shadow-lg group">
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo" class="w-5 h-5 group-hover:scale-110 transition-transform">
-                <span>Sign in with Google</span>
-            </button>
-
-            <p class="mt-8 text-white/30 text-[10px] font-medium tracking-widest uppercase">Encryption Active: 2025-2026</p>
+    <!-- Login Form -->
+    <form id="loginForm" class="space-y-4" novalidate>
+      <div>
+        <label for="userIdInput" class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1">
+          User ID / Email / EMIS
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <i data-lucide="user" class="w-4 h-4"></i>
+          </div>
+          <input 
+            type="text" 
+            id="userIdInput" 
+            name="userId"
+            required
+            autocomplete="username"
+            placeholder="e.g. ADM001, FAC001, EMIS202401"
+            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all placeholder:text-gray-400"
+          >
         </div>
-    </main>
+      </div>
 
-    <!-- FIREBASE MESSAGING SDK MODULE -->
-    <!-- FIREBASE & SUPABASE AUTH MODULE -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label for="passwordInput" class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+            Password
+          </label>
+          <a href="#" id="forgotPasswordBtn" class="text-xs text-brand-600 dark:text-brand-400 hover:underline">Forgot password?</a>
+        </div>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <i data-lucide="lock" class="w-4 h-4"></i>
+          </div>
+          <input 
+            type="password" 
+            id="passwordInput" 
+            name="password"
+            required
+            autocomplete="current-password"
+            placeholder="••••••••••••"
+            class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all placeholder:text-gray-400"
+          >
+          <button 
+            type="button" 
+            id="togglePasswordBtn" 
+            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            aria-label="Toggle password visibility"
+          >
+            <i data-lucide="eye" id="eyeIcon" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBSyMx_ozuq0IBS0J6b22vx45HOyTvJfJw",
-            authDomain: "kkdgmschool.firebaseapp.com",
-            projectId: "kkdgmschool",
-            storageBucket: "kkdgmschool.firebasestorage.app",
-            messagingSenderId: "1091598835673",
-            appId: "1:1091598835673:web:0b613f8750669ac0e403c8",
-            measurementId: "G-ZHSCYNGK23"
-        };
+      <!-- Remember device & Attempt Counter -->
+      <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-1">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="rememberMe" class="rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <span>Remember session</span>
+        </label>
+        <span id="attemptWarning" class="text-amber-600 dark:text-amber-400 font-medium hidden">
+          3 attempts max
+        </span>
+      </div>
 
-        const VAPID_KEY = "BFBXhwctSdcN-RWHdI__kdX98tVjVwSf0333n3131x7MteABahcUTq4UJHD4zm1id27XjS9OMPX1dPOF6SXTeuM";
+      <!-- Submit Button -->
+      <button 
+        type="submit" 
+        id="submitBtn" 
+        class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-700 to-brand-900 hover:from-brand-800 hover:to-brand-950 text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
+      >
+        <span id="btnText">Sign In to Dashboard</span>
+        <div id="btnSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      </button>
+    </form>
 
-        const firebaseApp = initializeApp(firebaseConfig);
-        const messaging = getMessaging(firebaseApp);
+    <!-- Divider -->
+    <div class="relative my-5">
+      <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200 dark:border-slate-700"></div></div>
+      <div class="relative flex justify-center text-xs uppercase"><span class="bg-white dark:bg-slate-900 px-3 text-gray-400">Or sign in with</span></div>
+    </div>
+
+    <!-- Google OAuth Button -->
+    <button 
+      type="button" 
+      id="googleSignInBtn" 
+      class="w-full py-2.5 px-4 rounded-xl border border-gray-300 dark:border-slate-700 bg-white hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-gray-700 dark:text-gray-200 font-medium text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-2"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+      </svg>
+      <span>Google Workspace</span>
+    </button>
+
+    <!-- Help info -->
+    <div class="mt-6 pt-4 border-t border-gray-100 dark:border-slate-800 text-center text-xs text-gray-500 dark:text-gray-400 space-y-1">
+      <p>Role routing automatically detected from your account.</p>
+      <p class="text-[11px] text-gray-400">Supported: ADMIN &bull; FACULTY &bull; STUDENT &bull; WARDEN &bull; TECH</p>
+    </div>
+  </div>
+
+  <!-- Application Module Scripts -->
+  <script type="module">
+    import config from './js/config.js';
+    import authService from './js/services/auth.service.js';
+    import uiService from './js/services/ui.service.js';
+    import fcmService from './js/services/fcm.service.js';
+    import auditService from './js/services/audit.service.js';
+    import permissionService from './js/services/permission.service.js';
+
+    // Role Dashboard mapping
+    const ROLE_ROUTES = {
+      ADMIN: 'admin/dashboard.html',
+      FACULTY: 'faculty/dashboard.html',
+      STUDENT: 'student/dashboard.html',
+      WARDEN: 'warden/dashboard.html',
+      TECHNICIAN: 'technician/dashboard.html',
+      GUEST: 'guest/dashboard.html'
+    };
+
+    // DOM Elements
+    const loginForm = document.getElementById('loginForm');
+    const userIdInput = document.getElementById('userIdInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const lockoutAlert = document.getElementById('lockoutAlert');
+    const lockoutCountdown = document.getElementById('lockoutCountdown');
+    const googleSignInBtn = document.getElementById('googleSignInBtn');
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+    const themeToggle = document.getElementById('themeToggle');
+
+    let lockoutInterval = null;
+
+    // Theme initialization
+    function initTheme() {
+      const saved = localStorage.getItem('kkdgms-theme');
+      const isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', isDark);
+    }
+    initTheme();
+
+    themeToggle?.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('kkdgms-theme', isDark ? 'dark' : 'light');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Password visibility toggle
+    togglePasswordBtn?.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      eyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    // Check existing session on load
+    async function checkExistingSession() {
+      try {
+        if (authService.isAuthenticated()) {
+          const user = authService.getUser();
+          const profile = await authService.getProfile();
+          const role = profile?.role || user?.user_metadata?.role || 'GUEST';
+          const target = ROLE_ROUTES[role] || 'index.html';
+          window.location.href = target;
+        }
+      } catch (err) {
+        console.warn('Session check fallback:', err);
+      }
+    }
+
+    // Check Lockout Status
+    function checkLockout() {
+      if (authService.isLockedOut()) {
+        submitBtn.disabled = true;
+        userIdInput.disabled = true;
+        passwordInput.disabled = true;
+        lockoutAlert.classList.remove('hidden');
         
-        const _supabase = supabase;
-
-        let isRedirecting = false;
-
-        // UI Toast Notification helper
-        function notify(message, type = 'yellow') {
-            const container = document.getElementById('toast-container');
-            const colors = {
-                green: 'bg-emerald-500/20 border-emerald-500 text-emerald-400',
-                red: 'bg-rose-500/20 border-rose-500 text-rose-400',
-                yellow: 'bg-amber-500/20 border-amber-500 text-amber-400'
-            };
-            const toast = document.createElement('div');
-            toast.className = `glass-panel toast-animate px-6 py-4 rounded-2xl border-l-4 ${colors[type]} flex items-center gap-3 shadow-2xl`;
-            toast.innerHTML = `<div class="w-2 h-2 rounded-full animate-pulse ${type === 'green' ? 'bg-emerald-400' : type === 'red' ? 'bg-rose-400' : 'bg-amber-400'}"></div><span class="text-xs font-bold uppercase tracking-wider">${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { 
-                toast.style.opacity = '0'; 
-                setTimeout(() => toast.remove(), 500); 
-            }, 4000);
+        updateLockoutTimer();
+        if (!lockoutInterval) {
+          lockoutInterval = setInterval(updateLockoutTimer, 1000);
         }
-
-        // Helper to accurately extract the provider from user metadata or explicit call
-        function detectAuthProvider(user, explicitProvider) {
-            if (explicitProvider) return explicitProvider;
-            
-            const identities = user.identities || [];
-            if (identities.length > 0) {
-                const providerId = identities[0].provider;
-                if (providerId === 'google') return 'Google';
-            }
-            
-            const appProvider = user.app_metadata?.provider;
-            if (appProvider === 'google') return 'Google';
-
-            return 'Email/Password';
+        return true;
+      } else {
+        submitBtn.disabled = false;
+        userIdInput.disabled = false;
+        passwordInput.disabled = false;
+        lockoutAlert.classList.add('hidden');
+        if (lockoutInterval) {
+          clearInterval(lockoutInterval);
+          lockoutInterval = null;
         }
+        return false;
+      }
+    }
 
-        // Record Login Audit Entry to Supabase Table (Login-time only)
-        async function recordLoginAudit(user, roleName, providerName) {
-            try {
-                await _supabase.from(TABLES.LOGIN_AUDIT_LOGS).insert([{
-                    user_id: user.id,
-                    email: user.email,
-                    role: roleName,
-                    provider: providerName,
-                    login_time: new Date().toISOString()
-                }]);
-            } catch (auditErr) {
-                console.error("Failed to record login audit log:", auditErr);
+    function updateLockoutTimer() {
+      const remainingSec = authService.getLockoutRemaining();
+      if (remainingSec <= 0) {
+        checkLockout();
+        return;
+      }
+      const mins = Math.floor(remainingSec / 60);
+      const secs = remainingSec % 60;
+      lockoutCountdown.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    // Form Submission Handler
+    loginForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (checkLockout()) return;
+
+      const userId = userIdInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!userId || !password) {
+        uiService.showToast('Please enter both User ID and Password', 'warning');
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const result = await authService.login(userId, password);
+
+        if (result && result.user) {
+          uiService.showToast('Authentication successful! Loading profile...', 'success');
+          
+          // Role determination
+          const profile = await authService.getProfile();
+          const role = profile?.role || result.user.user_metadata?.role || 'STUDENT';
+          
+          // FCM token registration attempt (non-blocking)
+          try {
+            if ('Notification' in window && Notification.permission === 'default') {
+              fcmService.requestPermission().then((token) => {
+                if (token) fcmService.saveToken(token);
+              }).catch(() => {});
             }
+          } catch (notifErr) {
+            console.warn('FCM registration skipped:', notifErr);
+          }
+
+          // Route navigation
+          const targetUrl = ROLE_ROUTES[role] || 'student/dashboard.html';
+          setTimeout(() => {
+            window.location.href = targetUrl;
+          }, 600);
         }
+      } catch (err) {
+        console.error('Login error:', err);
+        const errMsg = err.message || 'Invalid credentials. Please verify your User ID and Password.';
+        uiService.showToast(errMsg, 'error');
+        checkLockout();
+      } finally {
+        setLoading(false);
+      }
+    });
 
-        // Verification & Dashboard Redirect Handler
-        async function verifyUserAndRedirect(user, explicitProvider = null) {
-            if (isRedirecting) return;
-            isRedirecting = true;
+    // Google Sign-In Handler
+    googleSignInBtn?.addEventListener('click', async () => {
+      try {
+        await authService.loginWithGoogle();
+      } catch (err) {
+        uiService.showToast('Google Sign-In failed: ' + (err.message || 'Unknown error'), 'error');
+      }
+    });
 
-            const email = user.email.trim().toLowerCase();
-            notify(`Checking Role for ${email}...`, "yellow");
+    // Forgot password handler
+    forgotPasswordBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      uiService.showAlert(
+        'Password Reset', 
+        'To reset your password, please contact the School Administrator or your Department Head with your User ID / EMIS number.'
+      );
+    });
 
-            try {
-                const [studentCheck, adminCheck, facultyCheck, wardenCheck] = await Promise.all([
-                    _supabase.from(TABLES.STUDENTS).select('email').eq('email', email).maybeSingle(),
-                    _supabase.from(TABLES.ADMINS).select('email').eq('email', email).maybeSingle(),
-                    _supabase.from(TABLES.FACULTY_DETAILS).select('email').eq('email', email).maybeSingle(),
-                    _supabase.from(TABLES.WARDENS).select('email').eq('email', email).maybeSingle()
-                ]);
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading;
+      if (isLoading) {
+        btnText.textContent = 'Verifying...';
+        btnSpinner.classList.remove('hidden');
+      } else {
+        btnText.textContent = 'Sign In to Dashboard';
+        btnSpinner.classList.add('hidden');
+      }
+    }
 
-                let targetTable = null;
-                let redirectUrl = null;
-                let roleName = 'Unknown';
-
-                if (studentCheck.data) {
-                    targetTable = TABLES.STUDENTS;
-                    redirectUrl = 's_dashboard.html';
-                    roleName = 'Student';
-                } else if (adminCheck.data) {
-                    targetTable = TABLES.ADMINS;
-                    redirectUrl = 'a_dashboard.html';
-                    roleName = 'Admin';
-                } else if (facultyCheck.data) {
-                    targetTable = TABLES.FACULTY_DETAILS;
-                    redirectUrl = 'f_dashboard.html';
-                    roleName = 'Faculty';
-                } else if (wardenCheck.data) {
-                    targetTable = TABLES.WARDENS;
-                    redirectUrl = 'w_dashboard.html';
-                    roleName = 'Warden';
-                }
-
-                if (!targetTable || !redirectUrl) {
-                    isRedirecting = false;
-                    throw new Error(`Authenticated, but (${email}) is not registered in any role table.`);
-                }
-
-                // Determine provider type safely via identity inspection
-                const provider = detectAuthProvider(user, explicitProvider);
-
-                // Write entry into audit logs (Login timestamp tracking only)
-                await recordLoginAudit(user, roleName, provider);
-
-                notify("Role Identified! Opening Dashboard...", "green");
-                await collectFcmToken(email, targetTable);
-
-                setTimeout(() => window.location.replace(redirectUrl), 500);
-
-            } catch (err) {
-                isRedirecting = false;
-                notify(err.message, "red");
-            }
-        }
-
-        // Real-time Auth State Listener (handles OAuth redirects & persistent sessions)
-        _supabase.auth.onAuthStateChange(async (event, session) => {
-            if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
-                if (!isRedirecting) {
-                    await verifyUserAndRedirect(session.user);
-                }
-            }
-        });
-
-        // BFCache Handling
-        window.addEventListener('pageshow', function (event) {
-            if (event.persisted) {
-                window.location.reload();
-            }
-        });
-
-        // Mobile Detector
-        function isMobileDevice() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-            const isTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-            return mobileRegex.test(userAgent) || (window.innerWidth <= 768 && isTouchScreen);
-        }
-
-        // MOBILE FCM TOKEN COLLECTION
-        async function collectFcmToken(email, targetTable) {
-            try {
-                if (!isMobileDevice()) return;
-                if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
-
-                let permission = Notification.permission;
-                if (permission === 'denied') return;
-                if (permission !== 'granted') permission = await Notification.requestPermission();
-                if (permission !== 'granted') return;
-
-                let swRegistration;
-                try {
-                    swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-                    await navigator.serviceWorker.ready;
-                } catch (swErr) {
-                    console.error("Service worker registration error:", swErr);
-                    return;
-                }
-
-                const token = await getToken(messaging, { 
-                    vapidKey: VAPID_KEY,
-                    serviceWorkerRegistration: swRegistration 
-                });
-
-                if (token) {
-                    const currentTime = new Date().toISOString();
-                    
-                    let { error } = await _supabase
-                        .from(targetTable)
-                        .update({ fcm_token: token, fcm_updated_at: currentTime })
-                        .eq('email', email);
-
-                    if (error && error.message.includes('fcm_updated_at')) {
-                        const fallbackResult = await _supabase
-                            .from(targetTable)
-                            .update({ fcm_token: token, updated_at: currentTime })
-                            .eq('email', email);
-                        error = fallbackResult.error;
-                    }
-
-                    if (error && error.message.includes('updated_at')) {
-                        await _supabase.from(targetTable).update({ fcm_token: token }).eq('email', email);
-                    }
-                }
-            } catch (fcmErr) {
-                console.error("FCM exception:", fcmErr);
-            }
-        }
-
-        // GOOGLE OAUTH LOGIN HANDLER
-        document.getElementById('googleBtn').addEventListener('click', async () => {
-            notify("Redirecting to Google...", "yellow");
-
-            const { error } = await _supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: `https://kkdgms.vercel.app/login.html`
-                }
-            });
-
-            if (error) {
-                notify(error.message, "red");
-            }
-        });
-
-        // STANDARD EMAIL/PASSWORD LOGIN SUBMISSION
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('password').value;
-
-            btn.disabled = true;
-            btn.innerHTML = `<span class="animate-pulse">VERIFYING...</span>`;
-            notify("Processing Request...", "yellow");
-
-            try {
-                const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
-                if (authError) throw authError;
-
-                await verifyUserAndRedirect(authData.user, 'Email/Password');
-
-            } catch (err) {
-                notify(err.message, "red");
-                btn.disabled = false;
-                btn.innerHTML = "SIGN IN TO SYSTEM";
-            }
-        });
-    </script>
+    // Initialize icons & listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      checkExistingSession();
+      checkLockout();
+    });
+  </script>
 </body>
 </html>
