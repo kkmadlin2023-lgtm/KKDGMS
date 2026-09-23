@@ -1,5 +1,5 @@
 -- ============================================================================
--- KKDGMS — Master PostgreSQL Database Schema
+-- KKDGMS — Master PostgreSQL Database Schema (Bulletproof Version)
 -- KANYAKUMARI DIST GOVERNMENT MODEL SCHOOL
 -- ============================================================================
 
@@ -7,47 +7,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Clean drop for idempotency (if rebuilding)
--- Note: Cascading drops will wipe older tables and recreated with complete constraints.
-
--- 1. ENUMS & DOMAINS
-DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('ADMIN', 'FACULTY', 'STUDENT', 'WARDEN', 'TECHNICIAN', 'GUEST');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE gender_type AS ENUM ('MALE', 'FEMALE', 'OTHER');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE attendance_status AS ENUM ('PRESENT', 'ABSENT', 'LEAVE', 'HOLIDAY', 'LATE');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE leave_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE priority_level AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE gate_status AS ENUM ('OUT', 'IN', 'OVERDUE');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
--- 2. ACADEMIC YEARS
+-- 1. ACADEMIC YEARS
 CREATE TABLE IF NOT EXISTS academic_years (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     year_name VARCHAR(20) UNIQUE NOT NULL, -- e.g. '2024-2025'
@@ -58,19 +18,19 @@ CREATE TABLE IF NOT EXISTS academic_years (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. PROFILES (Master User Identity Linked to Supabase Auth)
+-- 2. PROFILES (Master User Identity Linked to Supabase Auth)
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     user_id VARCHAR(50) UNIQUE NOT NULL, -- e.g. 'ADM001', 'EMIS202401'
     email VARCHAR(255) UNIQUE NOT NULL,
-    role user_role NOT NULL DEFAULT 'GUEST',
+    role VARCHAR(50) NOT NULL DEFAULT 'GUEST' CHECK (role IN ('ADMIN', 'FACULTY', 'STUDENT', 'WARDEN', 'TECHNICIAN', 'GUEST')),
     full_name VARCHAR(150) NOT NULL,
     first_name VARCHAR(75),
     last_name VARCHAR(75),
     initial VARCHAR(10),
     dob DATE,
     age INT,
-    gender gender_type,
+    gender VARCHAR(20) DEFAULT 'OTHER' CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     aadhaar_number VARCHAR(12),
     mobile VARCHAR(15),
     photo_url TEXT,
@@ -82,10 +42,10 @@ CREATE TABLE IF NOT EXISTS profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. ROLE PERMISSIONS MATRIX
+-- 3. ROLE PERMISSIONS MATRIX
 CREATE TABLE IF NOT EXISTS role_permissions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    role user_role NOT NULL,
+    role VARCHAR(50) NOT NULL CHECK (role IN ('ADMIN', 'FACULTY', 'STUDENT', 'WARDEN', 'TECHNICIAN', 'GUEST')),
     page_id VARCHAR(100) NOT NULL, -- e.g. 'attendance.edit', 'marksheet.view'
     can_view BOOLEAN DEFAULT false,
     can_create BOOLEAN DEFAULT false,
@@ -97,7 +57,7 @@ CREATE TABLE IF NOT EXISTS role_permissions (
     UNIQUE(role, page_id)
 );
 
--- 5. STUDENTS
+-- 4. STUDENTS
 CREATE TABLE IF NOT EXISTS students (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -109,7 +69,7 @@ CREATE TABLE IF NOT EXISTS students (
     full_name VARCHAR(150) NOT NULL,
     dob DATE NOT NULL,
     age INT,
-    gender gender_type NOT NULL,
+    gender VARCHAR(20) NOT NULL CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     aadhaar_number VARCHAR(12),
     email VARCHAR(255),
     mobile VARCHAR(15),
@@ -140,7 +100,7 @@ CREATE TABLE IF NOT EXISTS students (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. FACULTY
+-- 5. FACULTY
 CREATE TABLE IF NOT EXISTS faculty_details (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -151,7 +111,7 @@ CREATE TABLE IF NOT EXISTS faculty_details (
     full_name VARCHAR(150) NOT NULL,
     dob DATE,
     age INT,
-    gender gender_type,
+    gender VARCHAR(20) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     aadhaar_number VARCHAR(12),
     email VARCHAR(255) UNIQUE NOT NULL,
     mobile VARCHAR(15) NOT NULL,
@@ -167,7 +127,7 @@ CREATE TABLE IF NOT EXISTS faculty_details (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. WARDENS
+-- 6. WARDENS
 CREATE TABLE IF NOT EXISTS wardens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -178,7 +138,7 @@ CREATE TABLE IF NOT EXISTS wardens (
     full_name VARCHAR(150) NOT NULL,
     dob DATE,
     age INT,
-    gender gender_type NOT NULL,
+    gender VARCHAR(20) NOT NULL CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     aadhaar_number VARCHAR(12),
     email VARCHAR(255) UNIQUE NOT NULL,
     mobile VARCHAR(15) NOT NULL,
@@ -193,7 +153,7 @@ CREATE TABLE IF NOT EXISTS wardens (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. TECHNICIANS
+-- 7. TECHNICIANS
 CREATE TABLE IF NOT EXISTS technicians (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -204,7 +164,7 @@ CREATE TABLE IF NOT EXISTS technicians (
     full_name VARCHAR(150) NOT NULL,
     dob DATE,
     age INT,
-    gender gender_type,
+    gender VARCHAR(20) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     aadhaar_number VARCHAR(12),
     email VARCHAR(255) UNIQUE NOT NULL,
     mobile VARCHAR(15) NOT NULL,
@@ -219,7 +179,7 @@ CREATE TABLE IF NOT EXISTS technicians (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. ADMINS
+-- 8. ADMINS
 CREATE TABLE IF NOT EXISTS admins (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -230,7 +190,7 @@ CREATE TABLE IF NOT EXISTS admins (
     full_name VARCHAR(150) NOT NULL,
     dob DATE,
     age INT,
-    gender gender_type,
+    gender VARCHAR(20) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     email VARCHAR(255) UNIQUE NOT NULL,
     mobile VARCHAR(15) NOT NULL,
     designation VARCHAR(100) DEFAULT 'Headmaster / Admin',
@@ -241,7 +201,7 @@ CREATE TABLE IF NOT EXISTS admins (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 10. GUESTS
+-- 9. GUESTS
 CREATE TABLE IF NOT EXISTS guests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -256,7 +216,7 @@ CREATE TABLE IF NOT EXISTS guests (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 11. FACULTY ALLOCATIONS
+-- 10. FACULTY ALLOCATIONS
 CREATE TABLE IF NOT EXISTS faculty_assign (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     faculty_id UUID REFERENCES faculty_details(id) ON DELETE CASCADE,
@@ -272,7 +232,7 @@ CREATE TABLE IF NOT EXISTS faculty_assign (
     UNIQUE(faculty_id, student_class, section, subject, academic_year)
 );
 
--- 12. HOLIDAYS & CALENDAR
+-- 11. HOLIDAYS & CALENDAR
 CREATE TABLE IF NOT EXISTS holidays (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     holiday_date DATE UNIQUE NOT NULL,
@@ -283,12 +243,12 @@ CREATE TABLE IF NOT EXISTS holidays (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 13. STUDENT ATTENDANCE
+-- 12. STUDENT ATTENDANCE
 CREATE TABLE IF NOT EXISTS student_attendance (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
     attendance_date DATE NOT NULL,
-    status attendance_status NOT NULL DEFAULT 'PRESENT',
+    status VARCHAR(20) NOT NULL DEFAULT 'PRESENT' CHECK (status IN ('PRESENT', 'ABSENT', 'LEAVE', 'HOLIDAY', 'LATE')),
     student_class INT NOT NULL,
     section VARCHAR(5) NOT NULL,
     academic_year VARCHAR(20) NOT NULL DEFAULT '2024-2025',
@@ -299,7 +259,7 @@ CREATE TABLE IF NOT EXISTS student_attendance (
     UNIQUE(student_id, attendance_date)
 );
 
--- 14. STUDENT LEAVES & OUTPASS
+-- 13. STUDENT LEAVES & OUTPASS
 CREATE TABLE IF NOT EXISTS student_leaves (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
@@ -309,7 +269,7 @@ CREATE TABLE IF NOT EXISTS student_leaves (
     leave_time TIME,
     reason TEXT NOT NULL,
     remarks TEXT,
-    status leave_status DEFAULT 'PENDING',
+    status VARCHAR(20) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED')),
     parent_approval BOOLEAN DEFAULT false,
     parent_approved_at TIMESTAMPTZ,
     parent_approval_token VARCHAR(100) UNIQUE,
@@ -322,7 +282,7 @@ CREATE TABLE IF NOT EXISTS student_leaves (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 15. GATE MOVEMENTS (HOSTEL OUT/IN)
+-- 14. GATE MOVEMENTS (HOSTEL OUT/IN)
 CREATE TABLE IF NOT EXISTS gate_movements (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
@@ -332,13 +292,13 @@ CREATE TABLE IF NOT EXISTS gate_movements (
     expected_return_time TIMESTAMPTZ,
     gate_in_time TIMESTAMPTZ,
     gate_in_warden UUID REFERENCES wardens(id) ON DELETE SET NULL,
-    status gate_status DEFAULT 'OUT',
+    status VARCHAR(20) DEFAULT 'OUT' CHECK (status IN ('OUT', 'IN', 'OVERDUE')),
     remarks TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 16. QUESTION BANK
+-- 15. QUESTION BANK
 CREATE TABLE IF NOT EXISTS question_bank (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     created_by UUID REFERENCES faculty_details(id) ON DELETE SET NULL,
@@ -356,7 +316,7 @@ CREATE TABLE IF NOT EXISTS question_bank (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 17. WRITTEN EXAM MARKS
+-- 16. WRITTEN EXAM MARKS
 CREATE TABLE IF NOT EXISTS marks_entries (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
@@ -377,7 +337,7 @@ CREATE TABLE IF NOT EXISTS marks_entries (
     UNIQUE(student_id, exam_name, subject, academic_year)
 );
 
--- 18. ONLINE EXAMS
+-- 17. ONLINE EXAMS
 CREATE TABLE IF NOT EXISTS online_exams (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     created_by UUID REFERENCES faculty_details(id) ON DELETE SET NULL,
@@ -401,7 +361,7 @@ CREATE TABLE IF NOT EXISTS online_exams (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 19. ONLINE EXAM QUESTIONS
+-- 18. ONLINE EXAM QUESTIONS
 CREATE TABLE IF NOT EXISTS exam_questions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     exam_id UUID REFERENCES online_exams(id) ON DELETE CASCADE,
@@ -417,7 +377,7 @@ CREATE TABLE IF NOT EXISTS exam_questions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 20. ONLINE EXAM ATTEMPTS
+-- 19. ONLINE EXAM ATTEMPTS
 CREATE TABLE IF NOT EXISTS exam_attempts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     exam_id UUID REFERENCES online_exams(id) ON DELETE CASCADE,
@@ -427,7 +387,7 @@ CREATE TABLE IF NOT EXISTS exam_attempts (
     total_score NUMERIC(6,2) DEFAULT 0.00,
     percentage NUMERIC(5,2) DEFAULT 0.00,
     is_passed BOOLEAN DEFAULT false,
-    status VARCHAR(20) DEFAULT 'IN_PROGRESS', -- 'IN_PROGRESS', 'SUBMITTED', 'EXPIRED'
+    status VARCHAR(20) DEFAULT 'IN_PROGRESS',
     feedback TEXT,
     student_remarks TEXT,
     faculty_remarks TEXT,
@@ -436,7 +396,7 @@ CREATE TABLE IF NOT EXISTS exam_attempts (
     UNIQUE(exam_id, student_id)
 );
 
--- 21. ONLINE EXAM ANSWERS (Immediate Auto-save)
+-- 20. ONLINE EXAM ANSWERS (Immediate Auto-save)
 CREATE TABLE IF NOT EXISTS exam_answers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     attempt_id UUID REFERENCES exam_attempts(id) ON DELETE CASCADE,
@@ -448,7 +408,7 @@ CREATE TABLE IF NOT EXISTS exam_answers (
     UNIQUE(attempt_id, question_id)
 );
 
--- 22. VISITORS & PASSES
+-- 21. VISITORS & PASSES
 CREATE TABLE IF NOT EXISTS visitors (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     visitor_name VARCHAR(150) NOT NULL,
@@ -459,7 +419,7 @@ CREATE TABLE IF NOT EXISTS visitors (
     student_id UUID REFERENCES students(id) ON DELETE SET NULL,
     entry_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     exit_time TIMESTAMPTZ,
-    status VARCHAR(20) DEFAULT 'ACTIVE', -- 'ACTIVE', 'COMPLETED'
+    status VARCHAR(20) DEFAULT 'ACTIVE',
     qr_code_token VARCHAR(100) UNIQUE,
     id_card_url TEXT,
     created_by UUID,
@@ -467,26 +427,26 @@ CREATE TABLE IF NOT EXISTS visitors (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 23. ANNOUNCEMENTS & NOTIFICATIONS
+-- 22. ANNOUNCEMENTS & NOTIFICATIONS
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(200) NOT NULL,
     message TEXT NOT NULL,
-    target_role user_role, -- NULL means all roles
+    target_role VARCHAR(50), -- NULL means all roles
     target_class INT,
     target_section VARCHAR(5),
     target_user_id UUID,
-    priority priority_level DEFAULT 'LOW',
+    priority VARCHAR(20) DEFAULT 'LOW' CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
     publish_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expiry_date TIMESTAMPTZ,
     attachment_url TEXT,
-    status VARCHAR(20) DEFAULT 'ACTIVE', -- 'UPCOMING', 'ACTIVE', 'EXPIRED'
+    status VARCHAR(20) DEFAULT 'ACTIVE',
     created_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 24. RECIPIENT NOTIFICATION READ RECEIPTS
+-- 23. RECIPIENT NOTIFICATION READ RECEIPTS
 CREATE TABLE IF NOT EXISTS notification_recipients (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     notification_id UUID REFERENCES notifications(id) ON DELETE CASCADE,
@@ -497,7 +457,7 @@ CREATE TABLE IF NOT EXISTS notification_recipients (
     UNIQUE(notification_id, user_id)
 );
 
--- 25. DEVICE FCM TOKENS
+-- 24. DEVICE FCM TOKENS
 CREATE TABLE IF NOT EXISTS device_tokens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
@@ -510,7 +470,7 @@ CREATE TABLE IF NOT EXISTS device_tokens (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 26. EVENTS
+-- 25. EVENTS
 CREATE TABLE IF NOT EXISTS events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(200) NOT NULL,
@@ -526,14 +486,14 @@ CREATE TABLE IF NOT EXISTS events (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 27. STORIES (24-Hour Expiry)
+-- 26. STORIES (24-Hour Expiry)
 CREATE TABLE IF NOT EXISTS stories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     creator_name VARCHAR(150),
     media_url TEXT NOT NULL,
     thumbnail_url TEXT,
-    media_type VARCHAR(20) DEFAULT 'IMAGE', -- 'IMAGE', 'VIDEO', 'TEXT'
+    media_type VARCHAR(20) DEFAULT 'IMAGE',
     caption TEXT,
     duration_seconds INT DEFAULT 15 CHECK (duration_seconds IN (15, 20, 30)),
     view_count INT DEFAULT 0,
@@ -541,14 +501,14 @@ CREATE TABLE IF NOT EXISTS stories (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 28. FEEDBACK & REPLIES
+-- 27. FEEDBACK & REPLIES
 CREATE TABLE IF NOT EXISTS feedback (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-    user_role user_role NOT NULL,
-    category VARCHAR(100) NOT NULL, -- 'ACADEMIC', 'FACILITY', 'HOSTEL', 'GENERAL'
+    user_role VARCHAR(50) NOT NULL,
+    category VARCHAR(100) NOT NULL,
     message TEXT NOT NULL,
-    status VARCHAR(20) DEFAULT 'OPEN', -- 'OPEN', 'RESOLVED', 'CLOSED'
+    status VARCHAR(20) DEFAULT 'OPEN',
     reply TEXT,
     replied_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     replied_at TIMESTAMPTZ,
@@ -556,7 +516,7 @@ CREATE TABLE IF NOT EXISTS feedback (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 29. TIMETABLES & PERIODS
+-- 28. TIMETABLES & PERIODS
 CREATE TABLE IF NOT EXISTS timetables (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     day_of_week VARCHAR(15) NOT NULL CHECK (day_of_week IN ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')),
@@ -574,41 +534,41 @@ CREATE TABLE IF NOT EXISTS timetables (
     UNIQUE(day_of_week, period_number, student_class, section, academic_year)
 );
 
--- 30. SCHOOL DOCUMENTS
+-- 29. SCHOOL DOCUMENTS
 CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(200) NOT NULL,
-    category VARCHAR(100) NOT NULL, -- 'CIRCULAR', 'SYLLABUS', 'POLICY', 'REPORT'
+    category VARCHAR(100) NOT NULL,
     file_url TEXT NOT NULL,
     file_size_bytes BIGINT,
     file_type VARCHAR(50),
     uploaded_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
-    target_role user_role,
+    target_role VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 31. EXPENSES CALCULATION
+-- 30. EXPENSES CALCULATION
 CREATE TABLE IF NOT EXISTS expenses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    category VARCHAR(100) NOT NULL, -- 'LAB_SUPPLIES', 'MAINTENANCE', 'HOSTEL_FOOD', 'EVENTS', 'MISC'
+    category VARCHAR(100) NOT NULL,
     amount NUMERIC(12,2) NOT NULL,
     expense_date DATE NOT NULL DEFAULT CURRENT_DATE,
     description TEXT,
     paid_by VARCHAR(150),
     receipt_url TEXT,
-    status VARCHAR(20) DEFAULT 'PAID', -- 'PENDING', 'PAID', 'CANCELLED'
+    status VARCHAR(20) DEFAULT 'PAID',
     created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 32. AUDIT LOGS (Master Traceability)
+-- 31. AUDIT LOGS (Master Traceability)
 CREATE TABLE IF NOT EXISTS audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID,
     role VARCHAR(50),
-    action VARCHAR(100) NOT NULL, -- 'CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'LOGIN', 'LOCKOUT'
-    entity VARCHAR(100) NOT NULL, -- 'STUDENT', 'ATTENDANCE', 'MARKS', 'LEAVE', 'AUTH'
+    action VARCHAR(100) NOT NULL,
+    entity VARCHAR(100) NOT NULL,
     entity_id VARCHAR(100),
     before_value JSONB,
     after_value JSONB,
@@ -617,13 +577,13 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 33. USER SESSIONS & LOGIN LOGS
+-- 32. USER SESSIONS & LOGIN LOGS
 CREATE TABLE IF NOT EXISTS login_audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id VARCHAR(50),
     email VARCHAR(255),
     role VARCHAR(50),
-    status VARCHAR(20) NOT NULL, -- 'SUCCESS', 'FAILED', 'LOCKED_OUT', 'LOGOUT'
+    status VARCHAR(20) NOT NULL,
     device_info TEXT,
     browser VARCHAR(100),
     platform VARCHAR(100),
@@ -632,7 +592,7 @@ CREATE TABLE IF NOT EXISTS login_audit_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 34. CLASSROOM BENCH SEATING
+-- 33. CLASSROOM BENCH SEATING
 CREATE TABLE IF NOT EXISTS classrooms (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     room_number VARCHAR(50) UNIQUE NOT NULL,
@@ -643,20 +603,20 @@ CREATE TABLE IF NOT EXISTS classrooms (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 35. EXAM SEATING ALLOCATIONS
+-- 34. EXAM SEATING ALLOCATIONS
 CREATE TABLE IF NOT EXISTS exam_allocations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     exam_name VARCHAR(100) NOT NULL,
     classroom_id UUID REFERENCES classrooms(id) ON DELETE CASCADE,
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
     bench_number INT NOT NULL,
-    seat_position INT NOT NULL, -- 1 or 2
+    seat_position INT NOT NULL,
     exam_date DATE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(classroom_id, bench_number, seat_position, exam_date)
 );
 
--- 36. PERFORMANCE INDEXES
+-- 35. PERFORMANCE INDEXES
 CREATE INDEX IF NOT EXISTS idx_students_class_sec ON students(student_class, section);
 CREATE INDEX IF NOT EXISTS idx_students_user_id ON students(user_id);
 CREATE INDEX IF NOT EXISTS idx_students_emis ON students(emis_number);
