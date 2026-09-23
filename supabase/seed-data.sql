@@ -68,8 +68,8 @@ INSERT INTO admins (
     user_id, first_name, last_name, initial, full_name, dob, gender,
     email, mobile, designation
 ) VALUES 
-    ('ADM001', 'Sundararajan', 'Swaminathan', 'S', 'Dr. S. Sundararajan', '1976-04-15', 'MALE', 'principal@kkdgms.edu.in', '9443123456', 'Principal & Headmaster')
-ON CONFLICT (email) DO NOTHING;
+    ('ADM001', 'Adlin', 'Geo', 'M', 'Madlin Adlin Geo', '1985-01-01', 'MALE', 'kkmadlin2023@gmail.com', '9443123456', 'Super Administrator & Principal')
+ON CONFLICT (email) DO UPDATE SET user_id = 'ADM001', full_name = 'Madlin Adlin Geo';
 
 -- 6. Sample Warden
 INSERT INTO wardens (
