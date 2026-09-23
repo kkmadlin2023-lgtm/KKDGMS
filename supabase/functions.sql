@@ -75,17 +75,17 @@ BEGIN
     IF (TG_OP = 'DELETE') THEN
         rec_id := OLD.id::TEXT;
         INSERT INTO audit_logs (user_id, role, action, entity, entity_id, before_value)
-        VALUES (user_id_val, auth.current_user_role()::TEXT, 'DELETE', entity_name, rec_id, to_jsonb(OLD));
+        VALUES (user_id_val, public.current_user_role(), 'DELETE', entity_name, rec_id, to_jsonb(OLD));
         RETURN OLD;
     ELSIF (TG_OP = 'UPDATE') THEN
         rec_id := NEW.id::TEXT;
         INSERT INTO audit_logs (user_id, role, action, entity, entity_id, before_value, after_value)
-        VALUES (user_id_val, auth.current_user_role()::TEXT, 'UPDATE', entity_name, rec_id, to_jsonb(OLD), to_jsonb(NEW));
+        VALUES (user_id_val, public.current_user_role(), 'UPDATE', entity_name, rec_id, to_jsonb(OLD), to_jsonb(NEW));
         RETURN NEW;
     ELSIF (TG_OP = 'INSERT') THEN
         rec_id := NEW.id::TEXT;
         INSERT INTO audit_logs (user_id, role, action, entity, entity_id, after_value)
-        VALUES (user_id_val, auth.current_user_role()::TEXT, 'CREATE', entity_name, rec_id, to_jsonb(NEW));
+        VALUES (user_id_val, public.current_user_role(), 'CREATE', entity_name, rec_id, to_jsonb(NEW));
         RETURN NEW;
     END IF;
     RETURN NULL;
