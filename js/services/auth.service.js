@@ -61,14 +61,41 @@ class AuthService {
     }
 
     /**
-     * Sign in with email and password.
-     * @param {string} email 
+     * Sign in with User ID or email and password.
+     * @param {string} userIdOrEmail 
      * @param {string} password 
      * @returns {Promise<object>}
      */
-    async login(email, password) {
+    async login(userIdOrEmail, password) {
         if (this.isLockedOut()) {
             throw new Error(`Account locked. Try again in ${this.getLockoutRemaining()} seconds.`);
+        }
+
+        let email = (userIdOrEmail || '').trim();
+
+        // If User ID is entered (no @), look up the email
+        if (!email.includes('@')) {
+            try {
+                // 1. Check profiles
+                const { data: profileData } = await supabaseService.from('profiles').select('email').eq('user_id', email).maybeSingle();
+                if (profileData?.email) {
+                    email = profileData.email;
+                } else {
+                    // 2. Check admins
+                    const { data: adminData } = await supabaseService.from('admins').select('email').eq('user_id', email).maybeSingle();
+                    if (adminData?.email) {
+                        email = adminData.email;
+                    } else {
+                        // 3. Check students
+                        const { data: stuData } = await supabaseService.from('students').select('email').eq('user_id', email).maybeSingle();
+                        if (stuData?.email) {
+                            email = stuData.email;
+                        }
+                    }
+                }
+            } catch (lookupErr) {
+                console.warn('User ID lookup error:', lookupErr);
+            }
         }
 
         const { data, error } = await supabaseService.auth.signInWithPassword({ email, password });
@@ -79,7 +106,10 @@ class AuthService {
         }
 
         this._resetAttempts();
-        await auditService.log('LOGIN', 'user', data.user.id, { email });
+        try {
+            await auditService.log('LOGIN', 'user', data.user.id, { email });
+        } catch (auditErr) {}
+        
         return data;
     }
 
