@@ -222,3 +222,79 @@ export interface FacultyMember {
   created_at?: string;
   updated_at?: string;
 }
+
+// ==========================================
+// Phase 4: Faculty Allocation & Timetable Types
+// ==========================================
+
+export type FacultyAssignmentStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface FacultyAssignment {
+  id: string;
+  academic_year_id: string;
+  faculty_id: string;
+  class_id: string;
+  section_id: string;
+  subject_id: string;
+  is_class_teacher: boolean;
+  status: FacultyAssignmentStatus;
+  academic_year?: AcademicYear;
+  faculty?: FacultyMember;
+  class?: SchoolClass;
+  section?: SchoolSection;
+  subject?: Subject;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TimetablePeriod {
+  id: string;
+  period_number: number;
+  name: string;
+  start_time: string;
+  end_time: string;
+  is_break: boolean;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY';
+export type TimetableStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+
+export interface TimetableEntry {
+  id: string;
+  academic_year_id: string;
+  class_id: string;
+  section_id: string;
+  subject_id: string;
+  faculty_id: string;
+  faculty_assignment_id?: string | null;
+  day_of_week: DayOfWeek;
+  period_number: number;
+  room?: string | null;
+  status: TimetableStatus;
+  academic_year?: AcademicYear;
+  class?: SchoolClass;
+  section?: SchoolSection;
+  subject?: Subject;
+  faculty?: FacultyMember;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TimetableConflict {
+  conflict_type: 'CLASS_CONFLICT' | 'FACULTY_CONFLICT' | 'ROOM_CONFLICT';
+  conflict_message: string;
+  conflicting_entry_id?: string;
+}
+
+export interface FacultyWorkload {
+  faculty: FacultyMember;
+  totalAssignments: number;
+  totalPeriodsPerWeek: number;
+  subjectsTaught: string[];
+  classesTaught: string[];
+  isClassTeacherOf?: string | null;
+}
+

@@ -202,4 +202,44 @@ export const studentService = {
     const { data } = supabase.storage.from('student-photos').getPublicUrl(filePath);
     return data.publicUrl;
   },
+
+  /**
+   * Fetch single student record by User ID.
+   */
+  async getStudentByUserId(userId: string): Promise<Student | null> {
+    const { data, error } = await supabase
+      .from('students')
+      .select(`
+        *,
+        student_enrollments (
+          id,
+          academic_year_id,
+          class_id,
+          section_id,
+          roll_number,
+          status,
+          created_at,
+          academic_year:academic_years(id, name, is_current),
+          class:classes(id, name),
+          section:sections(id, name)
+        )
+      `)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching student by user_id:', error);
+      return null;
+    }
+
+    if (!data) return null;
+
+    const enrollments = (data.student_enrollments as StudentEnrollment[]) || [];
+    const currentEnrollment = enrollments.find((e) => e.academic_year?.is_current) || enrollments[0];
+
+    return {
+      ...(data as unknown as Student),
+      current_enrollment: currentEnrollment,
+    };
+  },
 };

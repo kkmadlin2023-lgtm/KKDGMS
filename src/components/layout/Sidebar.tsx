@@ -11,6 +11,9 @@ import {
   BookMarked,
   Building2,
   Wrench,
+  Layers,
+  Calendar,
+  Clock,
   X,
   LucideIcon,
 } from 'lucide-react';
@@ -30,6 +33,9 @@ const iconMap: Record<string, LucideIcon> = {
   BookMarked,
   Building2,
   Wrench,
+  Layers,
+  Calendar,
+  Clock,
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {

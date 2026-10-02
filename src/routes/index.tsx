@@ -11,6 +11,10 @@ import { UserManagementPage } from '@/pages/admin/UserManagementPage';
 import { AcademicsPage } from '@/pages/admin/AcademicsPage';
 import { StudentsPage } from '@/pages/admin/StudentsPage';
 import { FacultyPage } from '@/pages/admin/FacultyPage';
+import { FacultyAssignmentsPage } from '@/pages/admin/FacultyAssignmentsPage';
+import { TimetablePage } from '@/pages/admin/TimetablePage';
+import { FacultyTimetablePage } from '@/pages/faculty/FacultyTimetablePage';
+import { StudentTimetablePage } from '@/pages/student/StudentTimetablePage';
 
 export const router = createBrowserRouter([
   // Public Auth Routes
@@ -74,6 +78,40 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
             <FacultyPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin/faculty-assignments',
+        element: (
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+            <FacultyAssignmentsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin/timetable',
+        element: (
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+            <TimetablePage />
+          </ProtectedRoute>
+        ),
+      },
+      // Faculty Routes
+      {
+        path: 'faculty/timetable',
+        element: (
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY']}>
+            <FacultyTimetablePage />
+          </ProtectedRoute>
+        ),
+      },
+      // Student Routes
+      {
+        path: 'student/timetable',
+        element: (
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'STUDENT']}>
+            <StudentTimetablePage />
           </ProtectedRoute>
         ),
       },

@@ -17,7 +17,7 @@ Modern, robust, and secure School Management ERP for **Kanyakumari Dist Governme
 - **Phase 1 (Complete)**: Foundation + Authentication + Global UI + RLS Security Architecture
 - **Phase 2 (Complete)**: Profiles + Roles + User Management + Account Control
 - **Phase 3 (Complete)**: Academic Structure + Student Management + Faculty Management
-- *Phase 4 (Pending)*: Faculty Allocation + Timetable
+- **Phase 4 (Complete)**: Faculty Allocation + Timetable Management
 - *Phases 5-22*: Subsequent modular milestones
 
 ---
@@ -79,6 +79,13 @@ Execute the migrations in your [Supabase SQL Editor](https://supabase.com/dashbo
    - `student_enrollments` table (preserving historical and current academic placements).
    - `faculty_details` table (qualifications, departments, designations).
    - Storage buckets `student-photos` and `faculty-photos` with RLS.
+
+4. **`supabase/migrations/004_faculty_assignments_timetable.sql`**:
+   - `faculty_assignments`: Subject mapping, single active teacher constraint per subject-class, single active class teacher constraint per class-section.
+   - `timetable_periods`: Configurable school timetable period slots & break times.
+   - `timetable_entries`: Weekly schedule matrix with class, faculty, and room conflict prevention.
+   - Stored procedure `check_timetable_conflict` for automated overlap validation.
+   - RLS security policies for faculty, student, and admin access scopes.
 
 ---
 

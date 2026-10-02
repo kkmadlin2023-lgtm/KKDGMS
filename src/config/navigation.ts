@@ -19,7 +19,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
     section: 'Account',
   },
 
-  // Administration (Phases 1-3 Active)
+  // Administration (Phases 1-4 Active)
   {
     id: 'admin_academics',
     label: 'Academic Structure',
@@ -45,12 +45,48 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
     section: 'Administration',
   },
   {
+    id: 'admin_faculty_assignments',
+    label: 'Faculty Allocation',
+    iconName: 'Layers',
+    path: '/app/admin/faculty-assignments',
+    allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+    section: 'Administration',
+  },
+  {
+    id: 'admin_timetable',
+    label: 'Timetable Setup',
+    iconName: 'Calendar',
+    path: '/app/admin/timetable',
+    allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+    section: 'Administration',
+  },
+  {
     id: 'admin_users',
     label: 'User Management',
     iconName: 'Users',
     path: '/app/admin/users',
     allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
     section: 'Administration',
+  },
+
+  // Faculty Section
+  {
+    id: 'faculty_timetable',
+    label: 'My Timetable',
+    iconName: 'Clock',
+    path: '/app/faculty/timetable',
+    allowedRoles: ['FACULTY'],
+    section: 'Teaching Schedule',
+  },
+
+  // Student Section
+  {
+    id: 'student_timetable',
+    label: 'Class Timetable',
+    iconName: 'Calendar',
+    path: '/app/student/timetable',
+    allowedRoles: ['STUDENT'],
+    section: 'Academic Routine',
   },
 
   // Future Phase Registry Placeholders

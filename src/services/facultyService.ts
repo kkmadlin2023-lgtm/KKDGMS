@@ -125,4 +125,22 @@ export const facultyService = {
     const { data } = supabase.storage.from('faculty-photos').getPublicUrl(filePath);
     return data.publicUrl;
   },
+
+  /**
+   * Fetch single faculty member by User ID (auth.users id).
+   */
+  async getFacultyByUserId(userId: string): Promise<FacultyMember | null> {
+    const { data, error } = await supabase
+      .from('faculty_details')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching faculty by user_id:', error);
+      return null;
+    }
+
+    return data as FacultyMember | null;
+  },
 };
