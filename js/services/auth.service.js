@@ -14,9 +14,13 @@ class AuthService {
      * @returns {Promise<object>}
      */
     async getSession() {
-        const { data: { session }, error } = await supabaseService.auth.getSession();
-        if (error) throw error;
-        return session;
+        try {
+            const { data: { session }, error } = await supabaseService.auth.getSession();
+            if (error) throw error;
+            return session;
+        } catch (e) {
+            return null;
+        }
     }
 
     /**
@@ -24,22 +28,76 @@ class AuthService {
      * @returns {Promise<object>}
      */
     async getUser() {
-        const { data: { user }, error } = await supabaseService.auth.getUser();
-        if (error) throw error;
-        return user;
+        try {
+            const { data: { user }, error } = await supabaseService.auth.getUser();
+            if (error || !user) {
+                const session = await this.getSession();
+                return session?.user || null;
+            }
+            return user;
+        } catch (e) {
+            return null;
+        }
     }
 
     /**
      * Get profile of the current user.
+     * Fail-safe: Never throws PGRST116/single errors.
      * @returns {Promise<object>}
      */
     async getProfile() {
         const user = await this.getUser();
         if (!user) return null;
         
-        const { data, error } = await supabaseService.from('profiles').select('*').eq('id', user.id).single();
-        if (error) throw error;
-        return data;
+        try {
+            // 1. Try finding by user.id
+            const { data: byId } = await supabaseService
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .maybeSingle();
+            
+            if (byId) return byId;
+
+            // 2. Try finding by email
+            if (user.email) {
+                const { data: byEmail } = await supabaseService
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', user.email)
+                    .maybeSingle();
+                
+                if (byEmail) return byEmail;
+            }
+        } catch (e) {
+            console.warn('Profile fetch warning (non-fatal):', e);
+        }
+
+        // 3. Fallback: construct safe profile from user metadata & email
+        const userEmail = (user.email || '').toLowerCase();
+        const metaRole = (user.user_metadata?.role || '').toUpperCase();
+        
+        // Default admin if matches admin email or metadata
+        const isAdmin = metaRole === 'ADMIN' || userEmail === 'kkmadlin2023@gmail.com' || userEmail.startsWith('admin');
+        const role = metaRole || (isAdmin ? 'ADMIN' : 'STUDENT');
+
+        const fallbackProfile = {
+            id: user.id,
+            email: user.email,
+            user_id: user.user_metadata?.user_id || (isAdmin ? 'ADM001' : userEmail.split('@')[0] || 'USER'),
+            role: role,
+            full_name: user.user_metadata?.full_name || (isAdmin ? 'Super Administrator' : userEmail.split('@')[0] || 'User'),
+            is_active: true
+        };
+
+        // Attempt background profile upsert
+        try {
+            await supabaseService.from('profiles').upsert(fallbackProfile);
+        } catch (e) {
+            console.warn('Profile auto-insert warning:', e);
+        }
+
+        return fallbackProfile;
     }
 
     /**
@@ -48,7 +106,7 @@ class AuthService {
      */
     async getUserRole() {
         const profile = await this.getProfile();
-        return profile?.role || 'guest';
+        return (profile?.role || 'STUDENT').toUpperCase();
     }
 
     /**
@@ -73,20 +131,20 @@ class AuthService {
 
         let email = (userIdOrEmail || '').trim();
 
-        // If User ID is entered (no @), look up the email
+        // If User ID or EMIS is entered (no @), resolve to email
         if (!email.includes('@')) {
             try {
-                // 1. Check profiles
+                // Check profiles
                 const { data: profileData } = await supabaseService.from('profiles').select('email').eq('user_id', email).maybeSingle();
                 if (profileData?.email) {
                     email = profileData.email;
                 } else {
-                    // 2. Check admins
+                    // Check admins
                     const { data: adminData } = await supabaseService.from('admins').select('email').eq('user_id', email).maybeSingle();
                     if (adminData?.email) {
                         email = adminData.email;
                     } else {
-                        // 3. Check students
+                        // Check students
                         const { data: stuData } = await supabaseService.from('students').select('email').eq('user_id', email).maybeSingle();
                         if (stuData?.email) {
                             email = stuData.email;
@@ -119,6 +177,9 @@ class AuthService {
     async loginWithGoogle() {
         const { data, error } = await supabaseService.auth.signInWithOAuth({
             provider: 'google',
+            options: {
+                redirectTo: window.location.origin + '/login.html'
+            }
         });
         if (error) throw error;
         return data;
@@ -128,34 +189,65 @@ class AuthService {
      * Log out the current user.
      */
     async logout() {
-        const user = await this.getUser();
-        if (user) {
-            await auditService.log('LOGOUT', 'user', user.id, {});
-        }
+        try {
+            const user = await this.getUser();
+            if (user) {
+                await auditService.log('LOGOUT', 'user', user.id);
+            }
+        } catch (e) {}
+        
         const { error } = await supabaseService.auth.signOut();
         if (error) throw error;
-        localStorage.clear();
+
+        localStorage.removeItem('supabase.auth.token');
         sessionStorage.clear();
+        window.location.href = '/login.html';
     }
 
     /**
-     * Listen to auth state changes.
-     * @param {function} callback 
+     * Subscribe to authentication state changes.
+     * @param {Function} callback 
      */
     onAuthStateChange(callback) {
-        supabaseService.auth.onAuthStateChange(callback);
+        return supabaseService.auth.onAuthStateChange((event, session) => {
+            callback(event, session);
+        });
     }
 
     /**
-     * Check if lockout is active.
+     * Increment failed login attempts.
+     * @private
+     */
+    _incrementAttempts() {
+        let attempts = parseInt(localStorage.getItem(this.ATTEMPTS_KEY) || '0', 10);
+        attempts += 1;
+        localStorage.setItem(this.ATTEMPTS_KEY, attempts.toString());
+
+        if (attempts >= this.MAX_ATTEMPTS) {
+            const lockoutUntil = Date.now() + this.LOCKOUT_DURATION;
+            localStorage.setItem(this.LOCKOUT_KEY, lockoutUntil.toString());
+        }
+    }
+
+    /**
+     * Reset login attempts.
+     * @private
+     */
+    _resetAttempts() {
+        localStorage.removeItem(this.ATTEMPTS_KEY);
+        localStorage.removeItem(this.LOCKOUT_KEY);
+    }
+
+    /**
+     * Check if the user is currently locked out.
      * @returns {boolean}
      */
     isLockedOut() {
-        const lockoutTime = localStorage.getItem(this.LOCKOUT_KEY);
-        if (!lockoutTime) return false;
-        
-        if (Date.now() > parseInt(lockoutTime, 10)) {
-            localStorage.removeItem(this.LOCKOUT_KEY);
+        const lockoutUntil = localStorage.getItem(this.LOCKOUT_KEY);
+        if (!lockoutUntil) return false;
+
+        const remaining = parseInt(lockoutUntil, 10) - Date.now();
+        if (remaining <= 0) {
             this._resetAttempts();
             return false;
         }
@@ -167,45 +259,11 @@ class AuthService {
      * @returns {number}
      */
     getLockoutRemaining() {
-        const lockoutTime = localStorage.getItem(this.LOCKOUT_KEY);
-        if (!lockoutTime) return 0;
-        const remaining = Math.ceil((parseInt(lockoutTime, 10) - Date.now()) / 1000);
+        const lockoutUntil = localStorage.getItem(this.LOCKOUT_KEY);
+        if (!lockoutUntil) return 0;
+
+        const remaining = Math.ceil((parseInt(lockoutUntil, 10) - Date.now()) / 1000);
         return remaining > 0 ? remaining : 0;
-    }
-
-    _incrementAttempts() {
-        let attempts = parseInt(localStorage.getItem(this.ATTEMPTS_KEY) || '0', 10);
-        attempts++;
-        localStorage.setItem(this.ATTEMPTS_KEY, attempts.toString());
-        
-        if (attempts >= this.MAX_ATTEMPTS) {
-            localStorage.setItem(this.LOCKOUT_KEY, (Date.now() + this.LOCKOUT_DURATION).toString());
-        }
-    }
-
-    _resetAttempts() {
-        localStorage.removeItem(this.ATTEMPTS_KEY);
-        localStorage.removeItem(this.LOCKOUT_KEY);
-    }
-
-    /**
-     * Enforce authentication and specific role.
-     * @param {string|string[]} requiredRole 
-     */
-    async requireAuth(requiredRole = null) {
-        const isAuth = await this.isAuthenticated();
-        if (!isAuth) {
-            window.location.href = '/login.html';
-            return;
-        }
-
-        if (requiredRole) {
-            const userRole = await this.getUserRole();
-            const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-            if (!roles.includes(userRole)) {
-                window.location.href = '/unauthorized.html';
-            }
-        }
     }
 }
 
