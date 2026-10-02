@@ -44,12 +44,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data) {
-        setProfile(data as UserProfile);
-        setRole(data.role || 'GUEST');
-        return data as UserProfile;
+        const userProfile = data as UserProfile;
+        setProfile(userProfile);
+        setRole(userProfile.role || 'GUEST');
+        return userProfile;
       }
 
-      // Fallback if trigger hasn't fired yet
+      // Fallback profile if DB trigger is delayed
       const fallbackRole: UserRole = (userEmail?.toLowerCase() === 'kkmadlin2023@gmail.com') 
         ? 'SUPER_ADMIN' 
         : 'GUEST';
@@ -60,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: userEmail || '',
         full_name: userEmail?.split('@')[0] || 'User',
         role: fallbackRole,
+        status: 'ACTIVE',
         is_active: true,
       };
 
@@ -124,11 +126,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (event === 'SIGNED_IN' && newSession?.user) {
           await fetchProfile(newSession.user.id, newSession.user.email);
+          // Record login event in background
+          try {
+            await supabase.rpc('record_login_event', { target_user_id: newSession.user.id });
+          } catch (e) {
+            // Ignore RPC failure if migration not yet applied
+          }
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setRole('GUEST');
-        } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
-          // Token refreshed silently
         }
       }
     );
@@ -156,11 +162,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         const userProfile = await fetchProfile(data.user.id, data.user.email);
-        if (userProfile && !userProfile.is_active) {
+        
+        if (userProfile && (!userProfile.is_active || userProfile.status !== 'ACTIVE')) {
           await supabase.auth.signOut();
-          const inactiveMsg = 'This account has been deactivated. Please contact the administrator.';
-          toast.error(inactiveMsg);
-          return { success: false, error: inactiveMsg };
+          const reason = userProfile.suspension_reason ? ` (Reason: ${userProfile.suspension_reason})` : '';
+          const statusMsg = userProfile.status === 'SUSPENDED' 
+            ? `Your account has been suspended${reason}. Please contact the school administrator.` 
+            : 'Your account is currently inactive. Please contact the school administrator.';
+          toast.error(statusMsg);
+          return { success: false, error: statusMsg };
         }
 
         toast.success(`Welcome back, ${userProfile?.full_name || 'User'}!`);
@@ -231,14 +241,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Update non-sensitive profile info
+  // Update permitted profile info
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return { success: false, error: 'Not authenticated' };
 
     try {
-      // Clean non-permitted fields to avoid RLS violation
       const safeUpdates: Record<string, unknown> = {};
-      if (updates.full_name !== undefined) safeUpdates.full_name = updates.full_name;
+      if (updates.full_name !== undefined) safeUpdates.full_name = updates.full_name.trim();
+      if (updates.phone !== undefined) safeUpdates.phone = updates.phone ? updates.phone.trim() : null;
       if (updates.avatar_url !== undefined) safeUpdates.avatar_url = updates.avatar_url;
 
       const { data, error: updateErr } = await supabase

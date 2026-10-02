@@ -1,7 +1,7 @@
 import { NavigationItem, UserRole } from '@/types';
 
 export const NAVIGATION_CONFIG: NavigationItem[] = [
-  // Common / Core
+  // Overview
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -19,16 +19,17 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
     section: 'Account',
   },
 
-  // Future Phase Registry Placeholders (ready for Phase 2+)
+  // Administration (Phase 2 Active)
   {
     id: 'admin_users',
     label: 'User Management',
     iconName: 'Users',
     path: '/app/admin/users',
     allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
-    badge: 'Phase 2',
     section: 'Administration',
   },
+
+  // Future Phase Registry Placeholders
   {
     id: 'academic',
     label: 'Academic Management',

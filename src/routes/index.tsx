@@ -7,6 +7,7 @@ import { DashboardPage } from '@/pages/app/DashboardPage';
 import { ProfilePage } from '@/pages/app/ProfilePage';
 import { UnauthorizedPage } from '@/pages/app/UnauthorizedPage';
 import { NotFoundPage } from '@/pages/errors/NotFoundPage';
+import { UserManagementPage } from '@/pages/admin/UserManagementPage';
 
 export const router = createBrowserRouter([
   // Public Auth Routes
@@ -40,12 +41,12 @@ export const router = createBrowserRouter([
         path: 'unauthorized',
         element: <UnauthorizedPage />,
       },
-      // Admin Routes (Role Protected)
+      // Admin User Management Route (Phase 2)
       {
-        path: 'admin/*',
+        path: 'admin/users',
         element: (
           <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
-            <DashboardPage />
+            <UserManagementPage />
           </ProtectedRoute>
         ),
       },

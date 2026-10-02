@@ -15,8 +15,9 @@ Modern, robust, and secure School Management ERP for **Kanyakumari Dist Governme
 ## 📋 Completed Phases
 
 - **Phase 1 (Complete)**: Foundation + Authentication + Global UI + RLS Security Architecture
-- *Phase 2 (Pending)*: Profiles + Roles + User Management
-- *Phases 3-22*: Subsequent modular milestones
+- **Phase 2 (Complete)**: Profiles + Roles + User Management + Account Control
+- *Phase 3 (Pending)*: Academic Structure + Student & Faculty Management
+- *Phases 4-22*: Subsequent modular milestones
 
 ---
 
@@ -55,7 +56,7 @@ VITE_SCHOOL_SHORT_NAME=KKDGMS
 
 ---
 
-## 🗄️ Database Setup (Supabase)
+## 🗄️ Database Migrations (Supabase)
 
 Execute the migrations in your [Supabase SQL Editor](https://supabase.com/dashboard/project/kymsjrxjfmloibcbages/sql) in chronological order:
 
@@ -64,6 +65,12 @@ Execute the migrations in your [Supabase SQL Editor](https://supabase.com/dashbo
    - `audit_logs` foundation table.
    - Row Level Security (RLS) policies for least-privilege data protection.
    - Triggers for automatic `updated_at`, new user profile creation (`handle_new_user`), and role escalation prevention (`prevent_role_escalation`).
+
+2. **`supabase/migrations/002_user_management.sql`**:
+   - Extended `profiles` with `phone`, `status` (`ACTIVE`, `INACTIVE`, `SUSPENDED`), `suspension_reason`, `last_login_at`.
+   - `roles` and `permissions` / `role_permissions` foundation tables.
+   - Secure RPC functions: `admin_update_user_role` and `admin_update_user_status` with strict hierarchy and `SUPER_ADMIN` safeguards.
+   - Supabase Storage setup & RLS policies for `avatars` bucket.
 
 ---
 
@@ -82,10 +89,10 @@ npm run preview
 
 ---
 
-## 🔐 Security Standards
+## 🔐 Security Standards & Role Control
 
-- **Row Level Security (RLS)**: Every table is protected with granular PostgreSQL policies.
-- **Client Route Protection**: `ProtectedRoute` component ensures only authenticated and permitted roles access specific paths.
-- **Role Escalation Protection**: PostgreSQL trigger rejects any client attempt to modify user roles or active statuses.
+- **Role Escalation Protection**: Verified at both RLS and PostgreSQL RPC levels. Normal users cannot modify their own or others' roles or statuses.
+- **Super Admin Protection**: Non-superadmins cannot assign `SUPER_ADMIN` or demote/deactivate the last active Super Administrator.
+- **Storage Protection**: Authenticated users can upload only their own avatar image (validated MIME type & size <= 2MB).
 - **Password Safety**: Supabase Auth securely manages passwords. No plaintext passwords stored.
-- **Google OAuth**: Official Supabase OAuth integration.
+- **Audit Trails**: Sensitive role and account status changes are automatically recorded in `audit_logs`.
