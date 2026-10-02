@@ -8,6 +8,9 @@ import { ProfilePage } from '@/pages/app/ProfilePage';
 import { UnauthorizedPage } from '@/pages/app/UnauthorizedPage';
 import { NotFoundPage } from '@/pages/errors/NotFoundPage';
 import { UserManagementPage } from '@/pages/admin/UserManagementPage';
+import { AcademicsPage } from '@/pages/admin/AcademicsPage';
+import { StudentsPage } from '@/pages/admin/StudentsPage';
+import { FacultyPage } from '@/pages/admin/FacultyPage';
 
 export const router = createBrowserRouter([
   // Public Auth Routes
@@ -41,12 +44,36 @@ export const router = createBrowserRouter([
         path: 'unauthorized',
         element: <UnauthorizedPage />,
       },
-      // Admin User Management Route (Phase 2)
+      // Admin Routes (Role Protected)
       {
         path: 'admin/users',
         element: (
           <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
             <UserManagementPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin/academics',
+        element: (
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+            <AcademicsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin/students',
+        element: (
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+            <StudentsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin/faculty',
+        element: (
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+            <FacultyPage />
           </ProtectedRoute>
         ),
       },

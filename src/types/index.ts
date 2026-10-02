@@ -100,3 +100,125 @@ export interface AuditLogEntry {
   user_agent?: string | null;
   created_at: string;
 }
+
+// ==========================================
+// Phase 3: Academic, Student & Faculty Types
+// ==========================================
+
+export interface AcademicYear {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SchoolClass {
+  id: string;
+  name: string;
+  numeric_order: number;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface SchoolSection {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface ClassSection {
+  id: string;
+  class_id: string;
+  section_id: string;
+  is_active: boolean;
+  class?: SchoolClass;
+  section?: SchoolSection;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface ClassSubject {
+  id: string;
+  class_id: string;
+  subject_id: string;
+  academic_year_id?: string | null;
+  is_active: boolean;
+  subject?: Subject;
+  class?: SchoolClass;
+}
+
+export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'TRANSFERRED' | 'GRADUATED';
+export type EnrollmentStatus = 'ACTIVE' | 'PROMOTED' | 'COMPLETED' | 'WITHDRAWN';
+
+export interface Student {
+  id: string;
+  user_id?: string | null;
+  admission_number: string;
+  full_name: string;
+  dob: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  aadhaar?: string | null;
+  photo_url?: string | null;
+  email?: string | null;
+  mobile?: string | null;
+  father_name?: string | null;
+  mother_name?: string | null;
+  parent_mobile?: string | null;
+  door_no?: string | null;
+  street_name?: string | null;
+  place?: string | null;
+  district?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  status: StudentStatus;
+  current_enrollment?: StudentEnrollment;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StudentEnrollment {
+  id: string;
+  student_id: string;
+  academic_year_id: string;
+  class_id: string;
+  section_id: string;
+  roll_number?: string | null;
+  status: EnrollmentStatus;
+  academic_year?: AcademicYear;
+  class?: SchoolClass;
+  section?: SchoolSection;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type FacultyStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface FacultyMember {
+  id: string;
+  user_id?: string | null;
+  employee_id: string;
+  full_name: string;
+  email: string;
+  mobile?: string | null;
+  department: string;
+  qualification?: string | null;
+  designation?: string | null;
+  dob?: string | null;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
+  photo_url?: string | null;
+  status: FacultyStatus;
+  created_at?: string;
+  updated_at?: string;
+}

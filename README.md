@@ -16,8 +16,9 @@ Modern, robust, and secure School Management ERP for **Kanyakumari Dist Governme
 
 - **Phase 1 (Complete)**: Foundation + Authentication + Global UI + RLS Security Architecture
 - **Phase 2 (Complete)**: Profiles + Roles + User Management + Account Control
-- *Phase 3 (Pending)*: Academic Structure + Student & Faculty Management
-- *Phases 4-22*: Subsequent modular milestones
+- **Phase 3 (Complete)**: Academic Structure + Student Management + Faculty Management
+- *Phase 4 (Pending)*: Faculty Allocation + Timetable
+- *Phases 5-22*: Subsequent modular milestones
 
 ---
 
@@ -72,6 +73,13 @@ Execute the migrations in your [Supabase SQL Editor](https://supabase.com/dashbo
    - Secure RPC functions: `admin_update_user_role` and `admin_update_user_status` with strict hierarchy and `SUPER_ADMIN` safeguards.
    - Supabase Storage setup & RLS policies for `avatars` bucket.
 
+3. **`supabase/migrations/003_academic_student_faculty.sql`**:
+   - `academic_years`, `classes`, `sections`, `class_sections`, `subjects`, `class_subjects`.
+   - `students` master table (personal identity, parents, address, masked Aadhaar).
+   - `student_enrollments` table (preserving historical and current academic placements).
+   - `faculty_details` table (qualifications, departments, designations).
+   - Storage buckets `student-photos` and `faculty-photos` with RLS.
+
 ---
 
 ## 🛠️ Development & Build Commands
@@ -89,10 +97,9 @@ npm run preview
 
 ---
 
-## 🔐 Security Standards & Role Control
+## 🔐 Security Standards & Academic Control
 
-- **Role Escalation Protection**: Verified at both RLS and PostgreSQL RPC levels. Normal users cannot modify their own or others' roles or statuses.
-- **Super Admin Protection**: Non-superadmins cannot assign `SUPER_ADMIN` or demote/deactivate the last active Super Administrator.
-- **Storage Protection**: Authenticated users can upload only their own avatar image (validated MIME type & size <= 2MB).
-- **Password Safety**: Supabase Auth securely manages passwords. No plaintext passwords stored.
-- **Audit Trails**: Sensitive role and account status changes are automatically recorded in `audit_logs`.
+- **Normalized Academic Relationships**: Class, section, and subject relationships are strictly defined in PostgreSQL to prevent impossible academic assignments.
+- **Sensitive Data Masking**: Aadhaar numbers are masked (`XXXX XXXX 1234`) on display and protected via RLS.
+- **Historical Enrollment Preservation**: Student movements across academic years are tracked as historical enrollment records.
+- **Zero Secrets**: No service-role keys or passwords in client code or frontend repositories.

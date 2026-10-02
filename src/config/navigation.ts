@@ -19,7 +19,31 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
     section: 'Account',
   },
 
-  // Administration (Phase 2 Active)
+  // Administration (Phases 1-3 Active)
+  {
+    id: 'admin_academics',
+    label: 'Academic Structure',
+    iconName: 'GraduationCap',
+    path: '/app/admin/academics',
+    allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+    section: 'Administration',
+  },
+  {
+    id: 'admin_students',
+    label: 'Students Directory',
+    iconName: 'BookMarked',
+    path: '/app/admin/students',
+    allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+    section: 'Administration',
+  },
+  {
+    id: 'admin_faculty',
+    label: 'Faculty Directory',
+    iconName: 'BookOpen',
+    path: '/app/admin/faculty',
+    allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
+    section: 'Administration',
+  },
   {
     id: 'admin_users',
     label: 'User Management',
@@ -30,33 +54,6 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
   },
 
   // Future Phase Registry Placeholders
-  {
-    id: 'academic',
-    label: 'Academic Management',
-    iconName: 'GraduationCap',
-    path: '/app/admin/academic',
-    allowedRoles: ['SUPER_ADMIN', 'ADMIN'],
-    badge: 'Phase 3',
-    section: 'Administration',
-  },
-  {
-    id: 'faculty_classes',
-    label: 'My Classes',
-    iconName: 'BookOpen',
-    path: '/app/faculty/classes',
-    allowedRoles: ['FACULTY'],
-    badge: 'Phase 3',
-    section: 'Academic',
-  },
-  {
-    id: 'student_academics',
-    label: 'My Academics',
-    iconName: 'BookMarked',
-    path: '/app/student/academics',
-    allowedRoles: ['STUDENT'],
-    badge: 'Phase 3',
-    section: 'Academic',
-  },
   {
     id: 'warden_hostel',
     label: 'Hostel Inmates',
